@@ -87,10 +87,12 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 
 打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.4.1.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。
 
-## 上架前必须补齐
+## 项目与上架信息
 
-- 将 `privacy.html` 托管到公开 HTTPS 地址，并在 Partner Center 的隐私政策 URL 中填写该地址。
-- 支持邮箱已配置为 lcf1249288484@outlook.com；发布前确认公开隐私政策 URL，准备商店截图。
+- GitHub 仓库：https://github.com/qudadd/qudadflow-translator
+- 项目网站：https://qudadd.github.io/qudadflow-translator/
+- 英文隐私政策：https://qudadd.github.io/qudadflow-translator/privacy.html
+- 支持邮箱：lcf1249288484@outlook.com；商店截图位于 `branding/screenshots`。
 - 按目标 API 服务商的条款确认用户文本和 Key 的处理方式。
 - 使用真实 API 在干净的 Edge 配置中完成侧载验收，再提交商店审核。
 
