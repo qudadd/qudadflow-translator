@@ -1,6 +1,6 @@
 {
   "browser": "155.0.4283.62",
-  "scope": "Isolated Edge, synthetic configuration keys. One public MyMemory sample sends only a fixed test sentence, without keys.",
+  "scope": "Isolated Edge, synthetic configuration keys and local simulated translation responses only. No live provider requests in this run.",
   "passed": 13,
   "failed": 0,
   "results": [
