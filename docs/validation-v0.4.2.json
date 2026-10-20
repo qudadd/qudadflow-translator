@@ -1,0 +1,230 @@
+{
+  "generatedAt": "2026-10-20T10:26:29.972Z",
+  "extensionVersion": "0.4.2",
+  "browser": "155.0.4283.62",
+  "scope": "Local synthetic HTTP API integration; test-only localhost host permission; original manifest side-load checked separately; provider billing/accounts not tested",
+  "passed": 44,
+  "failed": 0,
+  "results": [
+    {
+      "name": "google-translate-v2: HTTP request and response",
+      "passed": true,
+      "milliseconds": 25
+    },
+    {
+      "name": "microsoft-translator: HTTP request and response",
+      "passed": true,
+      "milliseconds": 7
+    },
+    {
+      "name": "deepl: HTTP request and response",
+      "passed": true,
+      "milliseconds": 6
+    },
+    {
+      "name": "openai-compatible: HTTP request and response",
+      "passed": true,
+      "milliseconds": 4
+    },
+    {
+      "name": "custom-json: HTTP request and response",
+      "passed": true,
+      "milliseconds": 8
+    },
+    {
+      "name": "DeepL: Chinese source uses ZH while target uses variant",
+      "passed": true,
+      "milliseconds": 4
+    },
+    {
+      "name": "Custom template safely escapes quotes and line breaks",
+      "passed": true,
+      "milliseconds": 12
+    },
+    {
+      "name": "Missing key",
+      "passed": true,
+      "milliseconds": 2
+    },
+    {
+      "name": "Permission denied",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Empty input",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Oversized input",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "HTTP 401",
+      "passed": true,
+      "milliseconds": 10
+    },
+    {
+      "name": "Missing response path",
+      "passed": true,
+      "milliseconds": 2
+    },
+    {
+      "name": "Invalid header object",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Invalid template",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Header timeout",
+      "passed": true,
+      "milliseconds": 92
+    },
+    {
+      "name": "Body timeout",
+      "passed": true,
+      "milliseconds": 89
+    },
+    {
+      "name": "Edge resolves localized manifest metadata and English product name",
+      "passed": true,
+      "milliseconds": 75
+    },
+    {
+      "name": "Provider switch resets endpoint and isolates credentials",
+      "passed": true,
+      "milliseconds": 66
+    },
+    {
+      "name": "Edge service worker: google-translate-v2",
+      "passed": true,
+      "milliseconds": 10
+    },
+    {
+      "name": "Edge service worker: microsoft-translator",
+      "passed": true,
+      "milliseconds": 7
+    },
+    {
+      "name": "Edge service worker: deepl",
+      "passed": true,
+      "milliseconds": 7
+    },
+    {
+      "name": "Edge service worker: openai-compatible",
+      "passed": true,
+      "milliseconds": 6
+    },
+    {
+      "name": "Edge service worker: custom-json",
+      "passed": true,
+      "milliseconds": 5
+    },
+    {
+      "name": "Context menus and command entries are registered",
+      "passed": true,
+      "milliseconds": 6
+    },
+    {
+      "name": "Options: reject arrays as custom headers",
+      "passed": true,
+      "milliseconds": 219
+    },
+    {
+      "name": "Options: save and connection test via actual extension worker",
+      "passed": true,
+      "milliseconds": 47
+    },
+    {
+      "name": "Selection translation through content script and worker",
+      "passed": true,
+      "milliseconds": 138
+    },
+    {
+      "name": "Repeated injection keeps exactly one listener and panel",
+      "passed": true,
+      "milliseconds": 11
+    },
+    {
+      "name": "API output renders as text, without HTML execution",
+      "passed": true,
+      "milliseconds": 15
+    },
+    {
+      "name": "Clipboard failure reports failure",
+      "passed": true,
+      "milliseconds": 132
+    },
+    {
+      "name": "Immersive translation skips editors, invisible and opted out content",
+      "passed": true,
+      "milliseconds": 140
+    },
+    {
+      "name": "Nested excluded spans are omitted from both page modes",
+      "passed": true,
+      "milliseconds": 111
+    },
+    {
+      "name": "Restore preserves original markup and link behavior",
+      "passed": true,
+      "milliseconds": 182
+    },
+    {
+      "name": "Damaged batch markers trigger per-paragraph fallback",
+      "passed": true,
+      "milliseconds": 161
+    },
+    {
+      "name": "Restore during translation prevents late reinsertion",
+      "passed": true,
+      "milliseconds": 338
+    },
+    {
+      "name": "Page translation excludes previously inserted translations",
+      "passed": true,
+      "milliseconds": 181
+    },
+    {
+      "name": "Closing panel cancels pending page result",
+      "passed": true,
+      "milliseconds": 329
+    },
+    {
+      "name": "Newest selection result wins over older request",
+      "passed": true,
+      "milliseconds": 347
+    },
+    {
+      "name": "Page translation splits long text into bounded requests",
+      "passed": true,
+      "milliseconds": 128
+    },
+    {
+      "name": "Long immersive paragraph is chunked and restored as one block",
+      "passed": true,
+      "milliseconds": 124
+    },
+    {
+      "name": "Page size limit is visible to the user",
+      "passed": true,
+      "milliseconds": 135
+    },
+    {
+      "name": "Popup buttons translate and restore the selected tab",
+      "passed": true,
+      "milliseconds": 1488
+    },
+    {
+      "name": "Protected browser page rejects content injection",
+      "passed": true,
+      "milliseconds": 218
+    }
+  ]
+}

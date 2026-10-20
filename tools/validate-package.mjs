@@ -19,6 +19,19 @@ assert(manifest.permissions?.includes("scripting"), "缺少 scripting 权限");
 assert(manifest.permissions?.includes("storage"), "缺少 storage 权限");
 assert(manifest.commands?.["translate-immersive"], "缺少沉浸式翻译快捷键");
 
+assert(manifest.default_locale === "en", "默认语言必须为 en");
+for (const locale of ["en", "zh_CN"]) {
+  const file = path.join(root, "_locales", locale, "messages.json");
+  assert(fs.existsSync(file), `缺少语言文件：${locale}`);
+  if (!fs.existsSync(file)) continue;
+  const messages = JSON.parse(fs.readFileSync(file, "utf8"));
+  assert(messages.extensionName?.message === "QudadFlow Translator", `${locale} 必须保留统一英文名称`);
+  for (const [, key] of JSON.stringify(manifest).matchAll(/__MSG_(\w+)__/g)) {
+    assert(Boolean(messages[key]?.message), `${locale} 缺少 manifest 消息：${key}`);
+  }
+  assert(messages.extensionDescription?.message.length <= 132, `${locale} 简介超过 132 个字符`);
+}
+
 const backgroundSource = fs.readFileSync(path.join(root, manifest.background.service_worker), "utf8");
 const contentSource = fs.readFileSync(path.join(root, "src/content.js"), "utf8");
 for (const provider of ["google-translate-v2", "microsoft-translator", "deepl", "custom-json"]) {

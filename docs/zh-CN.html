@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="QudadFlow Translator 中文说明：使用自备的 Google、DeepL、Microsoft 或兼容 API 翻译网页，支持划词翻译、沉浸式双语阅读与恢复原文。">
+  <meta name="theme-color" content="#0c1426">
+  <title>QudadFlow Translator — 中文说明与使用指南</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body class="chinese">
+  <header class="wrap nav">
+    <a class="brand" href="zh-CN.html"><img src="icon.png" alt="" width="40" height="40"><span>QudadFlow Translator</span></a>
+    <nav aria-label="主导航"><a href="./" lang="en" hreflang="en">English</a><a href="privacy.zh-CN.html">隐私政策</a><a href="https://github.com/qudadd/qudadflow-translator">GitHub ↗</a></nav>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <p class="eyebrow"><span></span> 为 Microsoft Edge 设计</p>
+        <h1>跨越语言，<br><em>从容阅读。</em></h1>
+        <p class="intro">保留原文，按自己的节奏阅读译文。选择熟悉的翻译服务，使用自己的 API，让网页翻译融入日常阅读。</p>
+        <div class="actions"><a class="button" href="https://github.com/qudadd/qudadflow-translator/releases">获取扩展 ↗</a><a class="text-link" href="#setup">开始使用 →</a></div>
+        <p class="note">开发版本 · 需自行配置 API 凭据<br>扩展操作界面为简体中文，产品名称统一为英文</p>
+      </div>
+      <div class="art"><div class="halo"></div><img src="icon.png" alt="QudadFlow Translator 图标" width="350" height="350"><div class="art-caption"><span>YOUR WORDS. YOUR PROVIDER.</span><span>QF / 01</span></div></div>
+    </section>
+    <section class="providers" aria-labelledby="providers-title"><h2 id="providers-title">多种翻译引擎，同一种阅读方式。</h2><div><span>Google Cloud</span><span>DeepL</span><span>Microsoft Translator</span><span>OpenAI 兼容接口</span><span>自定义 JSON</span></div></section>
+    <section class="features" aria-label="主要功能">
+      <article><span class="number">01</span><h2>划词与网页翻译</h2><p>选中文字后，通过扩展弹窗、右键菜单或快捷键发起翻译；也可以在独立面板查看网页译文并复制结果。</p></article>
+      <article><span class="number">02</span><h2>沉浸式双语阅读</h2><p>在原文段落下方显示译文，方便上下对照。一键恢复原文，继续使用网页原有的链接和布局。</p></article>
+      <article><span class="number">03</span><h2>自选服务，直接连接</h2><p>API 设置和密钥保存在浏览器本地。授权所选 API 域名后，翻译请求直接发给该服务商，扩展无广告、遥测或开发者代理。</p></article>
+    </section>
+    <section class="guide" id="setup" aria-labelledby="setup-title">
+      <p class="eyebrow">开始使用</p><h2 id="setup-title">几步完成配置。</h2>
+      <ol>
+        <li>从 GitHub Releases 下载运行包并解压。打开 <code>edge://extensions</code>，开启“开发人员模式”，点击“加载解压缩的扩展”，选择包含 <code>manifest.json</code> 的目录。也可下载仓库源码后选择其根目录。</li>
+        <li>打开扩展的“设置 / API 设置”，选择接口类型，填写服务商提供的端点、API Key 和必要的模型或区域。</li>
+        <li>保存设置并允许访问 API 域名，点击“测试连接”。服务商要求账号、额度或付费时，请先完成相应配置。</li>
+        <li>打开普通网页，选中文本后使用右键菜单或扩展弹窗翻译；需要逐段对照时点击“沉浸式翻译”，结束后点击“恢复原文”。</li>
+      </ol>
+      <p>选中文本快捷键为 <code>Alt+Shift+T</code>，沉浸式翻译为 <code>Alt+Shift+I</code>。可在 <code>edge://extensions/shortcuts</code> 调整；macOS 默认使用 <code>Control+Shift</code> 组合。</p>
+      <h2>选择你的 API。</h2>
+      <div class="table-scroll"><table><caption>常见配置示例，实际参数以服务商文档为准</caption><thead><tr><th scope="col">接口类型</th><th scope="col">端点示例</th><th scope="col">补充配置</th></tr></thead><tbody>
+        <tr><td>Google Cloud Translation v2</td><td><code>https://translation.googleapis.com/language/translate/v2</code></td><td>启用 Cloud Translation API 并提供对应 Key</td></tr>
+        <tr><td>DeepL API</td><td><code>https://api-free.deepl.com/v2/translate</code></td><td>Pro 通常使用 <code>api.deepl.com</code>；填写 DeepL API Key</td></tr>
+        <tr><td>Microsoft Translator</td><td><code>https://api.cognitive.microsofttranslator.com/translate</code></td><td>Azure Translator Key，按资源要求填写区域</td></tr>
+        <tr><td>OpenAI 兼容接口</td><td><code>https://你的服务商域名/v1/chat/completions</code></td><td>服务商 Key 与其支持的模型名称</td></tr>
+        <tr><td>自定义 JSON</td><td>服务商指定的 HTTPS 地址</td><td>请求模板、自定义请求头和响应字段路径</td></tr>
+      </tbody></table></div>
+      <p>自定义模板用 <code>{{text}}</code>、<code>{{model}}</code>、<code>{{sourceLanguage}}</code>、<code>{{targetLanguage}}</code> 作为完整的 JSON 值，扩展负责转义；响应路径示例为 <code>data.translation</code>。完整示例见 <a href="https://github.com/qudadd/qudadflow-translator/blob/main/README.zh-CN.md">中文 README ↗</a>。</p>
+      <h2>使用范围与数据处理</h2>
+      <p>浏览器内部页面、Edge 商店等受保护页面无法注入翻译界面。网页面板单次最多提取 12,000 个字符并提示截断；沉浸式模式单次最多处理 80 个正文块，长段落自动拆分。</p>
+      <p>翻译仅在你主动操作后开始。待翻译文本和鉴权信息直接发送至你配置的 API；服务商按自己的隐私、保留和收费规则处理。请使用可信的 HTTPS 端点。沉浸式译文插入网页后，网页脚本可能读到这些译文。详情见 <a href="privacy.zh-CN.html">中文隐私政策</a>。</p>
+      <p>已通过本地模拟 API 与 Edge 集成检查。真实 Google、DeepL、Microsoft 等账号的有效性、额度、网络可达性和翻译质量仍需使用自己的 Key 验证。</p>
+    </section>
+    <section class="support"><div><p class="eyebrow">支持与反馈</p><h2>配置遇到问题？</h2><p>请描述接口类型和错误提示，勿在反馈中发送 API Key。</p></div><a href="mailto:lcf1249288484@outlook.com">lcf1249288484@outlook.com ↗</a></section>
+    <p class="disclosure">QudadFlow Translator 为独立扩展，与所列服务商无隶属关系。扩展本身不附带翻译服务订阅，第三方账号、费用和条款由对应服务商决定。Edge 商店材料仍处于准备阶段，当前可通过 GitHub 获取开发版本。</p>
+  </main>
+  <footer class="wrap"><span>© 2026 QudadFlow Translator</span><a href="privacy.zh-CN.html">隐私政策</a><a href="./" lang="en">English</a><a href="https://github.com/qudadd/qudadflow-translator">源代码</a></footer>
+</body>
+</html>

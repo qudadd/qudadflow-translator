@@ -2,7 +2,7 @@
 
 A Manifest V3 extension for Microsoft Edge. Translate a selection, read a page in a translation panel, or insert translations beneath the original paragraphs.
 
-[Website](https://qudadd.github.io/qudadflow-translator/) · [Privacy policy](https://qudadd.github.io/qudadflow-translator/privacy.html) · [中文使用说明](README.zh-CN.md)
+[Website](https://qudadd.github.io/qudadflow-translator/) · [Privacy policy](https://qudadd.github.io/qudadflow-translator/privacy.html) · [中文网站指南](https://qudadd.github.io/qudadflow-translator/zh-CN.html) · [中文 README](README.zh-CN.md)
 
 ## Translation providers
 
@@ -47,8 +47,8 @@ npm install --no-save playwright
 node tools/functional-check.cjs functional-results.json
 ```
 
-The functional suite uses synthetic credentials, a local HTTP fixture, and an isolated Microsoft Edge profile. The test copy receives a localhost permission; the production manifest keeps optional host permissions. Version 0.4.1 passed 43 checks on Edge 155.0.4283.62. This verifies API request formats and extension behavior; live provider credentials, account billing, translation quality, and physical keyboard-shortcut activation were not tested.
+The functional suite uses synthetic credentials, a local HTTP fixture, and an isolated Microsoft Edge profile. The test copy receives a localhost permission; the production manifest keeps optional host permissions. Version 0.4.2 passed 44 checks on Edge 155.0.4283.62. This verifies API request formats and extension behavior; live provider credentials, account billing, translation quality, and physical keyboard-shortcut activation were not tested.
 
 ## Publishing
 
-The extension is being prepared for Edge Add-ons review. The repository and website do not imply store approval. Submission materials are in `docs/STORE_LISTING_DRAFT.md` and `docs/STORE_SUBMISSION.md`.
+The extension is being prepared for Edge Add-ons review. The repository and website do not imply store approval. English and Simplified Chinese metadata keep the same QudadFlow Translator name. Submission materials are in `docs/STORE_LISTING_DRAFT.md`, `docs/STORE_LISTING.zh-CN.md`, and `docs/STORE_SUBMISSION.md`.

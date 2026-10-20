@@ -1,0 +1,11 @@
+{
+  "extensionName": {
+    "message": "QudadFlow Translator",
+    "description": "所有语言均保留统一英文产品名称。"
+  },
+  "extensionDescription": {
+    "message": "使用自己的 Google、DeepL、Microsoft 或兼容 API 翻译网页，支持划词翻译、沉浸式双语阅读与一键恢复原文。"
+  },
+  "translateSelection": { "message": "翻译当前选中文本" },
+  "translateImmersive": { "message": "沉浸式翻译当前网页" }
+}

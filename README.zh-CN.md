@@ -85,13 +85,15 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 .\package.ps1
 ```
 
-打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.4.1.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。
+打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.4.2.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。
 
 ## 项目与上架信息
 
 - GitHub 仓库：https://github.com/qudadd/qudadflow-translator
 - 项目网站：https://qudadd.github.io/qudadflow-translator/
+- 中文使用指南：https://qudadd.github.io/qudadflow-translator/zh-CN.html
 - 英文隐私政策：https://qudadd.github.io/qudadflow-translator/privacy.html
+- 中文隐私政策：https://qudadd.github.io/qudadflow-translator/privacy.zh-CN.html
 - 支持邮箱：lcf1249288484@outlook.com；商店截图位于 `branding/screenshots`。
 - 按目标 API 服务商的条款确认用户文本和 Key 的处理方式。
 - 使用真实 API 在干净的 Edge 配置中完成侧载验收，再提交商店审核。

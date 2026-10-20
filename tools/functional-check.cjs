@@ -116,7 +116,7 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
 
     const extension = path.join(scratch,'extension');
     fs.mkdirSync(extension);
-    for(const name of ['manifest.json','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets']) fs.cpSync(path.join(root,name),path.join(extension,name),{recursive:true});
+    for(const name of ['manifest.json','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales']) fs.cpSync(path.join(root,name),path.join(extension,name),{recursive:true});
     const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json'),'utf8'));
     // Local API + fixture only. Production manifest retains optional permissions.
     manifest.host_permissions=['http://127.0.0.1/*'];
@@ -124,6 +124,14 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
     browser=await chromium.launchPersistentContext(path.join(scratch,'profile'),{channel:'msedge',headless:true,viewport:{width:1440,height:1000},args:[`--disable-extensions-except=${extension}`,`--load-extension=${extension}`]});
     browserVersion=browser.browser().version();
     const worker=browser.serviceWorkers()[0] || await browser.waitForEvent('serviceworker',{timeout:15000});
+    await check('Edge resolves localized manifest metadata and English product name',async()=>{
+      const metadata=await worker.evaluate(()=>({manifest:chrome.runtime.getManifest(),name:chrome.i18n.getMessage('extensionName'),description:chrome.i18n.getMessage('extensionDescription')}));
+      assert.equal(metadata.manifest.name,'QudadFlow Translator');
+      assert.equal(metadata.name,metadata.manifest.name);
+      assert.equal(metadata.manifest.description,metadata.description);
+      assert.ok(['en','zh_CN'].some(locale=>JSON.parse(fs.readFileSync(path.join(root,'_locales',locale,'messages.json'),'utf8')).extensionDescription.message===metadata.description));
+      assert.doesNotMatch(JSON.stringify(metadata.manifest),/__MSG_/);
+    });
     const extensionOrigin=`chrome-extension://${worker.url().split('/')[2]}`;
     const options=await browser.newPage();
     await options.goto(extensionOrigin+'/options.html');
@@ -291,7 +299,7 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
   } finally {
     if(browser) await browser.close();
     server.closeAllConnections(); await new Promise(resolve=>server.close(resolve));
-    const report={generatedAt:new Date().toISOString(),browser:browserVersion,scope:'Local synthetic HTTP API integration; test-only localhost host permission; original manifest side-load checked separately; provider billing/accounts not tested',passed:results.filter(r=>r.passed).length,failed:results.filter(r=>!r.passed).length,results};
+    const report={generatedAt:new Date().toISOString(),extensionVersion:JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8')).version,browser:browserVersion,scope:'Local synthetic HTTP API integration; test-only localhost host permission; original manifest side-load checked separately; provider billing/accounts not tested',passed:results.filter(r=>r.passed).length,failed:results.filter(r=>!r.passed).length,results};
     fs.mkdirSync(path.dirname(reportPath),{recursive:true}); fs.writeFileSync(reportPath,JSON.stringify(report,null,2));
     // Only the newly created task-specific directory is removed.
     fs.rmSync(scratch,{recursive:true,force:true,maxRetries:3,retryDelay:200});

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QudadFlow Translator 隐私政策</title>
+  <style>body{margin:0;background:#f4f7fb;color:#172033;font:15px/1.8 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}.page{max-width:760px;margin:auto;padding:42px 22px 70px;background:#fff;min-height:100vh;overflow-wrap:anywhere}h1{font-size:27px}h2{margin-top:28px;font-size:18px}small{color:#6b7890}a{color:#315bc7}</style>
+</head>
+<body><main class="page">
+  <p><a href="zh-CN.html">← 中文使用指南</a> · <a href="privacy.html" lang="en">English policy</a></p>
+  <h1>QudadFlow Translator 隐私政策</h1>
+  <small>版本 0.4.2 · 生效日期：2026 年 10 月 20 日</small>
+  <p>本政策说明 Microsoft Edge 扩展 QudadFlow Translator 如何处理信息。开发者支持与隐私联系邮箱：<a href="mailto:lcf1249288484@outlook.com">lcf1249288484@outlook.com</a>。</p>
+  <h2>处理的信息</h2>
+  <p>你主动发起翻译后，扩展读取选中文本或当前网页中的可见文本，并将其与源语言、目标语言以及所选 API 必需的鉴权和配置字段直接发送至你配置的端点。根据接口类型，请求还可能包括模型名称、翻译指令、段落标记、自定义字段或请求头。</p>
+  <p>扩展不会自动收集浏览历史或在后台自动翻译网页。网页提取会跳过编辑区域、隐藏内容、已插入的译文及标记为排除的内容。你明确选中的文字仍可能在划词翻译时发送。</p>
+  <h2>翻译服务商</h2>
+  <p>QudadFlow Translator 不运营翻译服务器或代理。你自行选择 Google Cloud Translation、DeepL、Microsoft Translator、OpenAI 兼容服务或自定义 JSON 服务及其端点。该服务商接收翻译请求，并适用其自己的隐私、数据保留、安全和计费条款。请选择可信端点，远程服务请使用 HTTPS。</p>
+  <p>服务商隐私信息：<a href="https://policies.google.com/privacy">Google</a>、<a href="https://www.deepl.com/privacy">DeepL</a>、<a href="https://privacy.microsoft.com/privacystatement">Microsoft</a>。其他端点请查阅相应服务商的政策。</p>
+  <h2>本地存储与 API 密钥</h2>
+  <p>API Key、端点、模型、语言偏好及自定义 API 设置保存在浏览器的扩展本地存储中。扩展不会同步这些信息，也不会将其发送给开发者。API Key 和自定义鉴权字段会发送到你配置的端点，以验证请求。设置页切换服务商时会保留独立的临时配置草稿，不会自动复用另一服务商的 Key。</p>
+  <p>译文显示在当前页面中，不会保存到扩展存储。沉浸式译文插入网页后，网页自身的脚本可能读取这些译文。恢复原文或刷新网页可移除插入的译文。</p>
+  <h2>权限用途</h2>
+  <p>activeTab 和 scripting 用于在扩展操作后访问当前页并注入随包提供的翻译界面；storage 在本地保存 API 设置和偏好；contextMenus 提供右键翻译命令；可选主机权限允许向你配置的 HTTP(S) API 域名发送请求。</p>
+  <h2>广告、分析与远程代码</h2>
+  <p>扩展不包含广告、跟踪、分析或遥测，开发者不出售个人信息。所有扩展可执行代码均随安装包提供；API 响应仅作为文本数据处理，不会作为代码执行。</p>
+  <h2>你的选择与删除</h2>
+  <p>你可以在设置页修改端点和凭据、通过 Edge 扩展设置撤销站点权限、恢复网页原文或移除扩展。移除扩展会删除它的本地扩展存储。这些操作不会删除 API 服务商已经保留的数据；有关删除及其他隐私请求，请联系该服务商。</p>
+  <h2>联系与政策变更</h2>
+  <p>支持或隐私请求请发至 <a href="mailto:lcf1249288484@outlook.com">lcf1249288484@outlook.com</a>。政策发生实质变更时，将更新生效日期和扩展发布说明。</p>
+</main></body></html>

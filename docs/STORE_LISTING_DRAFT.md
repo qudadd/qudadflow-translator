@@ -3,9 +3,9 @@
 ## Basic information
 
 - Name: QudadFlow Translator
-- Version: 0.4.1
+- Version: 0.4.2
 - Category: Productivity
-- Listing language: English (en-US)
+- Listing languages: English (en-US) and Simplified Chinese (zh-CN)
 - Support email: lcf1249288484@outlook.com
 - Privacy policy URL: https://qudadd.github.io/qudadflow-translator/privacy.html
 - Website and support URL: https://qudadd.github.io/qudadflow-translator/
@@ -50,6 +50,6 @@ Upload the generated `branding/qudadflow-store-logo-300.png` as the store logo. 
 3. Translation panel showing original and translated text with the copy action.
 4. Immersive translation with translated paragraphs below the originals.
 
-## Version 0.4.1 release notes
+## Version 0.4.2 release notes
 
-Improved provider switching, request deadlines, clipboard feedback, webpage text filtering, long-paragraph handling, and cancellation of outdated translation results. Added repeatable local API and Microsoft Edge integration checks.
+Added English and Simplified Chinese manifest metadata, a Chinese setup guide, and a Chinese privacy policy. The product name remains QudadFlow Translator in both locales. The extension interface remains Simplified Chinese.

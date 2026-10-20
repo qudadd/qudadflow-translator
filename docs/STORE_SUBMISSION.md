@@ -31,10 +31,10 @@ Microsoft 的发布文档列出的主流程是：准备可运行原型、创建�
 
 ## 具体上传步骤
 
-1. 在源代码目录打开 PowerShell，执行 `./package.ps1`，生成 `outputs/qudadflow-translator-v0.4.1.zip`。
+1. 在源代码目录打开 PowerShell，执行 `./package.ps1`，生成 `outputs/qudadflow-translator-v0.4.2.zip`。
 2. 用解压工具检查 ZIP 根目录，确认第一层直接有 `manifest.json`、`src/`、`assets/`，不要再套一层项目目录。
 3. 打开 Microsoft Edge Add-ons Partner Center，登录开发者账号，进入 Microsoft Edge 扩展管理页面，选择创建新的扩展/提交新包。页面名称可能随 Partner Center 更新略有变化。
-4. 上传 `qudadflow-translator-v0.4.1.zip`，等待包校验完成；如果提示权限或 Manifest 问题，先修复后重新运行打包脚本。
+4. 上传 `qudadflow-translator-v0.4.2.zip`，等待包校验完成；如果提示权限或 Manifest 问题，先修复后重新运行打包脚本。
 5. 填写名称、简短/详细描述、语言、分类、支持邮箱、图标和截图；可直接参考 `docs/STORE_LISTING_DRAFT.md`。
 6. 在隐私和数据使用页面填写公开 HTTPS 隐私政策 URL，并说明页面文本只在用户操作后发送到用户自己配置的 API，扩展不保存服务器端副本。
 7. 对 `activeTab`、`scripting`、可选 API 域名权限分别填写用途，声明 API Key 只用于用户选择的 Google、DeepL、Microsoft 或其他配置端点。
@@ -57,6 +57,8 @@ privacy.html
 src/background.js
 src/content.js
 assets/icon*.png
+_locales/en/messages.json
+_locales/zh_CN/messages.json
 ```
 
 开发文档不会进入提交 ZIP，避免把未完成的说明或测试材料当成扩展资源提交。

@@ -1,0 +1,11 @@
+{
+  "extensionName": {
+    "message": "QudadFlow Translator",
+    "description": "The product name stays in English in every locale."
+  },
+  "extensionDescription": {
+    "message": "Translate webpages with your Google, DeepL, Microsoft, or compatible API. Includes immersive translation."
+  },
+  "translateSelection": { "message": "Translate the selected text" },
+  "translateImmersive": { "message": "Translate the current page in immersive mode" }
+}
