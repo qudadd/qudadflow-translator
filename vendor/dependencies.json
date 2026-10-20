@@ -1,0 +1,28 @@
+[
+  {
+    "name": "pdfjs-dist",
+    "version": "6.4.299",
+    "directory": "pdfjs",
+    "integrity": "sha512-AVl138zALtfaAPvADulE0PZThbYzCBS79nL4pOSL/6Sm/4AH5A21BD9VHt97OlCuzJuCpmeZtAtkinisF4Vb1g==",
+    "paths": [
+      "legacy/build/pdf.mjs",
+      "legacy/build/pdf.worker.mjs",
+      "web/pdf_viewer.css",
+      "cmaps",
+      "standard_fonts",
+      "wasm",
+      "LICENSE",
+      "README.md"
+    ]
+  },
+  {
+    "name": "fflate",
+    "version": "0.8.3",
+    "directory": "fflate",
+    "integrity": "sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==",
+    "paths": [
+      "umd/index.js",
+      "LICENSE"
+    ]
+  }
+]

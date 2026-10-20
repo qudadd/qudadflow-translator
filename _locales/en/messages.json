@@ -4,7 +4,7 @@
     "description": "The product name stays in English in every locale."
   },
   "extensionDescription": {
-    "message": "Translate webpages with your Google, DeepL, Microsoft, or compatible API. Includes immersive translation."
+    "message": "Read webpages and PDF/Word documents bilingually. Save your API profiles or try basic key-free translation."
   },
   "translateSelection": { "message": "Translate the selected text" },
   "translateImmersive": { "message": "Translate the current page in immersive mode" }

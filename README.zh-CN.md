@@ -1,8 +1,11 @@
 # QudadFlow Translator（Microsoft Edge 扩展）
 
-这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，可在 Microsoft Edge 中侧载。它直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.4.2 已提交商店审核；0.4.4 为独立试用更新，尚未替换审核中的提交。
+这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，可在 Microsoft Edge 中侧载。它直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.5.0 新增 PDF、Word DOCX、TXT 和 Markdown 左右对照阅读。0.4.2 已提交商店审核；0.5.0 为独立试用更新，尚未替换审核中的提交。
 
 ## 当前功能
+
+- 保存最多 20 个具名 API 配置方案，包括接口、端点、Key、模型、请求头和语言；可选择、编辑、另存、删除，并在弹窗快速切换。
+- MyMemory 免 Key 基础试用：默认英译简中，可手动更改源语言，匿名额度通常为每天 5000 字符。
 
 - 站点授权后，选中文字即可就近点击“翻译”，通过跟随选区的小浮窗查看结果、复制或重试；Esc 关闭。
 - 保留扩展弹窗、右键菜单、`Alt+Shift+T` 快捷键划词入口。
@@ -28,7 +31,27 @@
 
 站点开关会保留到下次访问，权限按当前 HTTP/HTTPS 协议和主机匹配，包括该主机的所有端口。关闭开关会停用已加载页面中的按钮，并取消后续自动加载；如需撤销保留的站点权限，可在 Edge 扩展设置中操作。
 
-扩展无法注入 `edge://` 页面、内置 PDF 阅读器、Edge 加载项商店页面或其他浏览器内部页面。当前版本尚未实现专用 PDF 翻译。
+扩展无法向 `edge://` 页面、内置 PDF 阅读器、Edge 加载项商店等保护页面注入网页翻译界面。浏览器打开的 PDF 可以通过扩展弹窗的“PDF / 文档左右对照”进入独立文档阅读器。
+
+## PDF、Word 和文本左右对照
+
+### 配置方案与快速试用
+
+在设置页的“保存的配置方案”中选择历史方案，修改后点击“保存设置”应用；“另存为新方案”会保留之前的方案。打开设置时，原有已配置的连接会先保留到方案列表。删除正在使用的方案也会清空其当前连接密钥，其他方案中的 Key 不受影响。所有方案及密钥仅保存在此浏览器本地，不同步到 GitHub，也不记录翻译内容历史。
+
+无需 Key 的体验入口是“启用 MyMemory 基础试用”，首次需允许其 API 域名。默认 English → 简体中文，其他语言需手动设置源语言。它提供翻译记忆匹配与机器翻译，匿名额度通常为每天 5000 字符；请求会按单段、480 UTF-8 字节拆分，段落标记在本地保留，不调用公开贡献/上传接口，也不会在失败时暗中切换服务。文字通过 HTTPS 查询参数发送，服务商可能长期保留，请使用非私密短文试用。没有承诺完全不限量的免费公共 API。长文请使用自己的 API 或自托管兼容服务。详见 [MyMemory 额度](https://mymemory.translated.net/doc/usagelimits.php)和[条款/隐私说明](https://mymemory.translated.net/terms-and-conditions)。
+
+### 文档阅读步骤
+
+1. 重新加载扩展后，打开浏览器中的 PDF，点击扩展图标 → **PDF / 文档左右对照**。阅读器会填入当前文档链接；点击“打开文档”并允许访问该文档域名。也可以在网页或文档链接上使用右键文档入口。
+2. 本地文件直接点击 **打开文件**，或拖入阅读器。需要登录、无法直接下载或 `blob:` 临时链接的文件，请先下载再选择；不需要开放所有本地文件访问权限。
+3. 选择目标语言，点击 **翻译当前页** 或 **翻译全文**。使用已有 API 配置，无需重复填写密钥；打开文件本身不会发送翻译请求。
+4. PDF 左侧保留原页和可选文字，右侧按页显示段落译文。Word、TXT 和 Markdown 提取正文，以等高段落左右对应；可翻页、同步滚动、停止并续译。每个阅读器最多两个并发请求，已完成段落留在当前标签页。
+5. 点击 **导出双语 TXT** 保存原文和译文；未翻译的部分会明确标注。关闭阅读器后，当前文档与显示的译文不保留。
+
+支持最大 25 MB、300 页 PDF／阅读分段、100 万提取字符。TXT/Markdown 支持 UTF-8 或带 BOM 的 UTF-16。Word 仅支持 DOCX 正文：提取表格单元格文字，但不保留图片、页眉页脚、表格版式或原始分页；旧 DOC 请先另存为 DOCX。Markdown 按纯文本显示。扫描 PDF 需要先 OCR；当前没有内置 OCR。复杂多栏、公式和特殊字体的 PDF 可能存在阅读顺序或文字提取误差。此功能用于对照阅读，不生成保留原版式的译后 PDF/Word 文件。
+
+解析使用随包提供的 PDF.js 和 fflate，在浏览器本地进行。点击翻译后，仅将提取文字发送给所配置 API，不向它上传原始文件。打开远程文档需另行授权来源域名，下载时浏览器可能使用该站点的登录 Cookie；无法下载时可改用本地文件。最低要求 Chromium 内核 Edge 125，集成测试使用 Edge 155。第三方许可见 `THIRD_PARTY_NOTICES.md`。
 
 已有侧载安装更新时，在原目录替换运行文件后，到 `edge://extensions` 点击扩展的“重新加载”，再刷新需要翻译的网页。浏览器中的 API 配置会保留。
 
@@ -97,7 +120,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 .\package.ps1
 ```
 
-打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.4.4.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。
+打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.5.0.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
 
 ## 项目与上架信息
 
@@ -119,9 +142,11 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 ```powershell
 npm install --no-save playwright
 node tools/functional-check.cjs functional-results.json
+node tools/document-check.cjs document-results.json
+node tools/configuration-check.cjs configuration-results.json
 ```
 
-0.4.4 已通过 87 项本地模拟 API 与 Edge 集成检查，包含嵌套段落、分栏与表格位置、划词浮窗定位、站点开关、流式显示、缓存、取消请求和并发上限。测试使用虚构 Key 和独立浏览器配置，只给测试副本加入 localhost 权限；正式 Manifest 另行验证，保留可选主机权限。真实服务商的账号、额度、网络可达性和翻译质量仍需使用自己的 Key 验证。详见 `docs/VERIFICATION.md`。
+0.5.0 已通过 134 项检查：87 项网页/接口回归检查、34 项文档检查和 13 项配置方案/基础试用接口检查。覆盖真实 PDF 渲染与文字层、双栏/旋转页面、DOCX 与文本、流式翻译、段落对齐、同步滚动、停止续译、连接隔离、边界与错误处理、双语导出。测试使用生成文档、虚构 Key、本地模拟 API 和独立 Edge 155 配置，只给测试副本加入 localhost 权限；未修改的正式 Manifest 也验证了无主机授权时本地 PDF 可正常显示。真实服务商的账号、额度、网络可达性和翻译质量仍需使用自己的 Key 验证。详见 `docs/VERIFICATION.md`。
 
 网页面板每次最多翻译 12000 个字符并显示截断提示。沉浸式模式对正文进行有界扫描，每次最多处理视区附近的 80 个正文块，长段落自动拆分。滚动后重新翻译会替换上一轮译文。编辑区域、不可见内容和 translate=no 内容不会被自动提取。
 

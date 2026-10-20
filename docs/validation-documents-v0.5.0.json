@@ -1,0 +1,178 @@
+{
+  "version": "0.5.0",
+  "scope": "Generated PDF/DOCX/TXT/Markdown fixtures; isolated Edge; synthetic API only. No user profile or live credentials accessed.",
+  "passed": 34,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Text: UTF-8/UTF-16 and safe Unicode splitting",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Text: reading page and character limits",
+      "passed": true,
+      "milliseconds": 2
+    },
+    {
+      "name": "Batch markers: missing/duplicate rejected; split stream marker hidden",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Production manifest: real PDF canvas + text layer with no host grants",
+      "passed": true,
+      "milliseconds": 724
+    },
+    {
+      "name": "PDF: render real pages locally; opening does not call API",
+      "passed": true,
+      "milliseconds": 450
+    },
+    {
+      "name": "PDF: streamed translation appears before completion",
+      "passed": true,
+      "milliseconds": 868
+    },
+    {
+      "name": "PDF: two-column extraction reads left column before right",
+      "passed": true,
+      "milliseconds": 317
+    },
+    {
+      "name": "PDF: page without text shows OCR guidance and sends no API request",
+      "passed": true,
+      "milliseconds": 110
+    },
+    {
+      "name": "PDF: returning to a page restores its completed translation",
+      "passed": true,
+      "milliseconds": 132
+    },
+    {
+      "name": "PDF: rotated page retains logical reading order",
+      "passed": true,
+      "milliseconds": 515
+    },
+    {
+      "name": "DOCX: body, headings, Unicode and table text; hidden/deleted/header excluded",
+      "passed": true,
+      "milliseconds": 123
+    },
+    {
+      "name": "DOCX: corresponding blocks align at equal heights after translation",
+      "passed": true,
+      "milliseconds": 344
+    },
+    {
+      "name": "Word: explicitly visible runs are retained; malformed XML rejected",
+      "passed": true,
+      "milliseconds": 71
+    },
+    {
+      "name": "TXT: UTF-16 local input and bilingual export",
+      "passed": true,
+      "milliseconds": 486
+    },
+    {
+      "name": "Markdown and provider HTML render as text without executing",
+      "passed": true,
+      "milliseconds": 707
+    },
+    {
+      "name": "Malformed DOCX and entity declarations produce visible errors",
+      "passed": true,
+      "milliseconds": 66
+    },
+    {
+      "name": "Limits: reject oversized archive body, files and >300 PDF pages",
+      "passed": true,
+      "milliseconds": 5766
+    },
+    {
+      "name": "Whole document: 2 request cap, stop/resume preserves completed blocks",
+      "passed": true,
+      "milliseconds": 3009
+    },
+    {
+      "name": "Reading layout: synchronized scroll and resize preserve paragraph pairing",
+      "passed": true,
+      "milliseconds": 594
+    },
+    {
+      "name": "Document replacement cancels old stream and ignores stale output",
+      "passed": true,
+      "milliseconds": 310
+    },
+    {
+      "name": "Settings changes cancel stream and clear old-language results",
+      "passed": true,
+      "milliseconds": 261
+    },
+    {
+      "name": "Marker loss falls back per paragraph without wrong pairing",
+      "passed": true,
+      "milliseconds": 733
+    },
+    {
+      "name": "HTTP error is visible and does not mark unfinished blocks complete",
+      "passed": true,
+      "milliseconds": 169
+    },
+    {
+      "name": "Custom JSON provider also translates document text",
+      "passed": true,
+      "milliseconds": 206
+    },
+    {
+      "name": "URL: current document prefill is cleared from reader history",
+      "passed": true,
+      "milliseconds": 508
+    },
+    {
+      "name": "URL: attachment filename enables TXT without a suffix",
+      "passed": true,
+      "milliseconds": 102
+    },
+    {
+      "name": "URL: oversized response and login HTML are actionable errors",
+      "passed": true,
+      "milliseconds": 109
+    },
+    {
+      "name": "URL: denied permission shows local-file alternative",
+      "passed": true,
+      "milliseconds": 67
+    },
+    {
+      "name": "URL load replaced by local file does not overwrite the new document",
+      "passed": true,
+      "milliseconds": 1816
+    },
+    {
+      "name": "Cancel loading keeps reader idle without a stale document",
+      "passed": true,
+      "milliseconds": 1836
+    },
+    {
+      "name": "Closing one reader cancels only its own pending port requests",
+      "passed": true,
+      "milliseconds": 785
+    },
+    {
+      "name": "Worker port: third concurrent request rejected, disconnect aborts both",
+      "passed": true,
+      "milliseconds": 169
+    },
+    {
+      "name": "Popup opens reader with active PDF URL; context menu registered",
+      "passed": true,
+      "milliseconds": 2931
+    },
+    {
+      "name": "No parser/page errors or unexpected document network requests",
+      "passed": true,
+      "milliseconds": 0
+    }
+  ]
+}

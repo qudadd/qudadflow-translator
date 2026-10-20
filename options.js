@@ -24,6 +24,7 @@ const DEFAULTS = {
 const $ = (id) => document.getElementById(id);
 
 const PROVIDER_HINTS = {
+  mymemory: "免 Key 基础试用：默认 English → 简体中文。需手动选择源语言；匿名额度通常为 5000 字符/天，服务商可能保留查询文字。",
   "openai-compatible": "支持 Chat Completions 和 Responses。请使用服务商实际提供的模型名称；翻译长网页时优先选择响应较快的模型。",
   "google-translate-v2": "机器翻译直连：填写 Google Cloud Translation v2 地址，API Key 会作为 key 参数发送。默认地址：https://translation.googleapis.com/language/translate/v2。",
   "microsoft-translator": "机器翻译直连：填写 Azure Translator 地址，默认地址：https://api.cognitive.microsofttranslator.com/translate；API Key 放入 Ocp-Apim-Subscription-Key。",
@@ -32,6 +33,7 @@ const PROVIDER_HINTS = {
 };
 
 const ENDPOINT_HINTS = {
+  mymemory: "使用 MyMemory 官方 HTTPS 查询接口，自动按单段、500 UTF-8 字节以内拆分；不调用上传翻译记忆的接口。",
   "openai-compatible": "可填 /v1/chat/completions 或 /v1/responses 完整地址；只填域名或 /v1 时使用 Chat Completions。",
   "google-translate-v2": "请填写 Google Cloud Translation v2 的 POST 地址；扩展会把 API Key 作为 key 参数加入请求。",
   "microsoft-translator": "请填写 Azure Translator 的 POST 地址；扩展会自动加入 api-version=3.0 和目标语言参数。",
@@ -39,8 +41,9 @@ const ENDPOINT_HINTS = {
   "custom-json": "请填写自定义服务实际接收 POST 请求的地址。"
 };
 
-const DIRECT_STYLES = new Set(["google-translate-v2", "microsoft-translator", "deepl"]);
+const DIRECT_STYLES = new Set(["mymemory", "google-translate-v2", "microsoft-translator", "deepl"]);
 const PROVIDER_ENDPOINTS = {
+  mymemory: "https://api.mymemory.translated.net/get",
   "openai-compatible": DEFAULTS.endpoint,
   "google-translate-v2": "https://translation.googleapis.com/language/translate/v2",
   "microsoft-translator": "https://api.cognitive.microsofttranslator.com/translate",
@@ -51,6 +54,12 @@ const CONNECTION_FIELDS = ["endpoint", "apiKey", "model", "providerRegion", "cus
 const providerDrafts = new Map();
 let renderedStyle;
 let testing = false;
+let savedProfiles = [], selectedProfileId = '', profileRevision = 0;
+function lockEditor() {
+  testing=true;const controls=[...document.querySelectorAll('input,select,textarea,button')],disabled=controls.map(control=>control.disabled);
+  controls.forEach(control=>control.disabled=true);
+  return ()=>{controls.forEach((control,index)=>control.disabled=disabled[index]);$('deleteProfile').disabled=!selectedProfileId;testing=false;};
+}
 
 function setStatus(message, error = false) {
   $("status").textContent = message || "";
@@ -135,7 +144,8 @@ function validate(values) {
     throw new Error("请输入有效的 API 端点。");
   }
   if (!values.model && values.apiStyle === "openai-compatible") throw new Error("请填写模型名称。");
-  if (!values.apiKey && values.apiStyle !== "custom-json") throw new Error("请填写 API Key。");
+  if (!values.apiKey && !['custom-json','mymemory'].includes(values.apiStyle)) throw new Error("请填写 API Key。");
+  if(values.apiStyle==='mymemory' && values.sourceLanguage==='auto')throw new Error('MyMemory 试用需手动选择源语言。');
   if (!Number.isFinite(values.requestTimeoutSeconds) || values.requestTimeoutSeconds < 10 || values.requestTimeoutSeconds > 180) throw new Error("请求超时应为 10–180 秒。");
   let headers;
   try { headers = JSON.parse(values.customHeaders); } catch { throw new Error("自定义请求头必须是有效 JSON。"); }
@@ -152,6 +162,9 @@ function renderApiStyle() {
   $("modelWrap").classList.toggle("field-hidden", DIRECT_STYLES.has(style));
   $("regionWrap").classList.toggle("visible", style === "microsoft-translator");
   $("streamWrap").classList.toggle("field-hidden", style !== "openai-compatible");
+  $("apiKeyWrap").classList.toggle("field-hidden",style==='mymemory');
+  $("customHeadersWrap").classList.toggle("field-hidden",style==='mymemory');
+  $("sourceLanguage").querySelector('option[value="auto"]').disabled=style==='mymemory';
   $("providerHint").textContent = PROVIDER_HINTS[style] || PROVIDER_HINTS["openai-compatible"];
   $("endpointHint").textContent = ENDPOINT_HINTS[style] || ENDPOINT_HINTS["openai-compatible"];
   $("apiKeyHint").textContent = style === "google-translate-v2"
@@ -169,37 +182,82 @@ function switchProvider() {
   if (renderedStyle) providerDrafts.set(renderedStyle, formValues());
   const draft = providerDrafts.get(style) || { ...DEFAULTS, endpoint: PROVIDER_ENDPOINTS[style] || "", apiKey: "" };
   for (const key of CONNECTION_FIELDS) $(key).value = draft[key] ?? "";
+  if(style==='mymemory' && $('sourceLanguage').value==='auto')$('sourceLanguage').value='en';
   renderedStyle = style;
   renderApiStyle();
   setStatus("已切换接口；请检查连接信息并保存设置。");
   askForEndpointPermission(false);
 }
 
-async function load() {
-  const values = await chrome.storage.local.get(DEFAULTS);
+function showValues(values) {
+  $('apiKey').type='password';$('toggleKey').textContent='显示';
+  providerDrafts.clear();
   for (const [key, value] of Object.entries(values)) {
     const element = $(key);
     if (element?.type === "checkbox") element.checked = value;
     else if (element) element.value = value;
   }
-  renderedStyle = values.apiStyle;
-  renderApiStyle();
+  renderedStyle=values.apiStyle;renderApiStyle();
+}
+async function profileMessage(message) {
+  const result=await chrome.runtime.sendMessage(message);
+  if(!result?.ok)throw new Error(result?.error||'无法保存配置方案。');return result;
+}
+async function loadProfiles() {
+  const list=await profileMessage({type:'PROFILE_LIST'});profileRevision=list.revision;
+  const stored=await chrome.storage.local.get({savedProfiles:[]});savedProfiles=stored.savedProfiles;
+  $('savedProfile').replaceChildren(new Option('新建方案',''),...list.profiles.map(profile=>new Option(profile.name+(profile.id===list.activeProfileId?'（当前使用）':''),profile.id)));
+  selectedProfileId=list.activeProfileId;$('savedProfile').value=selectedProfileId;
+  $('profileName').value=savedProfiles.find(profile=>profile.id===selectedProfileId)?.name||'';
+  $('deleteProfile').disabled=!selectedProfileId;
+}
+async function saveProfile(values,asNew=false) {
+  const name=$('profileName').value.trim()||$('apiStyle').selectedOptions[0].textContent;
+  await profileMessage({type:'PROFILE_SAVE',revision:profileRevision,profileId:asNew?'':selectedProfileId,name,values});
+  await loadProfiles();
+}
+async function load() {
+  await loadProfiles();
+  const values = await chrome.storage.local.get(DEFAULTS);
+  showValues(values);
   await askForEndpointPermission(false);
+  document.body.dataset.ready='true';
 }
 
 $("settingsForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (testing) return;
+  let unlock;
   try {
     const values = formValues();
     validate(values);
     const permissionPromise = askForEndpointPermission();
-    await chrome.storage.local.set(values);
+    unlock=lockEditor();
+    await saveProfile(values);
     const granted = await permissionPromise;
     setStatus(granted ? "设置已保存。" : "设置已保存，但尚未授予 API 域名权限。", !granted);
   } catch (error) {
     setStatus(error.message, true);
-  }
+  } finally {unlock?.();}
+});
+
+$('savedProfile').addEventListener('change',()=>{
+  selectedProfileId=$('savedProfile').value;const profile=savedProfiles.find(profile=>profile.id===selectedProfileId);
+  if(profile){showValues(profile.values);$('profileName').value=profile.name;}else{$('profileName').value='';}
+  $('deleteProfile').disabled=!profile;setStatus('方案已载入编辑器。编辑后点击“保存设置”应用，或另存为新方案。');askForEndpointPermission(false);
+});
+$('saveAsProfile').addEventListener('click',async()=>{
+  if(testing)return;let unlock;try{const values=formValues();validate(values);const permission=askForEndpointPermission();unlock=lockEditor();await saveProfile(values,true);const granted=await permission;setStatus(granted?'新方案已保存并启用。':'新方案已保存，请允许 API 域名访问。',!granted);}catch(error){setStatus(error.message,true);}finally{unlock?.();}
+});
+$('deleteProfile').addEventListener('click',async()=>{
+  if(testing||!selectedProfileId)return;
+  if(!confirm('删除这个本地配置方案？若它正在使用，将同时清空当前连接中的密钥。'))return;
+  const unlock=lockEditor();try{await profileMessage({type:'PROFILE_DELETE',profileId:selectedProfileId,revision:profileRevision});await load();setStatus('配置方案已删除。');}catch(error){setStatus(error.message,true);}finally{unlock();}
+});
+$('useTrial').addEventListener('click',async()=>{
+  if(testing)return;
+  const permission=permissionRequest(['https://api.mymemory.translated.net/*']),unlock=lockEditor();
+  try{await profileMessage({type:'PROFILE_TRIAL'});await load();const granted=await permission;setStatus(granted?'MyMemory 基础试用已启用：English → 简体中文。可测试连接或返回网页翻译。':'基础试用已保存；请允许 MyMemory 域名访问。',!granted);}catch(error){setStatus(error.message,true);}finally{unlock();}
 });
 
 $("requestPermission").addEventListener("click", () => askForEndpointPermission());
@@ -221,7 +279,7 @@ $("testApi").addEventListener("click", async () => {
     validate(values);
     const permissionPromise = askForEndpointPermission();
     controls.forEach((element) => { element.disabled = true; });
-    await chrome.storage.local.set(values);
+    await saveProfile(values);
     const granted = await permissionPromise;
     if (!granted) return;
     const started = Date.now();
@@ -236,6 +294,7 @@ $("testApi").addEventListener("click", async () => {
   } finally {
     clearInterval(timer);
     controls.forEach((element, index) => { element.disabled = wasDisabled[index]; });
+    $('deleteProfile').disabled=!selectedProfileId;
     testing = false;
   }
 });

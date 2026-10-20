@@ -45,10 +45,13 @@ function Write-ZipPackage([string]$Directory, [string]$Destination) {
 $files = @(
   'manifest.json', 'popup.html', 'popup.css', 'popup.js',
   'options.html', 'options.css', 'options.js', 'privacy.html',
-  'src\background.js', 'src\content.js',
+  'src\background.js', 'src\content.js', 'src\document-format.mjs', 'src\docx-worker.js',
+  'src\profile-store.js', 'src\my-memory.js',
+  'reader.html', 'reader.css', 'reader.js', 'THIRD_PARTY_NOTICES.md',
   '_locales\en\messages.json', '_locales\zh_CN\messages.json',
   'assets\icon16.png', 'assets\icon32.png', 'assets\icon48.png', 'assets\icon128.png'
 )
+$files += Get-ChildItem -LiteralPath (Join-Path $root 'vendor') -File -Recurse | ForEach-Object { $_.FullName.Substring($root.Length + 1) }
 try {
   $runtimeStage = Join-Path $staging 'runtime'
   $sourceStage = Join-Path $staging 'source'
@@ -60,7 +63,7 @@ try {
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
     Copy-Item -LiteralPath $source -Destination $destination
   }
-  foreach ($relative in @('manifest.json','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales','branding','docs','tools','README.md','README.zh-CN.md','.gitignore','package.ps1')) {
+  foreach ($relative in @('manifest.json','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','reader.html','reader.css','reader.js','THIRD_PARTY_NOTICES.md','vendor','src','assets','_locales','branding','docs','tools','README.md','README.zh-CN.md','.gitignore','package.ps1')) {
     Copy-Item -LiteralPath (Join-Path $root $relative) -Destination $sourceStage -Recurse
   }
   $zipPath = Join-Path $outputRoot ("qudadflow-translator-v{0}.zip" -f $manifest.version)

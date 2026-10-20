@@ -21,6 +21,8 @@ const DEFAULTS = {
   responsePath: "choices[0].message.content"
 };
 
+if (typeof importScripts === "function") importScripts("profile-store.js", "my-memory.js");
+
 const MAX_INPUT_CHARS = 12000;
 const REQUEST_TIMEOUT_MS = 45000;
 const activeRequests = new Map();
@@ -388,7 +390,7 @@ async function translateText(request, controller = new AbortController(), onProg
   if (!text) throw new Error("没有可翻译的文本。");
   if (text.length > MAX_INPUT_CHARS) throw new Error(`单次翻译最多支持 ${MAX_INPUT_CHARS} 个字符，请缩短文本后重试。`);
   if (!effectiveSettings.endpoint.trim()) throw new Error("请先在设置中填写 API 端点。");
-  if (!effectiveSettings.apiKey && effectiveSettings.apiStyle !== "custom-json") throw new Error("请先在设置中填写 API Key。");
+  if (!effectiveSettings.apiKey && !["custom-json", "mymemory"].includes(effectiveSettings.apiStyle)) throw new Error("请先在设置中填写 API Key。");
   if (effectiveSettings.apiStyle === "openai-compatible" && !effectiveSettings.model.trim()) throw new Error("请先在设置中填写模型名称。");
   if (controller.signal.aborted) throw translationError("翻译已取消。", "CANCELLED");
 
@@ -409,12 +411,13 @@ async function translateText(request, controller = new AbortController(), onProg
     return cached.translation;
   }
 
-  const { endpoint, headers, body } = buildRequest(effectiveSettings, text, context);
+  const { endpoint, headers, body } = effectiveSettings.apiStyle==='mymemory'?{}:buildRequest(effectiveSettings, text, context);
   const timeoutSeconds = Number(effectiveSettings.requestTimeoutSeconds);
   const timeoutMs = Number.isFinite(timeoutSeconds) && timeoutSeconds >= 10 && timeoutSeconds <= 180 ? timeoutSeconds * 1000 : REQUEST_TIMEOUT_MS;
   let timedOut = false;
   const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
   try {
+    if(effectiveSettings.apiStyle==='mymemory')return rememberTranslation(cached.key,await translateMyMemory(effectiveSettings,text,controller,onProgress),effectiveSettings);
     // Retry only a rejected temperature parameter, once, within the original deadline.
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const response = await fetch(endpoint, {
@@ -479,6 +482,11 @@ function createContextMenu() {
       title: "沉浸式翻译当前网页",
       contexts: ["page"]
     });
+    chrome.contextMenus.create({
+      id: "translate-document",
+      title: "用 QudadFlow 打开 PDF / 文档对照阅读",
+      contexts: ["page", "link"]
+    });
   });
 }
 
@@ -489,6 +497,15 @@ chrome.storage.onChanged?.addListener((_changes, area) => { if (area === "local"
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!tab?.id) return;
   try {
+    if (info.menuItemId === "translate-document") {
+      let fragment = "local=1";
+      try {
+        const url = new URL(info.linkUrl || info.pageUrl || tab.url);
+        if (/^https?:$/.test(url.protocol) && !url.username && !url.password) fragment = `url=${encodeURIComponent(url.href)}`;
+      } catch {}
+      await chrome.tabs.create({ url: chrome.runtime.getURL(`reader.html#${fragment}`) });
+      return;
+    }
     await ensureContentScript(tab.id);
     if (info.menuItemId === "translate-selection") {
       await tabsSendMessage(tab.id, { type: "TRANSLATE_SELECTION", selectionText: info.selectionText || "" });
@@ -498,6 +515,51 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   } catch (error) {
     console.warn("Unable to translate selection", error);
   }
+});
+
+// A reader tab owns its port and up to two requests. Disconnecting aborts only that reader.
+chrome.runtime.onConnect?.addListener((port) => {
+  if (port.name !== "qudadflow-document") return;
+  if (port.sender?.id !== chrome.runtime.id || port.sender?.url?.split(/[?#]/)[0] !== chrome.runtime.getURL("reader.html")) {
+    port.disconnect();
+    return;
+  }
+  const requests = new Map();
+  let disconnected = false;
+  const post = message => { if (!disconnected) try { port.postMessage(message); } catch {} };
+  port.onDisconnect.addListener(() => {
+    disconnected = true;
+    for (const controller of requests.values()) controller.abort();
+    requests.clear();
+  });
+  port.onMessage.addListener(message => {
+    const requestId = message?.requestId;
+    if (message?.type === "PING") { post({ type: "PONG" }); return; }
+    if (typeof requestId !== "string" || requestId.length > 80) return;
+    if (message.type === "CANCEL") { requests.get(requestId)?.abort(); return; }
+    if (message.type !== "TRANSLATE" || requests.has(requestId)) return;
+    if (requests.size >= 2) {
+      post({ type: "RESULT", requestId, ok: false, error: "已有两个文档翻译请求正在进行，请稍后重试。" });
+      return;
+    }
+    const controller = new AbortController(), metadata = {}, started = Date.now();
+    requests.set(requestId, controller);
+    let lastProgress = 0;
+    const progress = translation => {
+      if (controller.signal.aborted || Date.now() - lastProgress < 150) return;
+      lastProgress = Date.now();
+      post({ type: "PROGRESS", requestId, translation });
+    };
+    (async () => {
+      let result;
+      try {
+        const translation = await translateText(message, controller, progress, metadata);
+        result = { ok: true, translation, cached: Boolean(metadata.cached) };
+      } catch (error) { result = { ok: false, error: error.message, code: error.code || "TRANSLATION_FAILED" }; }
+      finally { requests.delete(requestId); }
+      post({ type: "RESULT", requestId, ...result, elapsedMs: Date.now() - started });
+    })();
+  });
 });
 
 chrome.commands.onCommand.addListener(async (command) => {
@@ -510,6 +572,11 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type?.startsWith('PROFILE_')) {
+    const ownPage=sender.id===chrome.runtime.id && ['options.html','popup.html'].some(page=>sender.url?.split(/[?#]/)[0]===chrome.runtime.getURL(page));
+    if(!ownPage){sendResponse({ok:false,error:'仅扩展设置和弹窗可管理配置方案。'});return false;}
+    queuedProfileAction(message).then(sendResponse).catch(error=>sendResponse({ok:false,error:error.message}));return true;
+  }
   if (message?.type === "GET_SELECTION_ENABLED") {
     (async () => {
       if (!sender.tab?.url) return { enabled: false };

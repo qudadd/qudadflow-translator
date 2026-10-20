@@ -41,8 +41,8 @@ async function loadSelection() {
     const selection = response?.selection?.trim();
     $("selection").textContent = selection || "未检测到选中文本。可启用本站划词按钮，或直接翻译当前网页。";
   } catch (error) {
-    $("selection").textContent = "此页面不允许注入扩展脚本。请换到普通网页后重试。";
-    setStatus(error.message, true);
+    $("selection").textContent = "PDF 或浏览器保护页面请使用“PDF / 文档左右对照”；普通网页可使用沉浸式翻译。";
+    setStatus("当前页面无法直接显示网页翻译，可从上方打开文档阅读器。");
   }
 }
 
@@ -144,6 +144,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("restoreImmersive").addEventListener("click", restoreImmersive);
   $("selectionEnabled").addEventListener("change", setSelectionSite);
   $("openOptions").addEventListener("click", () => chrome.runtime.openOptionsPage());
+  try {
+    const profiles=await chrome.runtime.sendMessage({type:'PROFILE_LIST'});
+    if(profiles?.ok){$('activeProfile').replaceChildren(new Option('当前配置',''),...profiles.profiles.map(profile=>new Option(profile.name,profile.id)));$('activeProfile').value=profiles.activeProfileId;}
+  } catch {}
+  $('activeProfile').addEventListener('change',async()=>{
+    if(!$('activeProfile').value)return;
+    try {const result=await chrome.runtime.sendMessage({type:'PROFILE_APPLY',profileId:$('activeProfile').value});if(!result?.ok)throw new Error(result?.error||'切换失败');const values=await chrome.storage.local.get({targetLanguage:DEFAULT_TARGET});$('targetLanguage').value=values.targetLanguage;setStatus('已切换翻译方案。若尚未授权该 API 域名，请打开设置授权。');}catch(error){setStatus(error.message,true);}
+  });
+  $("openDocument").addEventListener("click", async () => {
+    const tab = activeTab || (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
+    let fragment = "local=1";
+    try {
+      const url = new URL(tab?.url);
+      if (/^https?:$/.test(url.protocol) && !url.username && !url.password) fragment = `url=${encodeURIComponent(url.href)}`;
+    } catch {}
+    await chrome.tabs.create({ url: chrome.runtime.getURL(`reader.html#${fragment}`) });
+    window.close();
+  });
   await loadSelection();
   await loadSelectionSite();
 });

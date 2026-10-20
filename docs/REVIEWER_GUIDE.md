@@ -2,6 +2,8 @@
 
 The extension has no QudadFlow account or login. Production translation calls a user-configured third-party API directly. Valid provider credentials are needed for live Google Cloud Translation, DeepL, Microsoft Translator, or OpenAI-compatible services. No shared production keys are supplied.
 
+For the 0.5.0 update, Settings includes **启用 MyMemory 基础试用** (enable basic trial). Approve access to api.mymemory.translated.net and try a short English sentence. No key is needed; English → Simplified Chinese is preconfigured. The typical anonymous quota is 5,000 characters/day, with provider retention/usage terms. Source language must be selected manually. This is a public, limited trial, not an unlimited service. Full current review steps and document limitations are in [STORE_UPDATE_0.5.0.md](STORE_UPDATE_0.5.0.md).
+
 For functional review without a paid account, the source repository includes an optional local simulated API. It demonstrates the custom JSON path with the submitted extension's normal settings and optional host permission flow. It is not a translation engine and does not prove live-provider translation quality. It is not bundled in the runtime extension.
 
 ## Local manual review

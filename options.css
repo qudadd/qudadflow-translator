@@ -26,6 +26,10 @@ code { padding:1px 4px; background:#f1f4f9; border-radius:4px; font-family:ui-mo
 .conditional-field { display:none; }
 .conditional-field.visible { display:block; }
 .field-hidden { display:none; }
+.profile-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.trial-card { background:#eff5ff; border-color:#cbdafa; }
+.trial-card>p { font-size:13px; line-height:1.7; color:#53627b; }
+.hint a { color:#315bc7; }
 .permission-card { background:#f9fbff; border-color:#d9e4ff; }
 .permission-card p { margin:0 0 12px; color:#5d6c83; font-size:13px; }
 button { font:inherit; cursor:pointer; border-radius:8px; padding:9px 14px; }

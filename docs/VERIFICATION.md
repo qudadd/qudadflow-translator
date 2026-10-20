@@ -1,4 +1,27 @@
-# QudadFlow Translator 0.4.4 verification
+# QudadFlow Translator 0.5.0 verification
+
+Date: October 21, 2026 (Asia/Shanghai). Browser: Microsoft Edge 155.0.4283.62.
+
+Version 0.5.0 passed **134 checks, 0 failures**: 87 webpage/provider checks, 34 document checks, and 13 saved-configuration/basic-provider checks. Machine-readable reports: `validation-v0.5.0.json` and `validation-documents-v0.5.0.json`. The tests use generated documents, local HTTP fixtures, synthetic credentials, and fresh isolated browser profiles. They do not access the user's extension settings or call a live provider.
+
+Saved-configuration checks cover migration of an existing connection, named copies, reload/edit/apply, metadata without credentials, stale-tab conflict rejection, popup switching, trial activation without destroying saved keys, duplicate prevention, and deletion of an active configuration. MyMemory tests verify single-paragraph requests below 500 UTF-8 bytes, local marker preservation, absence of key/custom headers, entity decoding, source-language and quota errors, cancellation, and configuration changes during page translation. Report: `validation-configuration-v0.5.0.json`.
+
+A separate live MyMemory check used an isolated extension profile and only the fixed sentence “Hello world. This is a translation test.” It returned Chinese text in 1,881 ms. This was an anonymous public API request, without any user key. It does not measure sustained availability, quotas, long-document latency, or translation quality. Other live provider connections remain unverified. To explicitly repeat this live check, set `QF_LIVE_TRIAL=1` when running `tools/configuration-check.cjs`; the default suite is local-only.
+
+Document coverage includes:
+
+- The unchanged production manifest renders a real local PDF canvas and selectable text layer with no host grants. All parser code, fonts, character maps, and codecs are bundled. PDF.js legacy targets Chromium 125+; this suite runs on Edge 155.
+- Multi-page PDF, single/two-column extraction, declared page rotation, navigation back to completed translations, and a page without extractable text that displays OCR guidance and sends no translation request.
+- DOCX headings, body/table-cell text, Unicode, hidden/deleted text exclusion, explicit visible-run handling, malformed ZIP/XML and entity-declaration rejection, and bounded document-XML decompression.
+- UTF-8/UTF-16 text, safe surrogate splitting, TXT/Markdown import, literal rendering of document/provider HTML, and no unexpected external document resource requests.
+- Streamed text before completion, marker preservation and bounded per-paragraph fallback, two-request concurrency, stop/resume, configuration invalidation, replacement during a stream, and independent cancellation when a reader closes. A third concurrent port request is rejected.
+- Equal paragraph heights, synchronized scrolling, resizing, bilingual TXT export, file/text/page limits, source-URL prefill, attachment filenames, download errors, download cancellation/replacement, popup document entry, and context-menu registration. Permission denial uses an isolated test stub; the actual source-download path uses a localhost grant in the test copy.
+
+The new reader retains original PDF page appearance alongside ordered translated text. It does not promise geometric paragraph matching for arbitrary PDFs or generate a layout-preserving translated PDF/DOCX. DOCX is a text-reading view, without Word image/table layout, headers, footers, or original pagination. Scanned-image OCR, unusual PDF encodings, arbitrary multi-column layouts, real authenticated source websites, encrypted-PDF password flow, and live-provider behavior were not verified by this suite.
+
+The runtime ZIP now includes the document reader, local parsing libraries, and their licenses. Development tests and website documents remain in the separate source ZIP. The previously submitted 0.4.2 package is preserved. Reload an updated unpacked installation in Edge to activate the new runtime; the file update does not access browser-local API settings.
+
+## Previous 0.4.4 verification
 
 Date: October 21, 2026 (Asia/Shanghai). Browser: Microsoft Edge 155.0.4283.62.
 

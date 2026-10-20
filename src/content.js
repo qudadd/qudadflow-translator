@@ -779,6 +779,16 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       return { ok: true, translation: translated.join("\n\n") };
     }
 
+    chrome.storage?.onChanged?.addListener((changes,area)=>{
+      const fields=['apiStyle','endpoint','apiKey','model','providerRegion','sourceLanguage','targetLanguage','temperature','requestTimeoutSeconds','streamOpenAi','customHeaders','requestTemplate','responsePath'];
+      if(area!=='local'||!fields.some(key=>key in changes))return;
+      const running=pendingRequests.size>0;
+      if(!running)return;
+      if(selectionBusy)hideSelectionBubble(true);
+      cancelRequests();immersiveRunId+=1;panelRunId+=1;
+      if(running&&shadow)setStatus('翻译配置已更改，当前任务已停止。已完成的译文保留；可重新发起翻译。');
+    });
+
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       if (message?.type === "TRANSLATION_PROGRESS") {
         const request = pendingRequests.get(message.requestId);

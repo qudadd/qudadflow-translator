@@ -41,7 +41,7 @@ for (const feature of ["TRANSLATE_IMMERSIVE", "RESTORE_IMMERSIVE", "data-edge-wt
   assert(contentSource.includes(feature), `内容脚本缺少功能标记：${feature}`);
 }
 
-for (const file of ["popup.html", "options.html"]) {
+for (const file of ["popup.html", "options.html", "reader.html"]) {
   const html = fs.readFileSync(path.join(root, file), "utf8");
   for (const match of html.matchAll(/<(?:script|link)[^>]+(?:src|href)=["']([^"']+)["']/gi)) {
     const resource = match[1];
@@ -59,10 +59,17 @@ for (const [size, icon] of Object.entries(manifest.icons || {})) {
   }
 }
 
-for (const file of ["popup.html", "options.html", "privacy.html"]) {
+for (const file of ["popup.html", "options.html", "privacy.html", "reader.html"]) {
   const html = fs.readFileSync(path.join(root, file), "utf8");
   assert(!/<script[^>]+src=["']https?:/i.test(html), `${file} 不得加载远程脚本`);
 }
+
+assert(manifest.content_security_policy?.extension_pages === "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'", "文档阅读器仅允许本地脚本与本地 WASM");
+for (const file of ['reader.js','src/document-format.mjs','src/docx-worker.js','vendor/pdfjs/legacy/build/pdf.mjs','vendor/pdfjs/legacy/build/pdf.worker.mjs','vendor/pdfjs/wasm/openjpeg.wasm','vendor/pdfjs/standard_fonts/LiberationSans-Regular.ttf','vendor/pdfjs/cmaps/Adobe-GB1-UCS2.bcmap','vendor/pdfjs/LICENSE','vendor/fflate/umd/index.js','vendor/fflate/LICENSE','vendor/dependencies.json','THIRD_PARTY_NOTICES.md']) {
+  assert(fs.existsSync(path.join(root,file)), `缺少文档运行资源：${file}`);
+}
+for(const file of ['src/profile-store.js','src/my-memory.js'])assert(fs.existsSync(path.join(root,file)),`缺少配置/基础翻译资源：${file}`);
+assert(!manifest.host_permissions?.length, '生产包不得预先请求全部网站权限');
 
 if (failures.length) {
   console.error(failures.map((item) => `✗ ${item}`).join("\n"));
