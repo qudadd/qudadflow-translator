@@ -24,6 +24,62 @@ const DEFAULTS = {
 const MAX_INPUT_CHARS = 12000;
 const REQUEST_TIMEOUT_MS = 45000;
 const activeRequests = new Map();
+const translationCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_MAX_CHARS = 250000;
+let cacheConfiguration = "";
+let cacheChars = 0;
+
+function clearTranslationCache() {
+  translationCache.clear();
+  cacheConfiguration = "";
+  cacheChars = 0;
+}
+
+function cachedTranslation(settings, text, context) {
+  // Memory only: a provider, credential or preference change invalidates previous results.
+  const configuration = JSON.stringify(settings);
+  if (configuration !== cacheConfiguration) { clearTranslationCache(); cacheConfiguration = configuration; }
+  const now = Date.now();
+  for (const [expiredKey, entry] of translationCache) {
+    if (now - entry.created >= CACHE_TTL_MS) { cacheChars -= entry.chars; translationCache.delete(expiredKey); }
+  }
+  const key = JSON.stringify([context, text]);
+  const entry = translationCache.get(key);
+  if (entry) {
+    translationCache.delete(key);
+    translationCache.set(key, entry);
+    return { key, translation: entry.translation };
+  }
+  return { key };
+}
+
+function rememberTranslation(key, translation, configuration) {
+  if (JSON.stringify(configuration) !== cacheConfiguration) return translation;
+  const chars = key.length + translation.length;
+  if (chars > CACHE_MAX_CHARS) return translation;
+  const old = translationCache.get(key);
+  if (old) cacheChars -= old.chars;
+  translationCache.delete(key);
+  translationCache.set(key, { translation, chars, created: Date.now() });
+  cacheChars += chars;
+  while (translationCache.size > 128 || cacheChars > CACHE_MAX_CHARS) {
+    const first = translationCache.keys().next().value;
+    cacheChars -= translationCache.get(first).chars;
+    translationCache.delete(first);
+  }
+  return translation;
+}
+
+function selectionScriptId(pattern) {
+  return `qf-selection-${encodeURIComponent(pattern)}`;
+}
+
+function selectionPattern(url) {
+  const parsed = new URL(url);
+  if (!/^https?:$/.test(parsed.protocol)) throw new Error("划词按钮仅支持普通 HTTP/HTTPS 网页。");
+  return `${parsed.protocol}//${parsed.hostname}/*`;
+}
 
 function translationError(message, code) {
   return Object.assign(new Error(message), { code });
@@ -321,7 +377,7 @@ async function readEventStream(response, settings, onProgress) {
   }
 }
 
-async function translateText(request, controller = new AbortController(), onProgress = () => {}) {
+async function translateText(request, controller = new AbortController(), onProgress = () => {}, metadata = {}) {
   const settings = normalizeSettings(await storageGet(DEFAULTS));
   const effectiveSettings = {
     ...settings,
@@ -342,8 +398,18 @@ async function translateText(request, controller = new AbortController(), onProg
     error.code = "PERMISSION_REQUIRED";
     throw error;
   }
+  if (controller.signal.aborted) throw translationError("翻译已取消。", "CANCELLED");
 
-  const { endpoint, headers, body } = buildRequest(effectiveSettings, text, request.context || "web page");
+  const context = request.context || "web page";
+  const cached = cachedTranslation(effectiveSettings, text, context);
+  // A connection test must always reach the provider.
+  if (!request.skipCache && cached.translation) {
+    metadata.cached = true;
+    onProgress(cached.translation);
+    return cached.translation;
+  }
+
+  const { endpoint, headers, body } = buildRequest(effectiveSettings, text, context);
   const timeoutSeconds = Number(effectiveSettings.requestTimeoutSeconds);
   const timeoutMs = Number.isFinite(timeoutSeconds) && timeoutSeconds >= 10 && timeoutSeconds <= 180 ? timeoutSeconds * 1000 : REQUEST_TIMEOUT_MS;
   let timedOut = false;
@@ -357,7 +423,7 @@ async function translateText(request, controller = new AbortController(), onProg
         signal: controller.signal
       });
       if (response.ok && /text\/event-stream/i.test(response.headers.get("content-type") || "") && effectiveSettings.apiStyle === "openai-compatible") {
-        return await readEventStream(response, effectiveSettings, onProgress);
+        return rememberTranslation(cached.key, await readEventStream(response, effectiveSettings, onProgress), effectiveSettings);
       }
       const raw = await response.text();
       let parsed;
@@ -373,7 +439,7 @@ async function translateText(request, controller = new AbortController(), onProg
         }
         throw httpError(response.status, detail);
       }
-      return readTranslation(parsed, effectiveSettings);
+      return rememberTranslation(cached.key, readTranslation(parsed, effectiveSettings), effectiveSettings);
     }
   } catch (error) {
     if (controller.signal.aborted) throw translationError(timedOut ? `API 请求超时（${timeoutMs / 1000} 秒）。请先测试短文本，检查端点、模型和网关记录；慢模型可在设置中调整超时。` : "翻译已取消。", timedOut ? "TIMEOUT" : "CANCELLED");
@@ -418,6 +484,7 @@ function createContextMenu() {
 
 chrome.runtime.onInstalled.addListener(createContextMenu);
 chrome.runtime.onStartup.addListener(createContextMenu);
+chrome.storage.onChanged?.addListener((_changes, area) => { if (area === "local") clearTranslationCache(); });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!tab?.id) return;
@@ -443,6 +510,15 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === "GET_SELECTION_ENABLED") {
+    (async () => {
+      if (!sender.tab?.url) return { enabled: false };
+      const pattern = selectionPattern(sender.tab.url);
+      const scripts = await chrome.scripting.getRegisteredContentScripts({ ids: [selectionScriptId(pattern)] });
+      return { enabled: scripts.length > 0 && await permissionsContains([pattern]) };
+    })().then(sendResponse).catch(() => sendResponse({ enabled: false }));
+    return true;
+  }
   const owner = `${sender.tab?.id ?? "extension"}:${sender.frameId ?? 0}`;
   const requestKey = `${owner}:${message?.requestId || ""}`;
   if (message?.type === "CANCEL_TRANSLATION") {
@@ -452,19 +528,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if (message?.type !== "TRANSLATE_TEXT" && message?.type !== "TRANSLATE_TEST") return false;
   const request = message.type === "TRANSLATE_TEST"
-    ? { text: "This is a connection test.", context: "API connection test" }
+    ? { text: "This is a connection test.", context: "API connection test", skipCache: true }
     : message;
   const controller = new AbortController();
   const started = Date.now();
   let lastProgress = 0;
+  const metadata = {};
   if (message.requestId) activeRequests.set(requestKey, controller);
   const progress = (translation) => {
     if (!message.requestId || !sender.tab?.id || controller.signal.aborted || Date.now() - lastProgress < 150) return;
     lastProgress = Date.now();
     tabsSendMessage(sender.tab.id, { type: "TRANSLATION_PROGRESS", requestId: message.requestId, translation }).catch(() => {});
   };
-  translateText(request, controller, progress)
-    .then((translation) => sendResponse({ ok: true, translation, elapsedMs: Date.now() - started }))
+  translateText(request, controller, progress, metadata)
+    .then((translation) => sendResponse({ ok: true, translation, cached: Boolean(metadata.cached), elapsedMs: Date.now() - started }))
     .catch((error) => sendResponse({ ok: false, code: error.code || "TRANSLATION_FAILED", error: error.message, elapsedMs: Date.now() - started }))
     .finally(() => { if (activeRequests.get(requestKey) === controller) activeRequests.delete(requestKey); });
   return true;

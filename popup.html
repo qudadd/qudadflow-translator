@@ -21,11 +21,12 @@
       <option value="es">Español</option>
       <option value="ru">Русский</option>
     </select>
-    <div class="selection" id="selection">正在读取选中文本…</div>
-    <button class="primary" id="translateSelection">翻译选中文本</button>
-    <button class="secondary" id="translatePage">翻译当前网页</button>
-    <button class="secondary" id="translateImmersive">沉浸式翻译（原文下方显示译文）</button>
+    <button class="primary" id="translateImmersive">沉浸式翻译当前网页</button>
     <button class="secondary" id="restoreImmersive">恢复网页原文</button>
+    <div class="selection-tools"><label class="site-toggle"><input id="selectionEnabled" type="checkbox" disabled> 在此网站启用划词翻译按钮</label><p class="hint">开启后，选中文字即可就近点击“翻译”。仅点击后发送文本；可随时关闭。</p></div>
+    <div class="selection" id="selection">正在读取选中文本…</div>
+    <button class="secondary" id="translateSelection">翻译当前选中文字</button>
+    <button class="text-action" id="translatePage">更多：在独立面板翻译网页文本</button>
     <p class="status" id="status" role="status"></p>
     <div class="footer"><button id="openOptions">API 与翻译设置</button><a href="privacy.html" target="_blank">隐私说明</a></div>
   </main>

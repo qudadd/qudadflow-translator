@@ -10,6 +10,7 @@ const root = path.resolve(__dirname, '..');
 const reportPath = path.resolve(process.argv[2] || path.join(root, '..', 'functional-results.json'));
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'qudadflow-check-'));
 const results = [];
+const measurements = {};
 const requests = [];
 let replyMode = 'normal';
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -17,7 +18,19 @@ async function until(predicate, timeout = 2000) {
   const deadline = Date.now() + timeout;
   while (!predicate()) { assert.ok(Date.now() < deadline, 'condition did not become true before deadline'); await delay(10); }
 }
-const translation = text => String(text).replace(/Hello world/g, '你好，世界').replace(/Good morning/g, '早上好').replace(/Read more/g, '了解更多');
+const demoTranslations = {
+  'A clearer way to read the web.':'更清晰地阅读网页。',
+  'Keep the original text in view while you read.':'阅读时保留原文，让理解更自然。',
+  'Translate a paragraph without losing its context.':'翻译段落，同时保留上下文。',
+  'The page keeps its original links and structure.':'网页保留原有的链接和结构。',
+  'Choose a word. Stay in the story.':'划选文字，继续沉浸阅读。',
+  'Your translation appears beside the passage you selected.':'译文就近显示在所选段落旁边。'
+};
+const translation = text => {
+  let output=String(text).replace(/Hello world/g, '你好，世界').replace(/Good morning/g, '早上好').replace(/Read more/g, '了解更多');
+  for(const [source,target] of Object.entries(demoTranslations)) output=output.split(source).join(target);
+  return output;
+};
 const fixture = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>QudadFlow integration fixture</title></head><body><main id="fixture"><h1>Hello world</h1><p id="first">Good morning <a href="#more">Read more</a>.</p><ul><li>Hello world</li></ul><div contenteditable="true"><p id="editor">PRIVATE EDITOR DRAFT</p></div><div style="opacity:0"><p>INVISIBLE TEXT</p></div><p style="display:none">HIDDEN TEXT</p><p translate="no">DO NOT TRANSLATE</p><p data-edge-wt-ignore>IGNORED TEXT</p></main></body></html>';
 const server = http.createServer(async (req, res) => {
   if (req.method === 'GET') {
@@ -54,7 +67,8 @@ const server = http.createServer(async (req, res) => {
     const event = data => res.write('data: '+JSON.stringify(data)+'\r\n\r\n');
     res.write(': synthetic heartbeat\r\n\r\n');
     event(responses ? {type:'response.reasoning_summary_text.delta',delta:'PRIVATE REASONING'} : {choices:[{delta:{reasoning_content:'PRIVATE REASONING',tool_calls:[{function:{arguments:'PRIVATE TOOL'}}]}}]});
-    const part = translated.slice(0,2);
+    const firstCount = url.pathname.includes('/stream-immersive/') ? (translated.match(/^__EDGE_WT_\d+__\n/)?.[0].length || 0) + 2 : 2;
+    const part = translated.slice(0,firstCount);
     const first = Buffer.from('data: '+JSON.stringify(responses ? {type:'response.output_text.delta',delta:part} : {choices:[{delta:{content:part}}]})+'\r\n\r\n');
     const unicodeAt = first.indexOf(Buffer.from(part));
     // Deliberately split inside a Chinese UTF-8 character and across CR/LF.
@@ -67,7 +81,7 @@ const server = http.createServer(async (req, res) => {
     if(res.destroyed) return;
     if(url.pathname.includes('/stream-error/')) return res.end('data: '+JSON.stringify({error:{message:'synthetic stream failure'}})+'\n\n');
     if(url.pathname.includes('/stream-truncated/')) return res.end();
-    event(responses ? {type:'response.output_text.delta',delta:translated.slice(2)} : {choices:[{delta:{content:translated.slice(2)}}]});
+    event(responses ? {type:'response.output_text.delta',delta:translated.slice(firstCount)} : {choices:[{delta:{content:translated.slice(firstCount)}}]});
     if(url.pathname.includes('/stream-length/')) event({choices:[{delta:{},finish_reason:'length'}]});
     else if(responses) event({type:'response.completed',response:responsesReply});
     else res.write('data: [DONE]\n\n');
@@ -95,19 +109,23 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
   const listeners = [];
   const progress = [];
   const deadlines = [];
+  const storageChanges = [];
   const event = {addListener(){}};
   const context = vm.createContext({ URL, URLSearchParams, AbortController, TextDecoder, console,
     setTimeout:(fn, ms)=>{ deadlines.push(ms); return setTimeout(fn, ms >= 10000 && ms <= 180000 ? timeout : ms); }, clearTimeout, fetch,
     chrome:{
       runtime:{onInstalled:event,onStartup:event,onMessage:{addListener:fn=>listeners.push(fn)}},
-      storage:{local:{get:(defaults,cb)=>cb({...defaults,...settings})}},
+      storage:{local:{get:(defaults,cb)=>cb({...defaults,...settings})},onChanged:{addListener:fn=>storageChanges.push(fn)}},
       permissions:{contains:(_p,cb)=>cb(permission)},
       tabs:{sendMessage:(id,message,callback)=>{ progress.push({id,...message}); callback({ok:true}); }},
       contextMenus:{onClicked:event},commands:{onCommand:event}
     }
   });
   vm.runInContext(fs.readFileSync(path.join(root,'src/background.js'),'utf8'), context);
-  return {context, progress, deadlines, send:(message,sender={})=>new Promise(resolve=>listeners[0](message,sender,resolve))};
+  return {context, progress, deadlines,
+    configure:extra=>{Object.assign(settings,extra);storageChanges.forEach(fn=>fn({},'local'));},
+    permission:value=>{permission=value;},
+    send:(message,sender={})=>new Promise(resolve=>listeners[0](message,sender,resolve))};
 }
 
 (async()=>{
@@ -231,6 +249,45 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
       const r=await pending; assert.equal(r.code,'CANCELLED'); assert.ok(r.elapsedMs<1000); await until(()=>record.aborted);
     });
 
+    await check('Cache: repeated complete translation uses zero additional HTTP requests',async()=>{
+      const api=background(openAi('/v1/chat/completions'));
+      const message={type:'TRANSLATE_TEXT',text:'Hello world',context:'selected text'};
+      replyMode='slow'; const before=requests.length;
+      const first=await api.send(message); const cached=await api.send(message); replyMode='normal';
+      assert.equal(first.ok,true,first.error); assert.equal(cached.translation,first.translation);
+      assert.equal(first.cached,false); assert.equal(cached.cached,true); assert.equal(requests.length-before,1);
+      measurements.memoryCache={firstRequestMs:first.elapsedMs,repeatRequestMs:cached.elapsedMs,httpRequestsForTwoTranslations:requests.length-before,fixtureDelayMs:200};
+    });
+    await check('Cache: context, target language, model and credentials never reuse incompatible results',async()=>{
+      const api=background(openAi('/v1/chat/completions'));
+      const before=requests.length;
+      const message={type:'TRANSLATE_TEXT',text:'Hello world'};
+      assert.equal((await api.send(message)).cached,false);
+      assert.equal((await api.send({...message,context:'selected text'})).cached,false);
+      assert.equal((await api.send({...message,targetLanguage:'fr'})).cached,false);
+      api.configure({model:'different-synthetic-model'}); assert.equal((await api.send(message)).cached,false);
+      api.configure({apiKey:'DIFFERENT-SYNTHETIC-KEY'}); assert.equal((await api.send(message)).cached,false);
+      assert.equal(requests.length-before,5);
+    });
+    await check('Cache: connection test always contacts the provider and revoked permission is enforced',async()=>{
+      const api=background(openAi('/v1/chat/completions')); const before=requests.length;
+      assert.equal((await api.send({type:'TRANSLATE_TEST'})).ok,true);
+      assert.equal((await api.send({type:'TRANSLATE_TEST'})).cached,false);
+      assert.equal(requests.length-before,2);
+      await api.send({type:'TRANSLATE_TEXT',text:'Hello world'}); api.permission(false);
+      const r=await api.send({type:'TRANSLATE_TEXT',text:'Hello world'}); assert.equal(r.code,'PERMISSION_REQUIRED');
+    });
+    await check('Cache: expired and failed or incomplete responses are not reused',async()=>{
+      const api=background(openAi('/v1/chat/completions')); const message={type:'TRANSLATE_TEXT',text:'Hello world'};
+      await api.send(message); vm.runInContext('Date.now = () => '+(Date.now()+301000),api.context);
+      assert.equal((await api.send(message)).cached,false);
+      for(const endpoint of ['/unauthorized/v1/chat/completions','/stream-truncated/v1/chat/completions']) {
+        const failure=background(openAi(endpoint)); const before=requests.length;
+        assert.equal((await failure.send(message)).ok,false); assert.equal((await failure.send(message)).ok,false);
+        assert.equal(requests.length-before,2);
+      }
+    });
+
     const extension = path.join(scratch,'extension');
     fs.mkdirSync(extension);
     for(const name of ['manifest.json','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales']) fs.cpSync(path.join(root,name),path.join(extension,name),{recursive:true});
@@ -323,9 +380,13 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
     await options.reload(); await options.waitForFunction(()=>document.querySelector('#apiStyle').value==='custom-json');
     await configure();
     const site=await browser.newPage();
+    site.setDefaultTimeout(6000);
+    let scenario=0;
     let tabId;
     async function resetSite(html) {
       replyMode='normal';
+      // Change synthetic configuration between unrelated scenarios; cache behavior is tested explicitly.
+      await worker.evaluate(model=>chrome.storage.local.set({model}),'synthetic-case-'+(++scenario));
       await site.goto(origin+'/fixture');
       if(html) await site.locator('#fixture').evaluate((e,markup)=>e.innerHTML=markup,html);
       tabId=await worker.evaluate(async url=>(await chrome.tabs.query({url:url+'/*'})).find(tab=>tab.url.includes('/fixture')).id,origin);
@@ -357,11 +418,11 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
     });
     await check('Repeated injection keeps exactly one listener and panel',async()=>{
       await worker.evaluate(async id=>chrome.scripting.executeScript({target:{tabId:id},files:['src/content.js']}),tabId);
-      const before=requests.length; await send({type:'TRANSLATE_SELECTION',selectionText:'Hello world'});
+      const before=requests.length; await send({type:'TRANSLATE_SELECTION',selectionText:'Hello world reinjection'});
       assert.equal(requests.length-before,1); assert.equal(await panel().count(),1);
     });
     await check('API output renders as text, without HTML execution',async()=>{
-      replyMode='html'; await send({type:'TRANSLATE_SELECTION',selectionText:'Hello world'});
+      replyMode='html'; await send({type:'TRANSLATE_SELECTION',selectionText:'Hello world literal-output'});
       assert.equal(await panel().locator('img').count(),0); assert.match(await panel().locator('.translation').textContent(),/<img/); replyMode='normal';
     });
     await check('Clipboard failure reports failure',async()=>{
@@ -452,7 +513,7 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
       replyMode='normal';
     });
     await check('Long immersive paragraph is chunked and restored as one block',async()=>{
-      await resetSite('<p>'+('Hello world '.repeat(1200))+'</p>'); const before=requests.length;
+      await resetSite('<p>'+Array.from({length:900},(_,i)=>`Hello world ${i}. `).join('')+'</p>'); const before=requests.length;
       const r=await send({type:'TRANSLATE_IMMERSIVE'}); assert.equal(r.ok,true,r.error); assert.equal(r.translatedCount,1);
       assert.ok(requests.length-before>1); assert.ok(requests.slice(before).every(r=>r.body.prompt.length<=1800));
       assert.equal((await send({type:'RESTORE_IMMERSIVE'})).count,1);
@@ -462,6 +523,147 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
       const r=await send({type:'TRANSLATE_PAGE'}); assert.equal(r.ok,true,r.error);
       assert.ok(requests.slice(before).map(r=>r.body.prompt).join('').length<=12000);
       assert.match(await panel().locator('.status').textContent(),/12000/);
+    });
+    await check('Immersive: nested direct text, spaces between spans and line breaks stay paired',async()=>{
+      await resetSite('<div id="nested">Hello world before<p>Good morning inside</p>Hello world after</div><p id="spaces"><span>Hello</span> <span>world</span><br>Good morning <a href="#more">Read more<span translate="no"> PRIVATE OPT OUT</span></a></p>');
+      const original=await site.locator('#fixture').evaluate(e=>e.innerHTML);
+      const r=await send({type:'TRANSLATE_IMMERSIVE'}); assert.equal(r.ok,true,r.error); assert.equal(r.translatedCount,4);
+      const nodes=await site.locator('#nested').evaluate(e=>Array.from(e.childNodes).map(n=>({tag:n.nodeName,text:n.textContent})));
+      assert.deepEqual(nodes.map(n=>n.tag),['#text','SPAN','P','#text','SPAN']);
+      assert.equal(nodes[1].text,'你好，世界 before'); assert.equal(nodes[4].text,'你好，世界 after');
+      const spaced=await site.locator('#spaces > [data-edge-wt-immersive-translation]').textContent();
+      assert.equal(spaced,'你好，世界\n早上好 了解更多');
+      assert.equal(await site.locator('#spaces a [data-edge-wt-immersive-translation]').count(),0);
+      await send({type:'RESTORE_IMMERSIVE'}); assert.equal(await site.locator('#fixture').evaluate(e=>e.innerHTML),original);
+    });
+    await check('Immersive: flex/grid cards, lists and tables retain horizontal geometry and original links',async()=>{
+      await resetSite('<style>.cards{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:820px}.card{padding:20px;border:1px solid #ddd;min-width:0}.flex{display:flex;gap:20px}.flex>div{width:220px}table{table-layout:fixed;width:700px}td{padding:8px}p{margin:10px 0}</style><div class="cards"><section class="card" id="card1"><h2>Hello world</h2><p id="linked">Good morning <a href="#more">Read more</a>.</p></section><section class="card" id="card2"><p>Hello world card two</p></section></div><div class="flex"><div><p>Hello world flex one</p></div><div><p>Good morning flex two</p></div></div><ul><li>Hello world list</li></ul><table><tbody><tr><td>Hello world cell</td><td>Good morning cell</td></tr></tbody></table>');
+      const original=await site.locator('#fixture').evaluate(e=>e.innerHTML);
+      const geometry=()=>site.locator('#card1,#card2,#linked,.flex>div,td,li').evaluateAll(elements=>elements.map(e=>{const r=e.getBoundingClientRect();return {left:r.left,width:r.width};}));
+      const before=await geometry();
+      await site.locator('#linked a').evaluate(e=>e.addEventListener('click',()=>e.dataset.clicked='yes'));
+      const r=await send({type:'TRANSLATE_IMMERSIVE'}); assert.equal(r.ok,true,r.error);
+      const after=await geometry(); assert.equal(after.length,before.length);
+      after.forEach((item,i)=>{assert.ok(Math.abs(item.left-before[i].left)<1);assert.ok(Math.abs(item.width-before[i].width)<1);});
+      assert.equal(await site.locator('.cards > [data-edge-wt-immersive-translation],.flex > [data-edge-wt-immersive-translation]').count(),0);
+      const align=await site.locator('#linked').evaluate(e=>({source:e.getBoundingClientRect().left,translation:e.querySelector('[data-edge-wt-immersive-translation]').getBoundingClientRect().left}));
+      assert.ok(Math.abs(align.source-align.translation)<1);
+      await send({type:'RESTORE_IMMERSIVE'}); assert.equal(await site.locator('#fixture').evaluate(e=>e.innerHTML),original);
+      await site.locator('#linked a').click(); assert.equal(await site.locator('#linked a').getAttribute('data-clicked'),'yes');
+    });
+    await check('Immersive: actual partial paragraph appears before its streaming batch completes',async()=>{
+      await configure({apiStyle:'openai-compatible',endpoint:origin+'/stream-immersive/v1/chat/completions'});
+      await resetSite('<p>Hello world</p><p>Good morning</p>'); let done=false; const started=Date.now();
+      const pending=send({type:'TRANSLATE_IMMERSIVE'}).then(r=>{done=true;return r;});
+      await site.waitForFunction(()=>document.querySelector('[data-edge-wt-pending]')?.textContent==='你好');
+      const partialMs=Date.now()-started; assert.equal(done,false);
+      assert.doesNotMatch(await site.locator('#fixture').textContent(),/__EDGE/);
+      const r=await pending; assert.equal(r.translatedCount,2); assert.equal(await site.locator('[data-edge-wt-pending]').count(),0);
+      measurements.immersiveStreaming={firstVisibleTextMs:partialMs,completedMs:Date.now()-started,fixtureRemainderDelayMs:220};
+      await configure();
+    });
+    await check('Immersive: streaming failure removes incomplete lines and allows a clean retry',async()=>{
+      await configure({apiStyle:'openai-compatible',endpoint:origin+'/stream-immersive/stream-error/v1/chat/completions'});
+      await resetSite('<p>Hello world</p><p>Good morning</p>'); const original=await site.locator('#fixture').evaluate(e=>e.innerHTML);
+      const pending=send({type:'TRANSLATE_IMMERSIVE'});
+      await site.waitForFunction(()=>document.querySelector('[data-edge-wt-pending]'));
+      const r=await pending; assert.equal(r.ok,false); assert.equal(r.code,'API_ERROR');
+      assert.equal(await site.locator('[data-edge-wt-immersive-translation]').count(),0);
+      assert.equal(await site.locator('#fixture').evaluate(e=>e.innerHTML),original);
+      await configure(); assert.equal((await send({type:'TRANSLATE_IMMERSIVE'})).translatedCount,2);
+    });
+    await check('Immersive: current viewport is translated first on long pages with a bounded block count',async()=>{
+      await resetSite(Array.from({length:150},(_,i)=>`<p id="para${i}" style="min-height:64px;margin:8px">Hello world paragraph ${i}</p>`).join(''));
+      await site.locator('#para110').evaluate(e=>e.scrollIntoView());
+      const before=requests.length; const r=await send({type:'TRANSLATE_IMMERSIVE'});
+      assert.equal(r.ok,true,r.error); assert.equal(r.translatedCount,80);
+      assert.match(requests[before].body.prompt,/paragraph 11\d/);
+      assert.equal(await site.locator('#para0 [data-edge-wt-immersive-translation]').count(),0);
+      assert.equal(await site.locator('#para110 [data-edge-wt-immersive-translation]').count(),1);
+      assert.match(await panel().locator('.status').textContent(),/最多 80/);
+    });
+    await check('Immersive: repeated same-page action reuses complete batches without HTTP',async()=>{
+      await resetSite('<p>Hello world cache</p><p>Good morning cache</p>');
+      const first=await send({type:'TRANSLATE_IMMERSIVE'}); const before=requests.length;
+      const second=await send({type:'TRANSLATE_IMMERSIVE'}); assert.equal(second.translatedCount,first.translatedCount);
+      assert.equal(requests.length,before); assert.equal(await site.locator('[data-edge-wt-immersive-translation]').count(),2);
+    });
+
+    const bubble=()=>site.locator('#edge-wt-selection-host');
+    const select=async(selector)=>{
+      await site.locator(selector).evaluate(element=>{const range=document.createRange();range.selectNodeContents(element);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);});
+      await delay(180);
+    };
+    await check('Selection chip: no activation or network traffic until the site is enabled',async()=>{
+      await resetSite('<p id="pick">Hello world</p>'); const before=requests.length;
+      await select('#pick'); assert.equal(await bubble().count(),0); assert.equal(requests.length,before);
+      await send({type:'SET_SELECTION_ENABLED',enabled:true}); await select('#pick');
+      assert.equal(await bubble().locator('.translate').isVisible(),true); assert.equal(requests.length,before);
+    });
+    await check('Selection chip: one click streams locally, guards duplicate clicks and copies text safely',async()=>{
+      await configure({apiStyle:'openai-compatible',endpoint:origin+'/stream-chat/v1/chat/completions'});
+      await resetSite('<p id="pick">Hello world</p>'); await send({type:'SET_SELECTION_ENABLED',enabled:true}); await select('#pick');
+      const before=requests.length;
+      await bubble().locator('.translate').click(); await bubble().locator('.translate').dispatchEvent('click');
+      await site.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.shadowRoot.querySelector('.result').textContent==='你好');
+      assert.match(await bubble().locator('.status').textContent(),/正在翻译/);
+      await site.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.shadowRoot.querySelector('.status').textContent.includes('完成'));
+      assert.equal(await bubble().locator('.result').textContent(),'你好，世界'); assert.equal(requests.length-before,1);
+      await site.evaluate(()=>getSelection().removeAllRanges()); await delay(180); assert.equal(await bubble().locator('.result').isVisible(),true);
+      await worker.evaluate(async id=>chrome.scripting.executeScript({target:{tabId:id},func:()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('synthetic clipboard denial');}}})}),tabId);
+      await bubble().locator('.copy').click(); await site.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.shadowRoot.querySelector('.status').textContent.includes('复制失败'));
+      await configure();
+    });
+    await check('Selection chip: repeat text uses cache and errors expose a retry action',async()=>{
+      await resetSite('<p id="pick">Hello world</p>'); await send({type:'SET_SELECTION_ENABLED',enabled:true}); await select('#pick');
+      await bubble().locator('.translate').click(); await site.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.shadowRoot.querySelector('.status').textContent.includes('完成'));
+      await site.keyboard.press('Escape'); const before=requests.length; await select('#pick'); await bubble().locator('.translate').click();
+      await site.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.shadowRoot.querySelector('.status').textContent.includes('复用'));
+      assert.equal(requests.length,before);
+      await configure({endpoint:origin+'/unauthorized'}); await site.keyboard.press('Escape'); await select('#pick'); await bubble().locator('.translate').click();
+      await site.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.shadowRoot.querySelector('.bubble.failed'));
+      assert.equal(await bubble().locator('.translate').textContent(),'重试'); assert.match(await bubble().locator('.status').textContent(),/401/);
+      await configure(); await bubble().locator('.translate').click();
+      await site.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.shadowRoot.querySelector('.status').textContent.includes('完成'));
+    });
+    await check('Selection chip: Escape aborts HTTP and late results stay closed',async()=>{
+      await configure({apiStyle:'openai-compatible',endpoint:origin+'/stream-stall/v1/chat/completions'});
+      await resetSite('<p id="pick">Hello world</p>'); await send({type:'SET_SELECTION_ENABLED',enabled:true}); await select('#pick');
+      await bubble().locator('.translate').click(); await site.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.shadowRoot.querySelector('.result').textContent==='你好');
+      const record=requests.at(-1); await site.keyboard.press('Escape'); await until(()=>record.aborted);
+      assert.equal(await bubble().evaluate(e=>e.style.display),'none'); await configure();
+    });
+    await check('Selection chip: editing and opt-out text, including mixed selections, are excluded',async()=>{
+      await resetSite('<p id="pick">Hello world</p><div contenteditable="true" id="edit">PRIVATE EDITOR</div><p translate="no" id="optout">PRIVATE OPT OUT</p><p id="mixed">Hello <span translate="no">PRIVATE</span> world</p>');
+      await send({type:'SET_SELECTION_ENABLED',enabled:true}); const before=requests.length;
+      for(const selector of ['#edit','#optout','#mixed']) {await select(selector);assert.equal(await bubble().count(),0);}
+      await select('#pick'); assert.equal(await bubble().locator('.translate').isVisible(),true); assert.equal(requests.length,before);
+      await send({type:'SET_SELECTION_ENABLED',enabled:false}); assert.equal(await bubble().evaluate(e=>e.style.display),'none');
+    });
+    await check('Selection chip: result stays inside viewport edges after scrolling and resizing',async()=>{
+      await resetSite('<div style="height:1700px"><p id="pick" style="position:absolute;top:910px;right:12px;margin:0">Hello world</p></div>');
+      await send({type:'SET_SELECTION_ENABLED',enabled:true}); await select('#pick'); await bubble().locator('.translate').click();
+      await site.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.shadowRoot.querySelector('.status').textContent.includes('完成'));
+      const assertBounds=async()=>{const b=await bubble().locator('.bubble').boundingBox();const size=site.viewportSize();assert.ok(b.x>=7&&b.y>=7&&b.x+b.width<=size.width-7&&b.y+b.height<=size.height-7,JSON.stringify(b));};
+      await assertBounds(); await site.evaluate(()=>scrollBy(0,500)); await delay(50); await assertBounds();
+      const y=await bubble().locator('.bubble').evaluate(e=>e.getBoundingClientRect().y);
+      const source=await site.locator('#pick').boundingBox(); assert.ok(Math.abs(y-source.y)<150);
+      await site.setViewportSize({width:480,height:600}); await delay(50); await assertBounds();
+      await site.setViewportSize({width:1440,height:1000});
+    });
+    for(const abort of [false,true]) await check(`Selection chip: ${abort?'cancelling its request':'reading a result'} preserves immersive work and two-request limit`,async()=>{
+      await configure(); await resetSite('<p id="pick">Hello world selected phrase</p>'+Array.from({length:17},(_,i)=>`<p>WAIT Hello world paragraph ${i}</p>`).join(''));
+      await send({type:'SET_SELECTION_ENABLED',enabled:true}); replyMode='concurrent'; const before=requests.length;
+      const immersive=send({type:'TRANSLATE_IMMERSIVE'}); await until(()=>requests.length-before===2);
+      await select('#pick'); await bubble().locator('.translate').click();
+      await until(()=>requests.length-before>=3); const selectionRequest=requests[before+2];
+      assert.equal(selectionRequest.body.prompt,'Hello world selected phrase','selection must take the next slot ahead of another page batch');
+      if(abort) {await site.keyboard.press('Escape'); await until(()=>selectionRequest.aborted);}
+      else await site.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.shadowRoot.querySelector('.status').textContent.includes('完成'));
+      const r=await immersive; assert.equal(r.ok,true,r.error); assert.equal(r.translatedCount,18);
+      const sent=requests.slice(before); assert.equal(sent.length,4);
+      assert.ok(sent.every(current=>sent.filter(other=>other.startedAt<=current.startedAt && other.endedAt>current.startedAt).length<=2));
+      assert.ok(sent.filter(item=>item!==selectionRequest).every(item=>!item.aborted)); replyMode='normal';
     });
     await check('Popup buttons translate and restore the selected tab',async()=>{
       await resetSite('<p>Hello world</p><p>Good morning</p>');
@@ -474,20 +676,46 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
       await popup.waitForFunction(()=>document.querySelector('#status').textContent.includes('已恢复 2'));
       await popup.close();
     });
+    await check('Popup site opt-in persists across navigation and disabling updates already open pages',async()=>{
+      await resetSite('<p id="pick">Hello world</p>');
+      const popup=await browser.newPage(); await popup.goto(extensionOrigin+'/popup.html'); await site.bringToFront(); await popup.reload();
+      await popup.waitForFunction(()=>!document.querySelector('#selectionEnabled').disabled);
+      await popup.locator('#selectionEnabled').check();
+      await popup.waitForFunction(()=>document.querySelector('#status').textContent.includes('本站已开启'));
+      const registered=await worker.evaluate(()=>chrome.scripting.getRegisteredContentScripts());
+      assert.equal(registered.length,1); assert.equal(registered[0].persistAcrossSessions,true); assert.deepEqual(registered[0].matches,['http://127.0.0.1/*']);
+      await site.reload(); await site.waitForFunction(()=>document.readyState==='complete'); await select('#first');
+      await site.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.style.display==='block');
+      const other=await browser.newPage(); await other.goto(origin+'/other-page');
+      await other.locator('#first').evaluate(e=>{const r=document.createRange();r.selectNodeContents(e);getSelection().removeAllRanges();getSelection().addRange(r);});
+      await other.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.style.display==='block');
+      await site.bringToFront(); await popup.reload(); await popup.waitForFunction(()=>!document.querySelector('#selectionEnabled').disabled);
+      assert.equal(await popup.locator('#selectionEnabled').isChecked(),true); await popup.locator('#selectionEnabled').uncheck();
+      await popup.waitForFunction(()=>document.querySelector('#status').textContent.includes('已关闭'));
+      assert.equal((await worker.evaluate(()=>chrome.scripting.getRegisteredContentScripts())).length,0);
+      assert.equal(await other.locator('#edge-wt-selection-host').evaluate(e=>e.style.display),'none');
+      await site.reload(); await select('#first'); assert.equal(await bubble().count(),0);
+      await other.close(); await popup.close();
+    });
     await check('Protected browser page rejects content injection',async()=>{
       const restricted=await browser.newPage(); await restricted.goto('edge://version');
       const restrictedId=await worker.evaluate(async()=> (await chrome.tabs.query({active:true,currentWindow:true}))[0].id);
       const result=await worker.evaluate(async id=>{try{await chrome.scripting.executeScript({target:{tabId:id},files:['src/content.js']});return 'unexpected success';}catch(e){return e.message;}},restrictedId);
       assert.match(result,/access|permission|Cannot|denied/i); await restricted.close();
     });
-    await resetSite('<h1>QudadFlow Translator</h1><p>Hello world</p><p>Good morning <a href="#more">Read more</a>.</p>');
-    await send({type:'TRANSLATE_IMMERSIVE'});
-    await site.screenshot({path:path.join(path.dirname(reportPath),'qudadflow-functional-edge.png'),fullPage:true});
-    await options.screenshot({path:path.join(path.dirname(reportPath),'qudadflow-functional-options.png'),fullPage:true});
+    const version=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8')).version;
+    const logo=fs.readFileSync(path.join(root,'assets/icon48.png')).toString('base64');
+    const demo=`<style>body{margin:0;background:#edf1f7;color:#1c2940;font:18px/1.7 "Segoe UI",sans-serif}#fixture{width:960px;margin:50px auto}.demo-brand{display:flex;align-items:center;gap:12px;font-size:17px;font-weight:650;margin-bottom:26px}.demo-brand img{width:38px;height:38px}.paper{padding:44px 52px;border:1px solid #dce3ef;border-radius:20px;background:white;box-shadow:0 12px 50px #21345408}.eyebrow{font-size:11px;letter-spacing:2px;color:#78869f}h1{font-size:36px;line-height:1.4;margin:18px 0 28px;letter-spacing:-1px}h2{font-size:23px;line-height:1.5;margin:30px 0 16px}p{margin:18px 0}a{color:#315bc7;text-decoration:none}.demo-note{margin-top:24px;font-size:12px;color:#718099}</style><header class="demo-brand" data-edge-wt-ignore><img src="data:image/png;base64,${logo}">QudadFlow Translator</header><article class="paper"><div class="eyebrow" data-edge-wt-ignore>THE READING JOURNAL · 01</div><h1>A clearer way to read the web.</h1><p id="quote">Keep the original text in view while you read.</p><p>Translate a paragraph without losing its context.</p><p>The page keeps its original links and structure.</p><h2>Choose a word. Stay in the story.</h2><p>Your translation appears beside the passage you selected.</p></article><footer class="demo-note" data-edge-wt-ignore>Local test page · Simulated API responses · v${version}</footer>`;
+    await configure(); await resetSite(demo); await send({type:'TRANSLATE_IMMERSIVE'}); await panel().locator('.close').click();
+    await site.screenshot({path:path.join(path.dirname(reportPath),`qudadflow-functional-edge-v${version}.png`),fullPage:true});
+    await resetSite(demo); await send({type:'SET_SELECTION_ENABLED',enabled:true}); await select('#quote'); await bubble().locator('.translate').click();
+    await site.waitForFunction(()=>document.querySelector('#edge-wt-selection-host')?.shadowRoot.querySelector('.status').textContent.includes('完成'));
+    await site.screenshot({path:path.join(path.dirname(reportPath),`qudadflow-functional-selection-v${version}.png`),fullPage:true});
+    await options.screenshot({path:path.join(path.dirname(reportPath),`qudadflow-functional-options-v${version}.png`),fullPage:true});
   } finally {
     if(browser) await browser.close();
     server.closeAllConnections(); await new Promise(resolve=>server.close(resolve));
-    const report={generatedAt:new Date().toISOString(),extensionVersion:JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8')).version,browser:browserVersion,scope:'Local synthetic HTTP API integration; test-only localhost host permission; original manifest side-load checked separately; provider billing/accounts not tested',passed:results.filter(r=>r.passed).length,failed:results.filter(r=>!r.passed).length,results};
+    const report={generatedAt:new Date().toISOString(),extensionVersion:JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8')).version,browser:browserVersion,scope:'Local synthetic HTTP API integration; test-only localhost host permission; original manifest side-load checked separately; provider billing/accounts not tested',passed:results.filter(r=>r.passed).length,failed:results.filter(r=>!r.passed).length,measurements,results};
     fs.mkdirSync(path.dirname(reportPath),{recursive:true}); fs.writeFileSync(reportPath,JSON.stringify(report,null,2));
     // Only the newly created task-specific directory is removed.
     fs.rmSync(scratch,{recursive:true,force:true,maxRetries:3,retryDelay:200});

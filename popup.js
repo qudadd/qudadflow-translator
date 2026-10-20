@@ -3,6 +3,8 @@
 const DEFAULT_TARGET = "zh-CN";
 let activeTab;
 let busy = false;
+let selectionSitePattern;
+let selectionSiteId;
 
 const $ = (id) => document.getElementById(id);
 
@@ -37,11 +39,60 @@ async function loadSelection() {
     await ensureContentScript(activeTab.id);
     const response = await sendTabMessage(activeTab.id, { type: "GET_SELECTION" });
     const selection = response?.selection?.trim();
-    $("selection").textContent = selection || "未检测到选中文本。可以改用“翻译当前网页”。";
+    $("selection").textContent = selection || "未检测到选中文本。可启用本站划词按钮，或直接翻译当前网页。";
   } catch (error) {
     $("selection").textContent = "此页面不允许注入扩展脚本。请换到普通网页后重试。";
     setStatus(error.message, true);
   }
+}
+
+async function loadSelectionSite() {
+  const checkbox = $("selectionEnabled");
+  try {
+    const url = new URL(activeTab?.url);
+    if (!/^https?:$/.test(url.protocol)) return;
+    selectionSitePattern = `${url.protocol}//${url.hostname}/*`;
+    selectionSiteId = `qf-selection-${encodeURIComponent(selectionSitePattern)}`;
+    const scripts = await chrome.scripting.getRegisteredContentScripts({ ids: [selectionSiteId] });
+    const allowed = await chrome.permissions.contains({ origins: [selectionSitePattern] });
+    checkbox.checked = scripts.length > 0 && allowed;
+    checkbox.disabled = false;
+    await sendTabMessage(activeTab.id, { type: "SET_SELECTION_ENABLED", enabled: checkbox.checked });
+  } catch { checkbox.disabled = true; }
+}
+
+async function setSelectionSite() {
+  const checkbox = $("selectionEnabled");
+  if (!selectionSitePattern || !activeTab?.id) return;
+  const enabled = checkbox.checked;
+  checkbox.disabled = true;
+  let createdScript = false;
+  try {
+    if (enabled) {
+      const allowed = await chrome.permissions.request({ origins: [selectionSitePattern] });
+      if (!allowed) throw new Error("未授予本站访问权限，划词按钮尚未开启。");
+      const scripts = await chrome.scripting.getRegisteredContentScripts({ ids: [selectionSiteId] });
+      if (!scripts.length) {
+        await chrome.scripting.registerContentScripts([{
+          id: selectionSiteId, matches: [selectionSitePattern], js: ["src/content.js"], runAt: "document_idle", persistAcrossSessions: true
+        }]);
+        createdScript = true;
+      }
+      await ensureContentScript(activeTab.id);
+      await sendTabMessage(activeTab.id, { type: "SET_SELECTION_ENABLED", enabled: true });
+    } else {
+      const scripts = await chrome.scripting.getRegisteredContentScripts({ ids: [selectionSiteId] });
+      if (scripts.length) await chrome.scripting.unregisterContentScripts({ ids: [selectionSiteId] });
+    }
+    const tabs = await chrome.tabs.query({ url: selectionSitePattern });
+    await Promise.allSettled(tabs.map((tab) => sendTabMessage(tab.id, { type: "SET_SELECTION_ENABLED", enabled })));
+    setStatus(enabled ? "本站已开启划词按钮。选中文字后点击“翻译”，Esc 关闭。" : "本站划词按钮已关闭，后续打开页面也不会自动启用。");
+  } catch (error) {
+    if (createdScript) await chrome.scripting.unregisterContentScripts({ ids: [selectionSiteId] }).catch(() => {});
+    const scripts = await chrome.scripting.getRegisteredContentScripts({ ids: [selectionSiteId] }).catch(() => []);
+    checkbox.checked = scripts.length > 0;
+    setStatus(error.message, true);
+  } finally { checkbox.disabled = false; }
 }
 
 async function run(type) {
@@ -91,6 +142,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("translatePage").addEventListener("click", () => run("TRANSLATE_PAGE"));
   $("translateImmersive").addEventListener("click", () => run("TRANSLATE_IMMERSIVE"));
   $("restoreImmersive").addEventListener("click", restoreImmersive);
+  $("selectionEnabled").addEventListener("change", setSelectionSite);
   $("openOptions").addEventListener("click", () => chrome.runtime.openOptionsPage());
   await loadSelection();
+  await loadSelectionSite();
 });

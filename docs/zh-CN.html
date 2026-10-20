@@ -27,8 +27,8 @@
     </section>
     <section class="providers" aria-labelledby="providers-title"><h2 id="providers-title">多种翻译引擎，同一种阅读方式。</h2><div><span>Google Cloud</span><span>DeepL</span><span>Microsoft Translator</span><span>OpenAI 兼容接口</span><span>自定义 JSON</span></div></section>
     <section class="features" aria-label="主要功能">
-      <article><span class="number">01</span><h2>划词与网页翻译</h2><p>选中文字后，通过扩展弹窗、右键菜单或快捷键发起翻译；也可以在独立面板查看网页译文并复制结果。</p></article>
-      <article><span class="number">02</span><h2>沉浸式双语阅读</h2><p>在原文段落下方显示译文，方便上下对照。一键恢复原文，继续使用网页原有的链接和布局。</p></article>
+      <article><span class="number">01</span><h2>就近划词翻译</h2><p>开启本站划词按钮后，选中文字，点击附近的“翻译”，即可在选区旁阅读和复制结果。Esc 关闭，单纯划选不会发送请求。</p></article>
+      <article><span class="number">02</span><h2>沉浸式双语阅读</h2><p>译文紧随原段落，接口返回时逐步显示，优先处理视区附近的内容。保留链接和原文节点，支持一键恢复。</p></article>
       <article><span class="number">03</span><h2>自选服务，直接连接</h2><p>API 设置和密钥保存在浏览器本地。授权所选 API 域名后，翻译请求直接发给该服务商，扩展无广告、遥测或开发者代理。</p></article>
     </section>
     <section class="guide" id="setup" aria-labelledby="setup-title">
@@ -37,7 +37,7 @@
         <li>从 GitHub Releases 下载运行包并解压。打开 <code>edge://extensions</code>，开启“开发人员模式”，点击“加载解压缩的扩展”，选择包含 <code>manifest.json</code> 的目录。也可下载仓库源码后选择其根目录。</li>
         <li>打开扩展的“设置 / API 设置”，选择接口类型，填写服务商提供的端点、API Key 和必要的模型或区域。</li>
         <li>保存设置并允许访问 API 域名，点击“测试连接”。服务商要求账号、额度或付费时，请先完成相应配置。</li>
-        <li>打开普通网页，选中文本后使用右键菜单或扩展弹窗翻译；需要逐段对照时点击“沉浸式翻译”，结束后点击“恢复原文”。</li>
+        <li>打开普通网页，点击“沉浸式翻译当前网页”，结束后点击“恢复原文”。勾选“在此网站启用划词翻译按钮”并授权后，即可就近点击划词翻译，开关会保留到下次访问。</li>
       </ol>
       <p>选中文本快捷键为 <code>Alt+Shift+T</code>，沉浸式翻译为 <code>Alt+Shift+I</code>。可在 <code>edge://extensions/shortcuts</code> 调整；macOS 默认使用 <code>Control+Shift</code> 组合。</p>
       <h2>选择你的 API。</h2>
@@ -49,14 +49,14 @@
         <tr><td>自定义 JSON</td><td>服务商指定的 HTTPS 地址</td><td>请求模板、自定义请求头和响应字段路径</td></tr>
       </tbody></table></div>
       <p>自定义模板用 <code>{{text}}</code>、<code>{{model}}</code>、<code>{{sourceLanguage}}</code>、<code>{{targetLanguage}}</code> 作为完整的 JSON 值，扩展负责转义；响应路径示例为 <code>data.translation</code>。完整示例见 <a href="https://github.com/qudadd/qudadflow-translator/blob/main/README.zh-CN.md">中文 README ↗</a>。</p>
-      <p>0.4.3 试用版支持流式接收、逐批显示和取消请求。API 测试会显示耗时与错误；默认超时 45 秒，可设为 10–180 秒。网关不支持流式时可关闭；Temperature 可留空。更新已有侧载版本后，请重新加载扩展并刷新网页。</p>
+      <p>0.4.4 试用版支持段落内流式显示、视区优先和五分钟内的成功译文复用。划词请求优先获得下一个空闲请求位置；页面最多两个并发请求，关闭划词浮窗不会中断沉浸式翻译。API 测试绕过缓存并显示耗时与错误；默认超时 45 秒，可设为 10–180 秒。网关不支持流式时可关闭；Temperature 可留空。更新已有侧载版本后，请重新加载扩展并刷新网页。</p>
       <h2>使用范围与数据处理</h2>
-      <p>浏览器内部页面、内置 PDF 阅读器、Edge 商店等受保护页面无法注入翻译界面。当前尚未实现专用 PDF 翻译。网页面板单次最多提取 12,000 个字符并提示截断；沉浸式模式单次最多处理 80 个正文块，长段落自动拆分。</p>
+      <p>浏览器内部页面、内置 PDF 阅读器、Edge 商店等受保护页面无法注入翻译界面。当前尚未实现专用 PDF 翻译。网页面板单次最多提取 12,000 个字符并提示截断；沉浸式模式在有界扫描的正文中优先处理视区附近的 80 个块，长段落自动拆分。滚动后再次翻译会替换上一轮译文。双语内容会增加段落高度；固定高度、虚拟滚动和内嵌内容等复杂页面仍可能需要专门适配。</p>
       <p>翻译仅在你主动操作后开始。待翻译文本和鉴权信息直接发送至你配置的 API；服务商按自己的隐私、保留和收费规则处理。请使用可信的 HTTPS 端点。沉浸式译文插入网页后，网页脚本可能读到这些译文。详情见 <a href="privacy.zh-CN.html">中文隐私政策</a>。</p>
-      <p>已通过本地模拟 API 与 Edge 集成检查。真实 Google、DeepL、Microsoft 等账号的有效性、额度、网络可达性和翻译质量仍需使用自己的 Key 验证。</p>
+      <p>已通过 87 项本地模拟 API 与 Edge 集成检查。真实 Google、DeepL、Microsoft 等账号的有效性、额度、网络可达性、速度和翻译质量仍需使用自己的 Key 验证。</p>
     </section>
     <section class="support"><div><p class="eyebrow">支持与反馈</p><h2>配置遇到问题？</h2><p>请描述接口类型和错误提示，勿在反馈中发送 API Key。</p></div><a href="mailto:lcf1249288484@outlook.com">lcf1249288484@outlook.com ↗</a></section>
-    <p class="disclosure">QudadFlow Translator 为独立扩展，与所列服务商无隶属关系。扩展本身不附带翻译服务订阅，第三方账号、费用和条款由对应服务商决定。0.4.2 已提交 Edge 商店审核，2026 年 10 月 20 日确认状态为 In review；0.4.3 为单独的开发更新。</p>
+    <p class="disclosure">QudadFlow Translator 为独立扩展，与所列服务商无隶属关系。扩展本身不附带翻译服务订阅，第三方账号、费用和条款由对应服务商决定。0.4.2 已提交 Edge 商店审核，2026 年 10 月 20 日确认状态为 In review；0.4.4 为单独的开发更新。</p>
   </main>
   <footer class="wrap"><span>© 2026 QudadFlow Translator</span><a href="privacy.zh-CN.html">隐私政策</a><a href="./" lang="en">English</a><a href="https://github.com/qudadd/qudadflow-translator">源代码</a></footer>
 </body>
