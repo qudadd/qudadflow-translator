@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "QudadFlow Translator",
+  "version": "0.4.1",
+  "description": "Translate webpages with your Google, DeepL, Microsoft, or compatible API. Includes immersive translation.",
+  "minimum_chrome_version": "102",
+  "action": {
+    "default_title": "QudadFlow Translator",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "32": "assets/icon32.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "options_page": "options.html",
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "scripting",
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "commands": {
+    "translate-selection": {
+      "suggested_key": {
+        "default": "Alt+Shift+T",
+        "mac": "MacCtrl+Shift+T"
+      },
+      "description": "翻译当前选中文本"
+    },
+    "translate-immersive": {
+      "suggested_key": {
+        "default": "Alt+Shift+I",
+        "mac": "MacCtrl+Shift+I"
+      },
+      "description": "沉浸式翻译当前网页"
+    }
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  }
+}

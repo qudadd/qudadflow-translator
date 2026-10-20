@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QudadFlow Translator设置</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="page">
+    <header class="header"><div class="brand"><img src="assets/icon48.png" alt=""><div><h1>QudadFlow Translator设置</h1><p>配置第三方翻译 API，密钥只保存在本浏览器的扩展存储中。</p></div></div></header>
+    <form id="settingsForm" novalidate>
+      <section class="card">
+        <h2>API 连接</h2>
+        <label for="apiStyle">接口类型</label>
+        <select id="apiStyle">
+          <option value="openai-compatible">OpenAI 兼容 Chat Completions（推荐）</option>
+          <option value="google-translate-v2">Google Cloud Translation v2（机器翻译）</option>
+          <option value="microsoft-translator">Microsoft Translator（Azure 机器翻译）</option>
+          <option value="deepl">DeepL API（机器翻译）</option>
+          <option value="custom-json">自定义 JSON 接口</option>
+        </select>
+        <p class="hint" id="providerHint">可填写 OpenAI、DeepSeek、智谱、通义、Moonshot、硅基流动、Ollama 等兼容接口的完整地址。</p>
+
+        <label for="endpoint">API 端点</label>
+        <input id="endpoint" type="url" required placeholder="https://api.openai.com/v1/chat/completions" autocomplete="url">
+        <p class="hint" id="endpointHint">OpenAI 兼容接口可填完整地址，或填到 /v1；自定义 JSON 接口请填实际 POST 地址。</p>
+
+        <label for="apiKey">API Key</label>
+        <div class="secret"><input id="apiKey" type="password" autocomplete="off" placeholder="sk-…"><button type="button" id="toggleKey">显示</button></div>
+        <p class="hint" id="apiKeyHint">扩展只会按接口类型把密钥发送到指定端点，不会上传到本项目服务器。</p>
+
+        <div id="modelWrap"><label for="model">模型</label><input id="model" type="text" placeholder="gpt-4o-mini" autocomplete="off"></div>
+
+        <div id="regionWrap" class="conditional-field"><label for="providerRegion">Azure 区域（可选）</label><input id="providerRegion" type="text" placeholder="eastus" autocomplete="off"><p class="hint">也可以在自定义请求头中填写 <code>Ocp-Apim-Subscription-Region</code>。</p></div>
+
+        <label for="customHeaders">自定义请求头（JSON，可选）</label>
+        <textarea id="customHeaders" rows="3" spellcheck="false">{}</textarea>
+        <p class="hint">可用占位符：<code>{{apiKey}}</code>、<code>{{model}}</code>。例如 <code>{"X-API-Key":"{{apiKey}}"}</code>。</p>
+      </section>
+
+      <section class="card">
+        <h2>翻译偏好</h2>
+        <div class="grid">
+          <div><label for="sourceLanguage">源语言</label><select id="sourceLanguage"><option value="auto">自动检测</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="es">Español</option><option value="ru">Русский</option></select></div>
+          <div><label for="targetLanguage">目标语言</label><select id="targetLanguage"><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="es">Español</option><option value="ru">Русский</option></select></div>
+        </div>
+        <label for="temperature">Temperature（0–1，可选）</label>
+        <input id="temperature" type="number" min="0" max="1" step="0.1">
+      </section>
+
+      <section class="card custom-only" id="customSection">
+        <h2>自定义 JSON 映射</h2>
+        <label for="requestTemplate">请求体模板</label>
+        <textarea id="requestTemplate" rows="9" spellcheck="false"></textarea>
+        <p class="hint">替换占位符后必须是 JSON。占位符要作为 JSON 值使用，例如 <code>"prompt": {{text}}</code>，可用 text、model、sourceLanguage、targetLanguage、context、apiKey。</p>
+        <label for="responsePath">译文响应路径</label>
+        <input id="responsePath" type="text" placeholder="choices[0].message.content">
+        <p class="hint">使用点号和数组下标，例如 <code>data.translation</code> 或 <code>choices[0].message.content</code>。</p>
+      </section>
+
+      <section class="card permission-card">
+        <h2>API 域名访问权限</h2>
+        <p id="permissionStatus">保存时会请求访问你填写的 API 域名。扩展只会向该域名发送翻译请求。</p>
+        <button type="button" class="secondary" id="requestPermission">请求/检查 API 域名权限</button>
+      </section>
+
+      <div class="actions"><button type="button" class="secondary" id="testApi">测试连接</button><button type="submit" class="primary">保存设置</button><span id="status" role="status"></span></div>
+    </form>
+    <footer><a href="privacy.html" target="_blank">隐私说明</a> · <a href="https://learn.microsoft.com/en-us/microsoft-edge/extensions/publish/publish-extension" target="_blank">Edge 商店发布文档</a></footer>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>
