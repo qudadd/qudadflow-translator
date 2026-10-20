@@ -2,6 +2,7 @@
 
 const DEFAULT_TARGET = "zh-CN";
 let activeTab;
+let busy = false;
 
 const $ = (id) => document.getElementById(id);
 
@@ -44,11 +45,15 @@ async function loadSelection() {
 }
 
 async function run(type) {
+  if (busy) return;
+  busy = true;
+  const buttons = ["translateSelection", "translatePage", "translateImmersive"].map($);
+  buttons.forEach((button) => { button.disabled = true; });
   try {
     if (!activeTab?.id) await loadSelection();
     if (!activeTab?.id) return;
     await ensureContentScript(activeTab.id);
-    setStatus("正在翻译…");
+    setStatus("正在翻译，进度显示在网页面板中。可关闭弹窗继续阅读。");
     const response = await sendTabMessage(activeTab.id, { type, targetLanguage: $("targetLanguage").value });
     if (!response?.ok) {
       const suffix = response?.code === "PERMISSION_REQUIRED" ? "请打开设置并允许访问 API 域名。" : "";
@@ -60,6 +65,9 @@ async function run(type) {
       : "译文已显示在网页右上角。点击页面面板中的复制即可复制。");
   } catch (error) {
     setStatus(`无法访问当前页面：${error.message}`, true);
+  } finally {
+    busy = false;
+    buttons.forEach((button) => { button.disabled = false; });
   }
 }
 

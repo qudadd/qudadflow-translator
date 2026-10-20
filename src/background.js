@@ -9,6 +9,8 @@ const DEFAULTS = {
   sourceLanguage: "auto",
   targetLanguage: "zh-CN",
   temperature: 0.2,
+  requestTimeoutSeconds: 45,
+  streamOpenAi: true,
   customHeaders: "{}",
   requestTemplate: `{
   "model": {{model}},
@@ -21,6 +23,11 @@ const DEFAULTS = {
 
 const MAX_INPUT_CHARS = 12000;
 const REQUEST_TIMEOUT_MS = 45000;
+const activeRequests = new Map();
+
+function translationError(message, code) {
+  return Object.assign(new Error(message), { code });
+}
 
 function storageGet(keys) {
   return new Promise((resolve, reject) => {
@@ -62,11 +69,13 @@ function permissionsContains(origins) {
 
 function openAiEndpoint(endpoint) {
   const url = new URL(endpoint);
-  if (url.pathname.endsWith("/chat/completions")) return url.toString();
-  if (url.pathname.endsWith("/v1") || url.pathname.endsWith("/v1/")) {
-    url.pathname = `${url.pathname.replace(/\/$/, "")}/chat/completions`;
+  url.pathname = url.pathname.replace(/\/+$/, "");
+  url.hash = "";
+  if (/\/(chat\/completions|responses)$/.test(url.pathname)) return url.toString();
+  if (url.pathname.endsWith("/v1")) {
+    url.pathname += "/chat/completions";
   } else {
-    url.pathname = `${url.pathname.replace(/\/$/, "")}/v1/chat/completions`;
+    url.pathname += "/v1/chat/completions";
   }
   return url.toString();
 }
@@ -163,15 +172,22 @@ function readTranslation(response, settings) {
   } else if (settings.apiStyle === "deepl") {
     candidates = [getByPath(response, "translations[0].text")];
   } else {
+    if (response?.error) throw translationError(response.error.message || "接口返回错误。", "API_ERROR");
+    if (response?.status === "incomplete" || response?.choices?.[0]?.finish_reason === "length") {
+      throw translationError("API 输出被截断，请缩短文本或检查模型的输出限制。", "INCOMPLETE_RESPONSE");
+    }
+    const content = getByPath(response, "choices[0].message.content");
     candidates = [
-      getByPath(response, "choices[0].message.content"),
+      Array.isArray(content) ? content.filter((part) => part.type === "text" || part.type === "output_text").map((part) => part.text || "").join("") : content,
+      response?.output_text,
+      Array.isArray(response?.output) ? response.output.filter((item) => item.type === "message").flatMap((item) => item.content || []).filter((part) => part.type === "output_text").map((part) => part.text || "").join("\n") : undefined,
       getByPath(response, "choices[0].text"),
       getByPath(response, "translation"),
       getByPath(response, "result")
     ];
   }
   const text = candidates.find((item) => typeof item === "string" && item.trim());
-  if (!text) throw new Error("API 返回中没有找到翻译文本，请检查响应路径设置。");
+  if (!text) throw translationError("API 返回中没有找到翻译文本，请检查端点协议、模型或自定义响应路径。", "EMPTY_TRANSLATION");
   return text.trim();
 }
 
@@ -219,18 +235,19 @@ function buildRequest(settings, text, context) {
     }
   } else {
     endpoint = openAiEndpoint(endpoint);
-    const temperature = Number(settings.temperature);
-    body = {
-      model: settings.model,
-      temperature: Number.isFinite(temperature) ? Math.min(1, Math.max(0, temperature)) : 0.2,
-      messages: [
+    const instructions = `You are a translation engine. Translate from ${settings.sourceLanguage || "auto-detected language"} to ${settings.targetLanguage}. Preserve meaning, line breaks, punctuation, URLs, placeholders, Markdown, and code. Return only the translation. Context: ${context || "web page"}.`;
+    body = new URL(endpoint).pathname.endsWith("/responses")
+      ? { model: settings.model, instructions, input: text, stream: settings.streamOpenAi !== false, store: false }
+      : { model: settings.model, stream: settings.streamOpenAi !== false, messages: [
         {
           role: "system",
-          content: `You are a translation engine. Translate from ${settings.sourceLanguage || "auto-detected language"} to ${settings.targetLanguage}. Preserve meaning, line breaks, punctuation, URLs, placeholders, Markdown, and code. Return only the translation. Context: ${context || "web page"}.`
+          content: instructions
         },
         { role: "user", content: text }
-      ]
-    };
+      ] };
+    if (settings.temperature !== "" && settings.temperature !== null && Number.isFinite(Number(settings.temperature))) {
+      body.temperature = Math.min(1, Math.max(0, Number(settings.temperature)));
+    }
     if (settings.apiKey && !Object.keys(headers).some((key) => key.toLowerCase() === "authorization")) {
       headers.Authorization = `Bearer ${settings.apiKey}`;
     }
@@ -238,7 +255,73 @@ function buildRequest(settings, text, context) {
   return { endpoint, headers, body };
 }
 
-async function translateText(request) {
+function httpError(status, detail) {
+  const hints = {
+    400: "请检查模型与接口协议是否匹配。",
+    401: "API Key 无效或已过期。",
+    403: "请检查 Key 权限和模型访问权限。",
+    404: "请检查 API 地址和模型名称。",
+    429: "接口限流或额度不足，请稍后再试。",
+    502: "网关上游暂时不可用。", 503: "网关上游暂时不可用。", 504: "网关等待上游超时。"
+  };
+  return translationError(`API 返回 ${status}：${detail} ${hints[status] || ""}`.trim(), `HTTP_${status}`);
+}
+
+// Read only translation deltas. Reasoning, tool calls and SSE metadata are never displayed.
+async function readEventStream(response, settings, onProgress) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let translation = "";
+  let completed = false;
+  let bytes = 0;
+  const consume = (event) => {
+    const data = event.split("\n").filter((line) => line.startsWith("data:")).map((line) => line.slice(5).trimStart()).join("\n");
+    if (!data) return;
+    if (data.trim() === "[DONE]") { completed = true; return; }
+    let item;
+    try { item = JSON.parse(data); } catch { throw translationError("接口返回了无效的流式数据。", "INVALID_RESPONSE"); }
+    if (item.error || item.type === "error" || item.type === "response.failed") {
+      throw translationError(item.error?.message || item.response?.error?.message || item.message || "API 流式请求失败。", "API_ERROR");
+    }
+    if (item.type === "response.incomplete" || item.choices?.[0]?.finish_reason === "length") {
+      throw translationError("API 输出被截断，请缩短文本或检查模型的输出限制。", "INCOMPLETE_RESPONSE");
+    }
+    const delta = item.type === "response.output_text.delta" ? item.delta : item.choices?.[0]?.delta?.content;
+    if (typeof delta === "string") translation += delta;
+    else if (Array.isArray(delta)) translation += delta.filter((part) => part.type === "text").map((part) => part.text || "").join("");
+    if (item.type === "response.completed") {
+      translation = readTranslation(item.response, settings);
+      completed = true;
+    }
+    if (translation) onProgress(translation);
+  };
+  try {
+    while (!completed) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > 2 * 1024 * 1024) throw translationError("API 响应过大，请缩短文本。", "RESPONSE_TOO_LARGE");
+      buffer += decoder.decode(value, { stream: true });
+      buffer = buffer.replace(/\r\n/g, "\n");
+      let boundary;
+      while ((boundary = buffer.indexOf("\n\n")) >= 0 && !completed) {
+        consume(buffer.slice(0, boundary));
+        buffer = buffer.slice(boundary + 2);
+      }
+    }
+    buffer += decoder.decode();
+    if (!completed && buffer.trim()) consume(buffer.replace(/\r\n/g, "\n"));
+    if (!completed) throw translationError("API 连接提前结束，未收到完整译文，请重试。", "INCOMPLETE_RESPONSE");
+    if (!translation.trim()) throw translationError("API 返回中没有找到翻译文本。", "EMPTY_TRANSLATION");
+    return translation.trim();
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+}
+
+async function translateText(request, controller = new AbortController(), onProgress = () => {}) {
   const settings = normalizeSettings(await storageGet(DEFAULTS));
   const effectiveSettings = {
     ...settings,
@@ -250,6 +333,8 @@ async function translateText(request) {
   if (text.length > MAX_INPUT_CHARS) throw new Error(`单次翻译最多支持 ${MAX_INPUT_CHARS} 个字符，请缩短文本后重试。`);
   if (!effectiveSettings.endpoint.trim()) throw new Error("请先在设置中填写 API 端点。");
   if (!effectiveSettings.apiKey && effectiveSettings.apiStyle !== "custom-json") throw new Error("请先在设置中填写 API Key。");
+  if (effectiveSettings.apiStyle === "openai-compatible" && !effectiveSettings.model.trim()) throw new Error("请先在设置中填写模型名称。");
+  if (controller.signal.aborted) throw translationError("翻译已取消。", "CANCELLED");
 
   const pattern = getOriginPattern(effectiveSettings.endpoint);
   if (!(await permissionsContains([pattern]))) {
@@ -259,36 +344,44 @@ async function translateText(request) {
   }
 
   const { endpoint, headers, body } = buildRequest(effectiveSettings, text, request.context || "web page");
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  let response;
-  let raw;
+  const timeoutSeconds = Number(effectiveSettings.requestTimeoutSeconds);
+  const timeoutMs = Number.isFinite(timeoutSeconds) && timeoutSeconds >= 10 && timeoutSeconds <= 180 ? timeoutSeconds * 1000 : REQUEST_TIMEOUT_MS;
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
   try {
-    response = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: typeof body === "string" ? body : JSON.stringify(body),
-      signal: controller.signal
-    });
-    // The deadline also covers downloading the response body.
-    raw = await response.text();
+    // Retry only a rejected temperature parameter, once, within the original deadline.
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const response = await fetch(endpoint, {
+        method: "POST", headers,
+        body: typeof body === "string" ? body : JSON.stringify(body),
+        signal: controller.signal
+      });
+      if (response.ok && /text\/event-stream/i.test(response.headers.get("content-type") || "") && effectiveSettings.apiStyle === "openai-compatible") {
+        return await readEventStream(response, effectiveSettings, onProgress);
+      }
+      const raw = await response.text();
+      let parsed;
+      try { parsed = JSON.parse(raw); } catch {
+        if (!response.ok) throw httpError(response.status, "端点返回的内容不是 JSON。");
+        throw translationError("API 返回的内容不是 JSON，请确认填写的是 API 地址而非网站首页。", "INVALID_RESPONSE");
+      }
+      if (!response.ok) {
+        const detail = typeof parsed?.error?.message === "string" ? parsed.error.message.slice(0, 300) : "请查看服务商后台错误记录。";
+        if (attempt === 0 && response.status === 400 && effectiveSettings.apiStyle === "openai-compatible" && Object.hasOwn(body, "temperature") && /temperature/i.test(detail) && /unsupported|not.support|only.*supported|not.allowed|不支持/i.test(detail)) {
+          delete body.temperature;
+          continue;
+        }
+        throw httpError(response.status, detail);
+      }
+      return readTranslation(parsed, effectiveSettings);
+    }
   } catch (error) {
-    if (error.name === "AbortError") throw new Error("API 请求超时，请检查端点或网络。");
-    throw new Error(`API 请求失败：${error.message}`);
+    if (controller.signal.aborted) throw translationError(timedOut ? `API 请求超时（${timeoutMs / 1000} 秒）。请先测试短文本，检查端点、模型和网关记录；慢模型可在设置中调整超时。` : "翻译已取消。", timedOut ? "TIMEOUT" : "CANCELLED");
+    if (error.code) throw error;
+    throw translationError(`API 请求失败：${error.message}。请检查 API 地址、网络及域名访问权限。`, "NETWORK_ERROR");
   } finally {
     clearTimeout(timer);
   }
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    parsed = { result: raw };
-  }
-  if (!response.ok) {
-    const detail = typeof parsed?.error?.message === "string" ? parsed.error.message : raw.slice(0, 300);
-    throw new Error(`API 返回 ${response.status}：${detail}`);
-  }
-  return readTranslation(parsed, effectiveSettings);
 }
 
 async function ensureContentScript(tabId) {
@@ -349,13 +442,30 @@ chrome.commands.onCommand.addListener(async (command) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  const owner = `${sender.tab?.id ?? "extension"}:${sender.frameId ?? 0}`;
+  const requestKey = `${owner}:${message?.requestId || ""}`;
+  if (message?.type === "CANCEL_TRANSLATION") {
+    activeRequests.get(requestKey)?.abort();
+    sendResponse({ ok: true });
+    return false;
+  }
   if (message?.type !== "TRANSLATE_TEXT" && message?.type !== "TRANSLATE_TEST") return false;
   const request = message.type === "TRANSLATE_TEST"
     ? { text: "This is a connection test.", context: "API connection test" }
     : message;
-  translateText(request)
-    .then((translation) => sendResponse({ ok: true, translation }))
-    .catch((error) => sendResponse({ ok: false, code: error.code || "TRANSLATION_FAILED", error: error.message }));
+  const controller = new AbortController();
+  const started = Date.now();
+  let lastProgress = 0;
+  if (message.requestId) activeRequests.set(requestKey, controller);
+  const progress = (translation) => {
+    if (!message.requestId || !sender.tab?.id || controller.signal.aborted || Date.now() - lastProgress < 150) return;
+    lastProgress = Date.now();
+    tabsSendMessage(sender.tab.id, { type: "TRANSLATION_PROGRESS", requestId: message.requestId, translation }).catch(() => {});
+  };
+  translateText(request, controller, progress)
+    .then((translation) => sendResponse({ ok: true, translation, elapsedMs: Date.now() - started }))
+    .catch((error) => sendResponse({ ok: false, code: error.code || "TRANSLATION_FAILED", error: error.message, elapsedMs: Date.now() - started }))
+    .finally(() => { if (activeRequests.get(requestKey) === controller) activeRequests.delete(requestKey); });
   return true;
 });

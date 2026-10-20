@@ -5,9 +5,12 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
 
   (() => {
     const MAX_PAGE_CHARS = 12000;
-    const CHUNK_CHARS = 2600;
+    const CHUNK_CHARS = 1800;
     const MAX_IMMERSIVE_BLOCKS = 80;
-    const IMMERSIVE_BATCH_CHARS = 5000;
+    const IMMERSIVE_BATCH_CHARS = 1800;
+    const IMMERSIVE_BATCH_BLOCKS = 8;
+    const MAX_CONCURRENT_REQUESTS = 2;
+    const MAX_MARKER_FALLBACK_BLOCKS = 8;
     const IMMERSIVE_BLOCK_SELECTOR = "p,li,h1,h2,h3,h4,h5,h6,blockquote,figcaption,td,th,pre,summary,dt,dd,div";
     const IMMERSIVE_NESTED_SELECTOR = `${IMMERSIVE_BLOCK_SELECTOR},ul,ol,table,article,section,nav,main,form`;
     const EXCLUDED_SELECTOR = "#edge-web-translator-host,[data-edge-wt-ignore],[data-edge-wt-immersive-translation],script,style,noscript,template,textarea,input,select,button,[contenteditable]:not([contenteditable='false']),[translate='no'],.notranslate";
@@ -17,8 +20,64 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
     let immersiveRecords = [];
     let immersiveRunId = 0;
     let panelRunId = 0;
+    let requestSequence = 0;
+    let progressText = "";
+    let progressStarted = 0;
+    let progressTimer;
+    const pendingRequests = new Map();
+    const pendingCommands = new Map();
+
+    function stopProgress() {
+      clearInterval(progressTimer);
+      progressTimer = undefined;
+    }
+
+    function cancelRequests() {
+      stopProgress();
+      for (const requestId of pendingRequests.keys()) {
+        try { chrome.runtime.sendMessage({ type: "CANCEL_TRANSLATION", requestId }, () => void chrome.runtime.lastError); }
+        catch { /* The extension may have been reloaded while this page was open. */ }
+      }
+      pendingRequests.clear();
+    }
+
+    function startProgress(text) {
+      stopProgress();
+      progressText = text;
+      progressStarted = Date.now();
+      const render = () => {
+        if (!shadow) return stopProgress();
+        const seconds = Math.floor((Date.now() - progressStarted) / 1000);
+        shadow.querySelector(".status").textContent = `${progressText} 已等待 ${seconds} 秒。`;
+      };
+      render();
+      progressTimer = setInterval(render, 1000);
+    }
+
+    async function mapConcurrent(items, translate, isCurrent) {
+      const output = new Array(items.length);
+      let next = 0;
+      let failure;
+      await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT_REQUESTS, items.length) }, async () => {
+        while (!failure && isCurrent()) {
+          const index = next++;
+          if (index >= items.length) return;
+          try { output[index] = await translate(items[index], index); }
+          catch (error) {
+            if (!failure) {
+              failure = error;
+              if (isCurrent()) cancelRequests();
+            }
+          }
+        }
+      }));
+      if (failure) throw failure;
+      if (!isCurrent()) throw Object.assign(new Error("翻译已取消。"), { code: "CANCELLED" });
+      return output;
+    }
 
     function beginPanelRun() {
+      cancelRequests();
       immersiveRunId += 1;
       return ++panelRunId;
     }
@@ -94,16 +153,28 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
 
     function setStatus(status) {
       const root = ensurePanel();
+      progressText = status;
       root.querySelector(".status").textContent = status;
     }
 
-    function runtimeMessage(message) {
+    function runtimeMessage(message, onProgress) {
+      const requestId = `${Date.now()}-${++requestSequence}`;
+      pendingRequests.set(requestId, onProgress);
       return new Promise((resolve) => {
-        chrome.runtime.sendMessage(message, (response) => {
+        const finish = (response) => {
+          pendingRequests.delete(requestId);
           if (chrome.runtime.lastError) resolve({ ok: false, error: chrome.runtime.lastError.message });
           else resolve(response || { ok: false, error: "扩展没有返回结果。" });
-        });
+        };
+        try { chrome.runtime.sendMessage({ ...message, requestId }, finish); }
+        catch (error) { finish({ ok: false, error: `${error.message}。请刷新网页后重试。` }); }
       });
+    }
+
+    async function requestTranslation(text, targetLanguage, context, onProgress) {
+      const response = await runtimeMessage({ type: "TRANSLATE_TEXT", text, targetLanguage, context }, onProgress);
+      if (!response?.ok) throw Object.assign(new Error(response?.error || "扩展没有返回翻译结果。"), { code: response?.code || "TRANSLATION_FAILED" });
+      return response.translation;
     }
 
     function splitText(text, maxChars) {
@@ -198,6 +269,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
     }
 
     function restoreImmersive() {
+      cancelRequests();
       immersiveRunId += 1;
       panelRunId += 1;
       const nodes = document.querySelectorAll('[data-edge-wt-immersive-translation="1"]');
@@ -219,7 +291,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       records.forEach((record, index) => {
         record.marker = `__EDGE_WT_${index}__`;
         const pieceLength = record.source.length + record.marker.length + 3;
-        if (current.length && length + pieceLength > IMMERSIVE_BATCH_CHARS) {
+        if (current.length && (length + pieceLength > IMMERSIVE_BATCH_CHARS || current.length >= IMMERSIVE_BATCH_BLOCKS)) {
           batches.push(current);
           current = [];
           length = 0;
@@ -272,60 +344,52 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       const batches = createImmersiveBatches(records);
       showPanel({ title: "沉浸式翻译", source: `已找到 ${records.length} 个正文段落。`, status: `正在翻译第 1/${batches.length} 批…`, showRestore: true });
       let translatedCount = 0;
-      for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
-        if (runId !== immersiveRunId) return { ok: false, error: "沉浸式翻译已取消。" };
-        const batch = batches[batchIndex];
-        // Long paragraphs are translated in bounded pieces, then inserted once.
-        if (batch.length === 1 && batch[0].source.length > CHUNK_CHARS) {
-          const parts = splitText(batch[0].source, CHUNK_CHARS);
-          const translated = [];
-          for (let partIndex = 0; partIndex < parts.length; partIndex += 1) {
-            setStatus(`正在翻译第 ${batchIndex + 1}/${batches.length} 批，第 ${partIndex + 1}/${parts.length} 段…`);
-            const single = await runtimeMessage({ type: "TRANSLATE_TEXT", text: parts[partIndex], targetLanguage, context: "immersive web translation; return only the translation" });
-            if (runId !== immersiveRunId) return { ok: false, error: "沉浸式翻译已取消。" };
-            if (!single?.ok) {
-              showPanel({ title: "沉浸式翻译", status: `翻译失败：${single?.error || "未知错误"}`, showRestore: true });
-              return single;
+      let fallbackBlocks = 0;
+      const isCurrent = () => runId === immersiveRunId;
+      startProgress(`正在翻译，已完成 0/${records.length} 个段落…`);
+      try {
+        await mapConcurrent(batches, async (batch) => {
+          let translations;
+          if (batch.length === 1) {
+            const parts = splitText(batch[0].source, CHUNK_CHARS);
+            const translated = [];
+            for (const part of parts) {
+              if (!isCurrent()) return;
+              translated.push(await requestTranslation(part, targetLanguage, "immersive web translation; return only the translation"));
             }
-            translated.push(single.translation);
-          }
-          insertImmersiveTranslation(batch[0], translated.join("\n\n"));
-          translatedCount += 1;
-          continue;
-        }
-        const payload = batch.map((record) => `${record.marker}\n${record.source}`).join("\n\n");
-        setStatus(`正在翻译第 ${batchIndex + 1}/${batches.length} 批…`);
-        const response = await runtimeMessage({
-          type: "TRANSLATE_TEXT",
-          text: payload,
-          targetLanguage,
-          context: "immersive web translation; preserve every __EDGE_WT_N__ marker exactly and return only the marked translations"
-        });
-        if (runId !== immersiveRunId) return { ok: false, error: "沉浸式翻译已取消。" };
-        if (!response?.ok) {
-          showPanel({ title: "沉浸式翻译", source: `已翻译 ${translatedCount}/${records.length} 个段落。`, status: `翻译失败：${response?.error || "未知错误"}`, showRestore: true });
-          return response;
-        }
-        let translations = parseImmersiveBatch(response.translation, batch);
-        if (!translations) {
-          translations = [];
-          for (const record of batch) {
-            if (runId !== immersiveRunId) return { ok: false, error: "沉浸式翻译已取消。" };
-            const single = await runtimeMessage({ type: "TRANSLATE_TEXT", text: record.source, targetLanguage, context: "immersive web translation; return only the translation" });
-            if (runId !== immersiveRunId) return { ok: false, error: "沉浸式翻译已取消。" };
-            if (!single?.ok) {
-              showPanel({ title: "沉浸式翻译", source: `已翻译 ${translatedCount}/${records.length} 个段落。`, status: `翻译失败：${single?.error || "未知错误"}`, showRestore: true });
-              return single;
+            translations = [translated.join("\n\n")];
+          } else {
+            const payload = batch.map((record) => `${record.marker}\n${record.source}`).join("\n\n");
+            const response = await requestTranslation(payload, targetLanguage, "immersive web translation; preserve every __EDGE_WT_N__ marker exactly and return only the marked translations");
+            if (!isCurrent()) return;
+            translations = parseImmersiveBatch(response, batch);
+            if (!translations) {
+              fallbackBlocks += batch.length;
+              if (fallbackBlocks > MAX_MARKER_FALLBACK_BLOCKS) throw Object.assign(new Error("模型多次未保留段落标记，已停止额外重试。请更换模型或使用网页译文面板。"), { code: "MARKER_MISMATCH" });
+              translations = [];
+              for (const record of batch) {
+                if (!isCurrent()) return;
+                const translation = await requestTranslation(record.source, targetLanguage, "immersive web translation; return only the translation");
+                translations.push(translation);
+                if (isCurrent()) {
+                  insertImmersiveTranslation(record, translation);
+                  translatedCount += 1;
+                  setStatus(`正在翻译，已完成 ${translatedCount}/${records.length} 个段落…`);
+                }
+              }
+              return;
             }
-            translations.push(single.translation);
           }
-        }
-        if (!translations) {
-          showPanel({ title: "沉浸式翻译", source: `已翻译 ${translatedCount}/${records.length} 个段落。`, status: "翻译失败：接口没有保留段落标记。", showRestore: true });
-          return { ok: false, error: "接口没有保留段落标记。" };
-        }
-        translations.forEach((translation, index) => insertImmersiveTranslation(batch[index], translation));
-        translatedCount += batch.length;
+          if (!isCurrent()) return;
+          translations.forEach((translation, index) => insertImmersiveTranslation(batch[index], translation));
+          translatedCount += batch.length;
+          setStatus(`正在翻译，已完成 ${translatedCount}/${records.length} 个段落…`);
+        }, isCurrent);
+      } catch (error) {
+        if (isCurrent()) showPanel({ title: "沉浸式翻译", source: `已翻译 ${translatedCount}/${records.length} 个段落。`, status: `翻译失败：${error.message}`, showRestore: true });
+        return { ok: false, code: error.code, error: error.message };
+      } finally {
+        if (isCurrent()) stopProgress();
       }
       showPanel({ title: "沉浸式翻译", source: `已在原网页位置显示 ${translatedCount} 个译文段落。`, status: "保留原文的沉浸式译文已完成。", showRestore: true });
       return { ok: true, translatedCount };
@@ -339,8 +403,12 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         return { ok: false, error: "请先选择文本。" };
       }
       showPanel({ title: "翻译选中文本", source, status: "正在请求翻译 API…" });
-      const result = await runtimeMessage({ type: "TRANSLATE_TEXT", text: source, targetLanguage, context: "selected text" });
+      startProgress("正在请求翻译 API…");
+      const result = await runtimeMessage({ type: "TRANSLATE_TEXT", text: source, targetLanguage, context: "selected text" }, (translation) => {
+        if (runId === panelRunId && shadow) shadow.querySelector(".translation").textContent = translation;
+      });
       if (runId !== panelRunId) return { ok: false, error: "翻译已取消。" };
+      stopProgress();
       if (!result?.ok) {
         showPanel({ title: "翻译选中文本", source, status: `翻译失败：${result?.error || "未知错误"}` });
         return result;
@@ -361,22 +429,37 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       const chunks = splitText(source, CHUNK_CHARS);
       showPanel({ title: "翻译当前网页", source, status: `${notice}正在翻译第 1/${chunks.length} 段…` });
       const translated = [];
-      for (let index = 0; index < chunks.length; index += 1) {
-        if (runId !== panelRunId) return { ok: false, error: "翻译已取消。" };
-        setStatus(`${notice}正在翻译第 ${index + 1}/${chunks.length} 段…`);
-        const result = await runtimeMessage({ type: "TRANSLATE_TEXT", text: chunks[index], targetLanguage, context: "web page" });
-        if (runId !== panelRunId) return { ok: false, error: "翻译已取消。" };
-        if (!result?.ok) {
-          showPanel({ title: "翻译当前网页", source, translation: translated.join("\n\n"), status: `翻译失败：${result?.error || "未知错误"}` });
-          return result;
-        }
-        translated.push(result.translation);
+      const isCurrent = () => runId === panelRunId;
+      let completed = 0;
+      startProgress(`${notice}正在翻译，已完成 0/${chunks.length} 段…`);
+      const render = () => { if (isCurrent() && shadow) shadow.querySelector(".translation").textContent = translated.filter(Boolean).join("\n\n"); };
+      try {
+        await mapConcurrent(chunks, async (chunk, index) => {
+          const translation = await requestTranslation(chunk, targetLanguage, "web page", (partial) => {
+            if (isCurrent()) { translated[index] = partial; render(); }
+          });
+          if (!isCurrent()) return;
+          translated[index] = translation;
+          completed += 1;
+          render();
+          setStatus(`${notice}正在翻译，已完成 ${completed}/${chunks.length} 段…`);
+        }, isCurrent);
+      } catch (error) {
+        if (isCurrent()) showPanel({ title: "翻译当前网页", source, translation: translated.filter(Boolean).join("\n\n"), status: `翻译失败：${error.message}` });
+        return { ok: false, code: error.code, error: error.message };
+      } finally {
+        if (isCurrent()) stopProgress();
       }
       showPanel({ title: "翻译当前网页", source, translation: translated.join("\n\n"), status: notice });
       return { ok: true, translation: translated.join("\n\n") };
     }
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      if (message?.type === "TRANSLATION_PROGRESS") {
+        pendingRequests.get(message.requestId)?.(message.translation);
+        sendResponse({ ok: true });
+        return false;
+      }
       if (message?.type === "PING") {
         sendResponse({ ok: true });
         return false;
@@ -385,16 +468,16 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         sendResponse({ ok: true, selection: selectionText() });
         return false;
       }
-      if (message?.type === "TRANSLATE_SELECTION") {
-        translateSelection(message.targetLanguage, message.selectionText).then(sendResponse);
-        return true;
-      }
-      if (message?.type === "TRANSLATE_PAGE") {
-        translatePage(message.targetLanguage).then(sendResponse);
-        return true;
-      }
-      if (message?.type === "TRANSLATE_IMMERSIVE") {
-        translateImmersive(message.targetLanguage).then(sendResponse);
+      if (["TRANSLATE_SELECTION", "TRANSLATE_PAGE", "TRANSLATE_IMMERSIVE"].includes(message?.type)) {
+        const key = JSON.stringify([message.type, message.targetLanguage, message.selectionText || selectionText()]);
+        if (!pendingCommands.has(key)) {
+          const task = (message.type === "TRANSLATE_SELECTION" ? translateSelection(message.targetLanguage, message.selectionText)
+            : message.type === "TRANSLATE_PAGE" ? translatePage(message.targetLanguage) : translateImmersive(message.targetLanguage))
+            .catch((error) => ({ ok: false, code: error.code || "TRANSLATION_FAILED", error: error.message }))
+            .finally(() => pendingCommands.delete(key));
+          pendingCommands.set(key, task);
+        }
+        pendingCommands.get(key).then(sendResponse);
         return true;
       }
       if (message?.type === "RESTORE_IMMERSIVE") {

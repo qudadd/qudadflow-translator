@@ -14,7 +14,7 @@
         <h2>API 连接</h2>
         <label for="apiStyle">接口类型</label>
         <select id="apiStyle">
-          <option value="openai-compatible">OpenAI 兼容 Chat Completions（推荐）</option>
+          <option value="openai-compatible">OpenAI 兼容（Chat Completions / Responses）</option>
           <option value="google-translate-v2">Google Cloud Translation v2（机器翻译）</option>
           <option value="microsoft-translator">Microsoft Translator（Azure 机器翻译）</option>
           <option value="deepl">DeepL API（机器翻译）</option>
@@ -31,6 +31,7 @@
         <p class="hint" id="apiKeyHint">扩展只会按接口类型把密钥发送到指定端点，不会上传到本项目服务器。</p>
 
         <div id="modelWrap"><label for="model">模型</label><input id="model" type="text" placeholder="gpt-4o-mini" autocomplete="off"></div>
+        <div id="streamWrap"><label><input id="streamOpenAi" type="checkbox" checked> 流式接收译文（推荐）</label><p class="hint">尽早显示返回的文字；如果网关不支持 stream，可取消勾选。</p></div>
 
         <div id="regionWrap" class="conditional-field"><label for="providerRegion">Azure 区域（可选）</label><input id="providerRegion" type="text" placeholder="eastus" autocomplete="off"><p class="hint">也可以在自定义请求头中填写 <code>Ocp-Apim-Subscription-Region</code>。</p></div>
 
@@ -47,6 +48,10 @@
         </div>
         <label for="temperature">Temperature（0–1，可选）</label>
         <input id="temperature" type="number" min="0" max="1" step="0.1">
+        <p class="hint">留空时由服务商决定；模型拒绝温度参数时会自动去除并重试一次。</p>
+        <label for="requestTimeoutSeconds">单次请求超时（秒）</label>
+        <input id="requestTimeoutSeconds" type="number" min="10" max="180" step="1" value="45">
+        <p class="hint">默认 45 秒。先用“测试连接”检查短文本；增加超时不会让模型变快。</p>
       </section>
 
       <section class="card custom-only" id="customSection">

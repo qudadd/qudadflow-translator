@@ -2,6 +2,8 @@
 
 ## 当前准备状态（2026 年 10 月 20 日）
 
+0.4.3 已作为独立试用更新准备，增加 Chat Completions / Responses 流式接收、逐批显示、超时设置与请求取消，通过 68 项本地模拟 API 与 Edge 集成检查。它尚未提交商城，不会替换下述审核中的 0.4.2；真实 API 配置和连通情况仍需试用确认。
+
 0.4.2 运行包已通过 Partner Center 包校验并正式提交至 Microsoft Edge Add-ons 审核。Packages、Availability、Properties、Privacy 和 Store listings 五项均已完成；英文和简体中文条目均已保存说明、统一英文名称、图标和三张实际扩展截图。2026 年 10 月 20 日 19:02（北京时间）已核实当前状态为 **In review**。后台提示预计在 7 个工作日内反馈，尚未在商店发布。
 
 GitHub 源码与网站已公开；中文指南位于 https://qudadd.github.io/qudadflow-translator/zh-CN.html 。0.4.2 已通过 44 项本地模拟 API 与 Edge 集成检查，并已在用户现有 Edge 配置中安装并启用。真实服务商账号、额度、网络可达性、翻译质量及实体键盘快捷键仍需试用验证。审核说明已提供无需付费密钥的本地模拟 API 操作步骤，详见 `REVIEWER_GUIDE.md`；该模拟接口仅用于功能演示。

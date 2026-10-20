@@ -1,6 +1,6 @@
 # QudadFlow Translator（Microsoft Edge 扩展）
 
-这是一个纯原生 Manifest V3 扩展，可在 Microsoft Edge 中侧载，也可整理后上传到 Microsoft Edge 加载项商店。它可以直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions 和自定义 JSON 接口。
+这是一个纯原生 Manifest V3 扩展，可在 Microsoft Edge 中侧载。它可以直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.4.2 已提交商店审核；0.4.3 为独立试用更新，尚未替换审核中的提交。
 
 ## 当前功能
 
@@ -10,7 +10,8 @@
 - 沉浸式翻译也可通过右键菜单或 `Alt+Shift+I` 快捷键触发。
 - 直接机器翻译：Google Cloud Translation v2、DeepL API、Microsoft Translator。
 - 配置 API 端点、API Key、模型、源/目标语言、温度、自定义请求头。
-- OpenAI 兼容模式和自定义 JSON 模式。
+- OpenAI 兼容模式支持 Chat Completions、Responses 和流式接收；保留自定义 JSON 模式。
+- 显示等待时长和逐批完成进度；关闭面板、恢复原文或发起不同任务时取消旧请求。
 - API 域名使用可选权限：保存端点时只请求该端点所在的域名。
 - 不加载远程脚本，不使用广告或遥测。
 
@@ -22,7 +23,9 @@
 4. 保存设置并允许 API 域名权限；点击“测试连接”。
 5. 打开普通网页，选中文本后点击扩展图标，或使用右键菜单翻译。
 
-扩展无法注入 `edge://` 页面、Edge 加载项商店页面或其他浏览器内部页面，这是浏览器平台限制。
+扩展无法注入 `edge://` 页面、内置 PDF 阅读器、Edge 加载项商店页面或其他浏览器内部页面。当前版本尚未实现专用 PDF 翻译。
+
+已有侧载安装更新时，在原目录替换运行文件后，到 `edge://extensions` 点击扩展的“重新加载”，再刷新需要翻译的网页。浏览器中的 API 配置会保留。
 
 ## API 配置示例
 
@@ -64,6 +67,10 @@ Azure 区域：例如 eastus（多区域资源可能需要）
 
 DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写其 OpenAI 兼容端点和模型名。具体地址、模型名和鉴权方式以服务商文档为准。
 
+如果服务商要求 Responses 协议，请填写完整的 `https://你的服务商域名/v1/responses`。只填写域名或 `/v1` 时，扩展默认使用 Chat Completions，不会自动切换协议。
+
+0.4.3 默认启用流式接收；网关不支持时可以在设置中关闭。Temperature 可留空；仅在接口明确拒绝此参数时去除后重试一次。单次请求超时默认 45 秒，可设置为 10–180 秒。增加超时不会提高模型速度，建议先用“测试连接”检查短文本，再翻译长网页。网页请求最多同时执行两个，已有译文会逐批显示；模型反复破坏段落标记时会停止额外重试，避免大量逐段调用。
+
 自定义 JSON 示例：
 
 ```json
@@ -85,7 +92,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 .\package.ps1
 ```
 
-打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.4.2.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。
+打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.4.3.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。
 
 ## 项目与上架信息
 
@@ -109,6 +116,6 @@ npm install --no-save playwright
 node tools/functional-check.cjs functional-results.json
 ```
 
-测试使用本地模拟 API、虚构 Key 和独立浏览器配置。浏览器集成测试只给测试副本加入 localhost 权限，正式 Manifest 保留可选主机权限。真实服务商的账号、额度、网络可达性和翻译质量仍需使用自己的 Key 验证。
+0.4.3 已通过 68 项本地模拟 API 与 Edge 集成检查，包含流式解析、逐步显示、取消请求、协议错误和并发上限。测试使用虚构 Key 和独立浏览器配置，只给测试副本加入 localhost 权限；正式 Manifest 保留可选主机权限。真实服务商的账号、额度、网络可达性和翻译质量仍需使用自己的 Key 验证。
 
 网页面板每次最多翻译 12000 个字符并显示截断提示。沉浸式模式每次最多处理 80 个正文块，长段落自动拆分。编辑区域、不可见内容和 translate=no 内容不会被自动提取。

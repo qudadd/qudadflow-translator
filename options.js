@@ -9,6 +9,8 @@ const DEFAULTS = {
   sourceLanguage: "auto",
   targetLanguage: "zh-CN",
   temperature: 0.2,
+  requestTimeoutSeconds: 45,
+  streamOpenAi: true,
   customHeaders: "{}",
   requestTemplate: `{
   "model": {{model}},
@@ -22,7 +24,7 @@ const DEFAULTS = {
 const $ = (id) => document.getElementById(id);
 
 const PROVIDER_HINTS = {
-  "openai-compatible": "可填写 OpenAI、DeepSeek、智谱、通义、Moonshot、硅基流动、Ollama 等兼容接口的完整地址。",
+  "openai-compatible": "支持 Chat Completions 和 Responses。请使用服务商实际提供的模型名称；翻译长网页时优先选择响应较快的模型。",
   "google-translate-v2": "机器翻译直连：填写 Google Cloud Translation v2 地址，API Key 会作为 key 参数发送。默认地址：https://translation.googleapis.com/language/translate/v2。",
   "microsoft-translator": "机器翻译直连：填写 Azure Translator 地址，默认地址：https://api.cognitive.microsofttranslator.com/translate；API Key 放入 Ocp-Apim-Subscription-Key。",
   deepl: "机器翻译直连：填写 DeepL 地址（免费版通常是 https://api-free.deepl.com/v2/translate，专业版使用 api.deepl.com）。",
@@ -30,7 +32,7 @@ const PROVIDER_HINTS = {
 };
 
 const ENDPOINT_HINTS = {
-  "openai-compatible": "OpenAI 兼容接口可填完整地址，或填到 /v1；扩展会补全 /chat/completions。",
+  "openai-compatible": "可填 /v1/chat/completions 或 /v1/responses 完整地址；只填域名或 /v1 时使用 Chat Completions。",
   "google-translate-v2": "请填写 Google Cloud Translation v2 的 POST 地址；扩展会把 API Key 作为 key 参数加入请求。",
   "microsoft-translator": "请填写 Azure Translator 的 POST 地址；扩展会自动加入 api-version=3.0 和目标语言参数。",
   deepl: "请填写 DeepL 的 POST 地址；免费版通常是 api-free.deepl.com，专业版通常是 api.deepl.com。",
@@ -48,6 +50,7 @@ const PROVIDER_ENDPOINTS = {
 const CONNECTION_FIELDS = ["endpoint", "apiKey", "model", "providerRegion", "customHeaders", "requestTemplate", "responsePath"];
 const providerDrafts = new Map();
 let renderedStyle;
+let testing = false;
 
 function setStatus(message, error = false) {
   $("status").textContent = message || "";
@@ -111,7 +114,9 @@ function formValues() {
     providerRegion: $("providerRegion").value.trim(),
     sourceLanguage: $("sourceLanguage").value,
     targetLanguage: $("targetLanguage").value,
-    temperature: Number($("temperature").value),
+    temperature: $("temperature").value === "" ? "" : Number($("temperature").value),
+    requestTimeoutSeconds: Number($("requestTimeoutSeconds").value),
+    streamOpenAi: $("streamOpenAi").checked,
     customHeaders: $("customHeaders").value.trim() || "{}",
     requestTemplate: $("requestTemplate").value.trim(),
     responsePath: $("responsePath").value.trim()
@@ -131,6 +136,7 @@ function validate(values) {
   }
   if (!values.model && values.apiStyle === "openai-compatible") throw new Error("请填写模型名称。");
   if (!values.apiKey && values.apiStyle !== "custom-json") throw new Error("请填写 API Key。");
+  if (!Number.isFinite(values.requestTimeoutSeconds) || values.requestTimeoutSeconds < 10 || values.requestTimeoutSeconds > 180) throw new Error("请求超时应为 10–180 秒。");
   let headers;
   try { headers = JSON.parse(values.customHeaders); } catch { throw new Error("自定义请求头必须是有效 JSON。"); }
   if (!headers || typeof headers !== "object" || Array.isArray(headers)) throw new Error("自定义请求头必须是 JSON 对象。");
@@ -145,6 +151,7 @@ function renderApiStyle() {
   $("customSection").classList.toggle("visible", style === "custom-json");
   $("modelWrap").classList.toggle("field-hidden", DIRECT_STYLES.has(style));
   $("regionWrap").classList.toggle("visible", style === "microsoft-translator");
+  $("streamWrap").classList.toggle("field-hidden", style !== "openai-compatible");
   $("providerHint").textContent = PROVIDER_HINTS[style] || PROVIDER_HINTS["openai-compatible"];
   $("endpointHint").textContent = ENDPOINT_HINTS[style] || ENDPOINT_HINTS["openai-compatible"];
   $("apiKeyHint").textContent = style === "google-translate-v2"
@@ -172,7 +179,8 @@ async function load() {
   const values = await chrome.storage.local.get(DEFAULTS);
   for (const [key, value] of Object.entries(values)) {
     const element = $(key);
-    if (element) element.value = value;
+    if (element?.type === "checkbox") element.checked = value;
+    else if (element) element.value = value;
   }
   renderedStyle = values.apiStyle;
   renderApiStyle();
@@ -181,6 +189,7 @@ async function load() {
 
 $("settingsForm").addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (testing) return;
   try {
     const values = formValues();
     validate(values);
@@ -202,19 +211,32 @@ $("toggleKey").addEventListener("click", () => {
   $("toggleKey").textContent = input.type === "password" ? "显示" : "隐藏";
 });
 $("testApi").addEventListener("click", async () => {
+  if (testing) return;
+  testing = true;
+  const controls = [...document.querySelectorAll("input,select,textarea,button")];
+  const wasDisabled = controls.map((element) => element.disabled);
+  let timer;
   try {
     const values = formValues();
     validate(values);
     const permissionPromise = askForEndpointPermission();
+    controls.forEach((element) => { element.disabled = true; });
     await chrome.storage.local.set(values);
     const granted = await permissionPromise;
     if (!granted) return;
-    setStatus("正在测试 API…");
+    const started = Date.now();
+    const render = () => setStatus(`正在测试 API…已等待 ${Math.floor((Date.now() - started) / 1000)} 秒（超时 ${values.requestTimeoutSeconds} 秒）。`);
+    render();
+    timer = setInterval(render, 1000);
     const response = await chrome.runtime.sendMessage({ type: "TRANSLATE_TEST" });
-    if (!response?.ok) throw new Error(response?.error || "API 测试失败。");
-    setStatus(`连接成功：${response.translation}`);
+    if (!response?.ok) throw new Error(`${response?.code ? `[${response.code}] ` : ""}${response?.error || "API 测试失败。"}`);
+    setStatus(`连接成功（${((response.elapsedMs || Date.now() - started) / 1000).toFixed(1)} 秒）：${response.translation}`);
   } catch (error) {
     setStatus(error.message, true);
+  } finally {
+    clearInterval(timer);
+    controls.forEach((element, index) => { element.disabled = wasDisabled[index]; });
+    testing = false;
   }
 });
 
