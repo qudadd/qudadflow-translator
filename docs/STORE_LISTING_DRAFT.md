@@ -5,7 +5,7 @@
 - Name: QudadFlow Translator
 - Version: 0.4.2
 - Category: Productivity
-- Listing languages: English (en-US) and Simplified Chinese (zh-CN)
+- Listing languages: English (en) and Simplified Chinese (zh-CN)
 - Support email: lcf1249288484@outlook.com
 - Privacy policy URL: https://qudadd.github.io/qudadflow-translator/privacy.html
 - Website and support URL: https://qudadd.github.io/qudadflow-translator/

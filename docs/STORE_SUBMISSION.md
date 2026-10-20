@@ -2,9 +2,9 @@
 
 ## 当前准备状态（2026 年 10 月 20 日）
 
-0.4.2 运行包已上传至现有 Partner Center 扩展草稿并通过平台包校验。Packages、Availability、Properties、Privacy 和 Store listings 五项均显示完成；英文和简体中文条目均已保存说明、统一英文名称、图标和三张实际扩展截图。当前状态为 In draft，尚未提交审核或在商店发布。
+0.4.2 运行包已通过 Partner Center 包校验并正式提交至 Microsoft Edge Add-ons 审核。Packages、Availability、Properties、Privacy 和 Store listings 五项均已完成；英文和简体中文条目均已保存说明、统一英文名称、图标和三张实际扩展截图。2026 年 10 月 20 日 19:02（北京时间）已核实当前状态为 **In review**。后台提示预计在 7 个工作日内反馈，尚未在商店发布。
 
-GitHub 源码与网站已公开；中文指南位于 https://qudadd.github.io/qudadflow-translator/zh-CN.html 。0.4.2 已通过 44 项本地模拟 API 与 Edge 集成检查。真实服务商账号、额度、网络可达性、翻译质量及实体键盘快捷键仍需试用验证。
+GitHub 源码与网站已公开；中文指南位于 https://qudadd.github.io/qudadflow-translator/zh-CN.html 。0.4.2 已通过 44 项本地模拟 API 与 Edge 集成检查，并已在用户现有 Edge 配置中安装并启用。真实服务商账号、额度、网络可达性、翻译质量及实体键盘快捷键仍需试用验证。审核说明已提供无需付费密钥的本地模拟 API 操作步骤，详见 `REVIEWER_GUIDE.md`；该模拟接口仅用于功能演示。
 
 ## 已在骨架中落实
 
@@ -26,14 +26,15 @@ Microsoft 的发布文档列出的主流程是：准备可运行原型、创建�
 
 1. [x] 已使用登录的 Microsoft Edge Add-ons 开发者账号建立扩展草稿。
 2. [x] 运行 `package.ps1`，确认 ZIP 根目录直接包含 `manifest.json`，没有多余的外层目录。
-3. [ ] 在 Edge `edge://extensions` 侧载 ZIP 解压内容，验证弹出窗口、设置页、右键菜单、两个快捷键、机器翻译、沉浸式翻译、恢复原文和失败提示。
+3. [x] 已在用户的 Edge `edge://extensions` 侧载并启用 0.4.2。本地模拟 API 已验证主要功能及快捷键注册；真实服务与实体快捷键触发仍需试用。
 4. [x] 提供公开 HTTPS 隐私政策 URL：https://qudadd.github.io/qudadflow-translator/privacy.html ，已包含用户确认的联系邮箱。
 5. [x] 在 Partner Center 的隐私部分解释：页面文本只在用户操作后发送到用户自己配置的 API；Key 只存于本地；扩展无广告、分析和遥测。
 6. [x] 对 `activeTab`、`scripting`、`storage`、`contextMenus` 和可选 API 域名权限逐项写出功能用途。特别说明可选域名权限仅用于调用用户指定的翻译 API。
 7. [x] 在远程代码声明中选择不使用远程代码；API 返回内容只作为数据处理，不作为脚本执行。
 8. [x] 已准备实际扩展截图、图标、英文描述、支持邮箱及分类/语言资料。翻译截图标明本地模拟 API；不代表已测试真实服务商账号。
 9. [x] 检查商店 listing 不包含无法兑现的“官方翻译”“保证准确”等表述；注明第三方 API 费用和隐私政策由服务商决定。
-10. [ ] 提交后根据审核反馈更新版本号、变更说明和隐私政策；不要把 API Key、测试账号或真实用户内容放进 ZIP。
+10. [x] 已提供审核测试说明并提交官方审核，当前为 In review。
+11. [ ] 收到审核反馈后按需更新版本号、变更说明和隐私政策；不要把 API Key、测试账号或真实用户内容放进 ZIP。
 
 ## 具体上传步骤
 
