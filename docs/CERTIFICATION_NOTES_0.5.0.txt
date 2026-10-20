@@ -1,0 +1,9 @@
+No QudadFlow account is required. To test without provider credentials, open Settings and click "启用 MyMemory 基础试用", approve access to api.mymemory.translated.net, then test a short English sentence translated into Simplified Chinese. This public service has an anonymous quota and can be unavailable; no shared paid key is embedded.
+
+For deterministic offline review, use the optional localhost fixture described in https://github.com/qudadd/qudadflow-translator/blob/main/docs/REVIEWER_GUIDE.md . The fixture is excluded from the runtime and is explicitly a simulation.
+
+Test documents through popup "PDF / 文档左右对照". A local TXT file with two English paragraphs is sufficient; a text-based PDF exercises original-page rendering. Verify current-page/all translation, stop/resume, page navigation, and bilingual TXT export. Opening a file alone sends no translation request. Scanned-image OCR and layout-preserving document export are not included.
+
+Optional host access is requested separately for the selected API, sites with selection-button opt-in, and remote document source hosts. No required host grants or remote code are added. Local WASM is used by bundled PDF.js codecs. Saved profile keys stay local and are never included in source/runtime packages.
+
+Settings can save, edit, duplicate and delete up to 20 named API profiles; popup selection switches the active profile. This update includes both English and Chinese store descriptions, with a Simplified Chinese extension UI.

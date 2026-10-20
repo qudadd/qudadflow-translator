@@ -2,6 +2,8 @@
 
 Date: October 21, 2026 (Asia/Shanghai). Browser: Microsoft Edge 155.0.4283.62.
 
+The 0.5.0 runtime package passed Partner Center package validation and was submitted to Microsoft Edge Add-ons on October 21, 2026 (Asia/Shanghai). The overview confirmed **Version 0.5.0 — In review**, with English and Chinese (China) listings. Submission evidence and the exact package SHA256 are in [STORE_SUBMISSION_0.5.0.md](STORE_SUBMISSION_0.5.0.md). This confirms submission, not store approval.
+
 Version 0.5.0 passed **134 checks, 0 failures**: 87 webpage/provider checks, 34 document checks, and 13 saved-configuration/basic-provider checks. Machine-readable reports: `validation-v0.5.0.json` and `validation-documents-v0.5.0.json`. The tests use generated documents, local HTTP fixtures, synthetic credentials, and fresh isolated browser profiles. They do not access the user's extension settings or call a live provider.
 
 Saved-configuration checks cover migration of an existing connection, named copies, reload/edit/apply, metadata without credentials, stale-tab conflict rejection, popup switching, trial activation without destroying saved keys, duplicate prevention, and deletion of an active configuration. MyMemory tests verify single-paragraph requests below 500 UTF-8 bytes, local marker preservation, absence of key/custom headers, entity decoding, source-language and quota errors, cancellation, and configuration changes during page translation. Report: `validation-configuration-v0.5.0.json`.

@@ -2,6 +2,8 @@
 
 Name in both languages: **QudadFlow Translator**
 
+Submitted October 21, 2026 (Asia/Shanghai). Partner Center confirmed **In review** for version 0.5.0. See [submission evidence](STORE_SUBMISSION_0.5.0.md). The exact certification text used is retained in [CERTIFICATION_NOTES_0.5.0.txt](CERTIFICATION_NOTES_0.5.0.txt).
+
 ## English description
 
 Read webpages and documents in two languages with QudadFlow Translator for Microsoft Edge.

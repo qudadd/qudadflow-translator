@@ -13,4 +13,4 @@ The runtime bundles PDF.js 6.4.299 and fflate 0.8.3, along with their licenses. 
 
 Validation uses isolated Edge 155, synthetic credentials, generated documents, and local HTTP fixtures. A separate live MyMemory check sent only the fixed public sentence “Hello world. This is a translation test.” and received Chinese output in about 1.9 seconds; this does not establish sustained availability, quota, quality, or long-document performance. User-configured paid/private API credentials remain untested.
 
-The archived 0.4.2 ZIP is retained for rollback/audit. Store publication is subject to Microsoft's review; uploading an update does not mean it is approved.
+Version 0.5.0 was submitted to Edge Add-ons on October 21, 2026 (Asia/Shanghai); Partner Center confirmed **In review**. The earlier 0.4.2 pending submission was cancelled so this update could be submitted. Its archived ZIP is retained for rollback/audit. Store approval and publication remain pending. See [submission evidence](STORE_SUBMISSION_0.5.0.md).

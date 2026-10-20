@@ -84,4 +84,4 @@ Version 0.5.0 passed 134 checks on Edge 155.0.4283.62: 87 webpage/provider regre
 
 ## Publishing
 
-Version 0.4.2 was submitted to Edge Add-ons and showed **In review** on October 20, 2026. Version 0.5.0 is a separate development update; it has not replaced that submission. The repository and website do not imply store approval. English and Simplified Chinese metadata keep the same QudadFlow Translator name. The existing 0.4.2 submission materials are in `docs/STORE_LISTING_DRAFT.md`, `docs/STORE_LISTING.zh-CN.md`, and `docs/STORE_SUBMISSION.md`; they do not advertise the new document reader as store-approved.
+Version 0.5.0 was submitted to Edge Add-ons and showed **In review** on October 21, 2026 (Asia/Shanghai). It replaces the previous 0.4.2 pending submission. English and Simplified Chinese metadata keep the same QudadFlow Translator name. Submission is confirmed, but Microsoft has not yet approved or published this version. See the [submission record](docs/STORE_SUBMISSION_0.5.0.md), [current listing and certification text](docs/STORE_UPDATE_0.5.0.md), and [reviewer guide](docs/REVIEWER_GUIDE.md).

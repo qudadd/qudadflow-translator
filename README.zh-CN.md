@@ -1,6 +1,6 @@
 # QudadFlow Translator（Microsoft Edge 扩展）
 
-这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，可在 Microsoft Edge 中侧载。它直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.5.0 新增 PDF、Word DOCX、TXT 和 Markdown 左右对照阅读。0.4.2 已提交商店审核；0.5.0 为独立试用更新，尚未替换审核中的提交。
+这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，可在 Microsoft Edge 中侧载。它直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.5.0 新增 PDF、Word DOCX、TXT 和 Markdown 左右对照阅读、API 配置方案保存及 MyMemory 免 Key 基础试用。0.5.0 已于 2026 年 10 月 21 日（北京时间）替换旧版待审提交，Partner Center 确认状态为 **In review**；尚未审核通过或在商店正式发布。见[提交记录](docs/STORE_SUBMISSION_0.5.0.md)。
 
 ## 当前功能
 

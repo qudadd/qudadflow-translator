@@ -49,7 +49,7 @@
         <tr><td>自定义 JSON</td><td>服务商指定的 HTTPS 地址</td><td>请求模板、自定义请求头和响应字段路径</td></tr>
       </tbody></table></div>
       <p>自定义模板用 <code>{{text}}</code>、<code>{{model}}</code>、<code>{{sourceLanguage}}</code>、<code>{{targetLanguage}}</code> 作为完整的 JSON 值，扩展负责转义；响应路径示例为 <code>data.translation</code>。完整示例见 <a href="https://github.com/qudadd/qudadflow-translator/blob/main/README.zh-CN.md">中文 README ↗</a>。</p>
-      <p>0.4.4 试用版支持段落内流式显示、视区优先和五分钟内的成功译文复用。划词请求优先获得下一个空闲请求位置；页面最多两个并发请求，关闭划词浮窗不会中断沉浸式翻译。API 测试绕过缓存并显示耗时与错误；默认超时 45 秒，可设为 10–180 秒。网关不支持流式时可关闭；Temperature 可留空。更新已有侧载版本后，请重新加载扩展并刷新网页。</p>
+      <p>当前版本支持段落内流式显示、视区优先和五分钟内的成功译文复用。划词请求优先获得下一个空闲请求位置；页面最多两个并发请求，关闭划词浮窗不会中断沉浸式翻译。API 测试绕过缓存并显示耗时与错误；默认超时 45 秒，可设为 10–180 秒。网关不支持流式时可关闭；Temperature 可留空。更新已有侧载版本后，请重新加载扩展并刷新网页。</p>
       <h2>配置方案与免 Key 基础试用</h2>
       <p>设置页可保存最多 20 个具名方案，包含接口、端点、Key、模型及语言偏好。选中后可编辑并保存，或另存为新方案；弹窗可快速切换。首次使用会先保留原有连接，所有配置和密钥仅存在此浏览器本地。</p>
       <p>点击“启用 MyMemory 基础试用”并允许其 API 域名，可免 Key 体验短文翻译。默认英译简中，其他源语言需手动选择。匿名额度通常为每天 5000 字符，服务商可能长期保留提交文字，请使用非私密样本；不承诺完全不限量。长文建议使用自己的 API 或自托管兼容服务。<a href="https://mymemory.translated.net/terms-and-conditions">MyMemory 条款与隐私</a> · <a href="https://mymemory.translated.net/doc/usagelimits.php">额度说明</a></p>
@@ -63,7 +63,7 @@
       <p>0.5.0 已通过 134 项检查：87 项网页/接口回归、34 项文档检查和 13 项配置方案/基础试用接口检查，使用生成文档、本地模拟 API 与独立 Edge 配置。真实 Google、DeepL、Microsoft 等账号的有效性、额度、网络可达性、速度和翻译质量仍需使用自己的 Key 验证。</p>
     </section>
     <section class="support"><div><p class="eyebrow">支持与反馈</p><h2>配置遇到问题？</h2><p>请描述接口类型和错误提示，勿在反馈中发送 API Key。</p></div><a href="mailto:lcf1249288484@outlook.com">lcf1249288484@outlook.com ↗</a></section>
-    <p class="disclosure">QudadFlow Translator 为独立扩展，与所列服务商无隶属关系。扩展本身不附带翻译服务订阅，第三方账号、费用和条款由对应服务商决定。0.4.2 已提交 Edge 商店审核，2026 年 10 月 20 日确认状态为 In review；0.5.0 为单独的开发更新，未替换该提交。</p>
+    <p class="disclosure">QudadFlow Translator 为独立扩展，与所列服务商无隶属关系。扩展本身不附带翻译服务订阅，第三方账号、费用和条款由对应服务商决定。0.5.0 已于 2026 年 10 月 21 日（北京时间）替换旧版待审提交，Partner Center 确认状态为 In review；尚未审核通过或在商店正式发布。<a href="https://github.com/qudadd/qudadflow-translator/blob/main/docs/STORE_SUBMISSION_0.5.0.md">查看提交记录 ↗</a></p>
   </main>
   <footer class="wrap"><span>© 2026 QudadFlow Translator</span><a href="privacy.zh-CN.html">隐私政策</a><a href="./" lang="en">English</a><a href="https://github.com/qudadd/qudadflow-translator">源代码</a></footer>
 </body>
