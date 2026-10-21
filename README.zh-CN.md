@@ -1,6 +1,6 @@
 # QudadFlow Translator（Microsoft Edge 扩展）
 
-这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，可在 Microsoft Edge 中侧载。它直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.6.0 开发预览版新增文档原位替换和底部 AI 图文工作流。传统接口与 AI 均可提供基础沉浸式翻译；支持图片输入的 AI 额外翻译图中文字、解释图表。0.6.0 尚未提交商店。0.5.0 已于 2026 年 10 月 21 日（北京时间）替换旧版待审提交，Partner Center 确认状态为 **In review**；尚未审核通过或在商店正式发布。见[提交记录](docs/STORE_SUBMISSION_0.5.0.md)。
+这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，可在 Microsoft Edge 中侧载。它直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.7.0 提供文档原位翻译、网页图表提取、论文分析、自定义 Skill、可选跨页记忆及 Python/R 复现草稿。传统接口与 AI 均支持基础翻译，额外分析使用所选 AI。0.5.0 已在 Edge 商城上线（2026 年 10 月 21 日确认）；0.7.0 更新的官方状态见[提交记录](docs/STORE_SUBMISSION_0.7.0.md)。
 
 ## 当前功能
 
@@ -55,13 +55,27 @@
 2. 展开最下方 **AI 图文工作流**，点击 **提取本页图片**。PDF 矢量图表可使用 **框选图表**，也可以 **提取整页**。先预览图片，按需下载或移除；本地提取不调用 API。
 3. 在 **图表 AI** 中单独选择已保存的视觉模型配置，点击 **翻译图文并解释** 或 **分析未完成图片**。此时才向所选 AI 发送图片、目标语言和分析指令。结果逐步显示，可停止、重试。
 
-图片最长边限制为 1600 像素，单张编码不超过 4 MB，最多暂存 20 张/24 MB。图片和分析结果只存于当前标签页内存，不进入正文缓存；下载图片和导出 TXT 会保留在下载目录。AI 可能误读文字或数值，请核对原图。此工作流展示文字翻译和解释，不重绘图表，也不把扫描页自动变成原位译文。
+图片最长边限制为 1600 像素，单张编码不超过 4 MB，最多暂存 20 张/24 MB。文档图片存于当前标签页内存，不进入正文缓存；启用可选研究记忆时可保存分析文本；下载图片和导出 TXT 会保留在下载目录。AI 可能误读文字或数值，请核对原图。此工作流展示文字翻译和解释，不重绘图表，也不把扫描页自动变成原位译文。
 
 最大 25 MB、300 页/阅读分段、100 万提取字符。TXT/Markdown 支持 UTF-8 或带 BOM 的 UTF-16。Word 仅支持 DOCX；浏览器字体和复杂 Word 排版可能与 Microsoft Word 不同，严格保真请先另存 PDF。旧 DOC 请先转为 DOCX。扫描 PDF 的正文原位替换需先 OCR，当前无内置整页 OCR 替换；可将整页图片交给视觉 AI 阅读。复杂多栏、重叠文字、公式及特殊字体可能需段落模式或人工核对。
 
 PDF.js、fflate、docx-preview 和 JSZip 随包提供，在浏览器本地解析文件，无远程可执行代码。正文翻译发送提取文字；底部 AI 分析只在点击后发送所选图片，不上传原始 PDF/DOCX 文件或密码。远程文档下载需来源域名权限，可能携带该站点登录 Cookie。最低要求 Chromium 内核 Edge 125，集成测试使用 Edge 155。许可见 THIRD_PARTY_NOTICES.md。
 
 已有侧载安装更新时，在原目录替换运行文件后，到 `edge://extensions` 点击扩展的“重新加载”，再刷新需要翻译的网页。浏览器中的 API 配置会保留。
+
+## 论文分析、Skill 与跨页面记忆（0.7.0）
+
+在普通论文网页中，点击扩展弹窗的 **论文分析 / 提取网页图表**，打开研究工作台。正文可以编辑，图表带图注；可见 SVG/Canvas 可从临时视区截图中裁取，跨域或未显示的图片通过 **载入原图** 单独授权来源域名后加载。提取不调用 AI，自动识别可能遗漏复杂网页、嵌入框架或被保护的图片，请先核对材料。
+
+PDF、DOCX、TXT、Markdown 在阅读器底部展开 **AI 图文工作流 → 论文分析**，共用 Skill、笔记本、问题和导出入口。可选当前页或全文，最多 6 万字；图表请求附带图注及提取页最多 8000 字上下文，翻页后来源仍属于原提取页。文字分析需要 AI 配置，图表分析另需模型支持图片输入。支持流式显示、停止和 Markdown 导出。
+
+内置论文精读、方法/统计审查、图表解读三种 Skill。在设置页可复制、编辑、导入或导出 JSON/Markdown/TXT；最多 20 个自定义模板，每个 4000 字。这是纯文本分析指令模板，不运行脚本。
+
+跨页记忆默认关闭。主动开启后按研究笔记本隔离，仅向所选 AI 附加该笔记本的相关记录并保存新分析，不影响基础翻译。最多 20 个笔记本；每次最多 6 条和 4000/6000/12000 字（默认 6000）。IndexedDB 分条保存并去重，总计最多 300 条、200 万内容字符，超限淘汰最早记录。单条最多 2000 字原文摘录和 10000 字分析，带来源标题、去除查询参数/片段的 URL 和页码。保留期限可选 7/30/90 天（默认 90）或仅容量限制，到期后在后续研究操作清理。关闭记忆停止后续使用/保存，旧记录需删除或等待到期；设置支持搜索、删除、清空和全部导出 JSON/Markdown。导出不含 API 配置、密钥或图片，但含已保存研究文本。
+
+图表识别完成后，点击 **生成 Python** 或 **生成 R**，下载 .py/.R 草稿及说明。提示要求引用原数据或读取用户提供的 data.csv，标明图中估读值，不用虚构样本替代证据。扩展不执行生成代码；需自行核对代码、依赖、数据和方法，单张图片不能保证精确科学复现。
+
+网页提取材料有独立本地临时缓存：最多 4 份、每份图片字节不超过 16 MB，1 小时到期后在后续研究操作清理，不属于跨页记忆；本地文档图片仍在标签页内存。分析请求会发送所选文字/图片、来源、Skill、问题和已启用的相关记忆。详见[隐私政策](https://qudadd.github.io/qudadflow-translator/privacy.zh-CN.html)。
 
 ## API 配置示例
 
@@ -128,7 +142,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 .\package.ps1
 ```
 
-打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.6.0.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
+打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.7.0.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
 
 ## 项目与上架信息
 
@@ -153,9 +167,10 @@ node tools/functional-check.cjs functional-results.json
 node tools/document-check.cjs document-results.json
 node tools/configuration-check.cjs configuration-results.json
 node tools/layout-check.cjs layout-results.json
+node tools/research-check.cjs research-results.json
 ```
 
-0.6.0 的自动检查覆盖网页/接口、文档、配置方案、原位翻译和底部 AI 工作流。测试使用生成文档、虚构 Key、本地模拟接口及独立 Edge 配置，不读取真实用户 API 设置。检查结果不能代表真实服务商速度、额度、可用性或翻译质量。具体结果见 [验证记录](docs/VERIFICATION.md)。
+0.7.0 的 169 项自动检查覆盖网页/接口、文档、配置方案、原位翻译和底部 AI 工作流。测试使用生成文档、虚构 Key、本地模拟接口及独立 Edge 配置，不读取真实用户 API 设置。检查结果不能代表真实服务商速度、额度、可用性或翻译质量。具体结果见 [验证记录](docs/VERIFICATION.md)。
 
 网页面板每次最多翻译 12000 个字符并显示截断提示。沉浸式模式对正文进行有界扫描，每次最多处理视区附近的 80 个正文块，长段落自动拆分。滚动后重新翻译会替换上一轮译文。编辑区域、不可见内容和 translate=no 内容不会被自动提取。
 

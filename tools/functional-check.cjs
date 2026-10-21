@@ -290,7 +290,7 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
 
     const extension = path.join(scratch,'extension');
     fs.mkdirSync(extension);
-    for(const name of ['manifest.json','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales']) fs.cpSync(path.join(root,name),path.join(extension,name),{recursive:true});
+    for(const name of ['manifest.json','research.html','research.css','research.js','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales']) fs.cpSync(path.join(root,name),path.join(extension,name),{recursive:true});
     const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json'),'utf8'));
     // Local API + fixture only. Production manifest retains optional permissions.
     manifest.host_permissions=['http://127.0.0.1/*'];

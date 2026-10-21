@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QudadFlow Translator · Research</title><link rel="icon" href="assets/icon32.png"><link rel="stylesheet" href="reader.css"><link rel="stylesheet" href="research.css"></head>
+<body class="research-page">
+  <header class="app-header"><a class="brand" href="research.html"><img src="assets/icon48.png" alt=""><span>QudadFlow Translator<small>RESEARCH WORKSPACE</small></span></a><a href="options.html#researchSettings" target="_blank">Skill 与记忆设置 ↗</a></header>
+  <main class="research-document"><p class="eyebrow">READ · QUESTION · REPRODUCE</p><h1 id="paperTitle">论文研究工作台</h1><a id="paperSource" target="_blank" rel="noreferrer" hidden>返回论文来源 ↗</a><p id="captureStatus" role="status">从论文网页点击扩展 → “论文分析 / 提取网页图表”。</p><label for="paperMaterial">分析材料（可编辑，最多 6 万字）</label><textarea id="paperMaterial" maxlength="60000" rows="9" placeholder="也可以粘贴论文段落后分析。"></textarea><div id="remoteFigures" class="remote-figures"></div></main>
+  <details id="figureWorkflow" class="figure-workflow" open><summary><span>论文与图表分析 <small>识别 → 分析 → R / Python 复现</small></span><span><b id="figureCount">0</b> 张图片</span></summary><div class="figure-body"><div class="figure-tools"><button id="extractFigures" hidden>提取本页图片</button><button id="cropFigure" hidden>框选图表</button><button id="capturePage" hidden>提取整页</button><label>分析 AI <select id="figureProfile" aria-label="图表 AI 配置"></select></label><button id="analyzeFigures" class="primary">分析未完成图片</button><button id="stopFigures" hidden>停止分析</button></div><p id="figureStatus" role="status">图表可先预览。点击分析后才向所选 AI 发送材料。</p><div id="figureCards" class="figure-cards"></div></div></details>
+  <script type="module" src="research.js"></script>
+</body></html>

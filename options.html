@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>QudadFlow Translator设置</title>
   <link rel="stylesheet" href="options.css">
-</head>
+<link rel="stylesheet" href="research.css"></head>
 <body>
   <main class="page">
     <header class="header"><div class="brand"><img src="assets/icon48.png" alt=""><div><h1>QudadFlow Translator设置</h1><p>配置第三方翻译 API，密钥只保存在本浏览器的扩展存储中。</p></div></div></header>
@@ -81,8 +81,10 @@
 
       <div class="actions"><button type="button" class="secondary" id="testApi">测试连接</button><button type="submit" class="primary">保存设置</button><span id="status" role="status"></span></div>
     </form>
+    <section class="card research-manager" id="researchSettings"></section>
     <footer><a href="privacy.html" target="_blank">隐私说明</a> · <a href="https://learn.microsoft.com/en-us/microsoft-edge/extensions/publish/publish-extension" target="_blank">Edge 商店发布文档</a></footer>
   </main>
   <script src="options.js"></script>
+  <script type="module" src="src/research-settings.mjs"></script>
 </body>
 </html>

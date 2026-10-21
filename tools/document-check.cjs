@@ -77,7 +77,7 @@ const server=http.createServer(async(req,res)=>{
     });
     await smoke.close();smoke=undefined;
     const extension=path.join(scratch,'extension');fs.mkdirSync(extension);
-    for(const file of ['manifest.json','reader.html','reader.css','reader.js','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales','vendor'])fs.cpSync(path.join(root,file),path.join(extension,file),{recursive:true});
+    for(const file of ['manifest.json','research.html','research.css','research.js','reader.html','reader.css','reader.js','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales','vendor'])fs.cpSync(path.join(root,file),path.join(extension,file),{recursive:true});
     const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json'),'utf8'));version=manifest.version;manifest.host_permissions=['http://127.0.0.1/*'];fs.writeFileSync(path.join(extension,'manifest.json'),JSON.stringify(manifest));
     context=await chromium.launchPersistentContext(path.join(scratch,'test-profile'),{channel:'msedge',headless:true,acceptDownloads:true,viewport:{width:1440,height:1000},args:['--disable-extensions-except='+extension,'--load-extension='+extension]});
     const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'),id=new URL(worker.url()).host,base='chrome-extension://'+id+'/';

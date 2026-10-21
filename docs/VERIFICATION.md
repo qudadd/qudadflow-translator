@@ -1,4 +1,14 @@
-# QudadFlow Translator 0.6.0 verification
+# QudadFlow Translator 0.7.0 verification
+
+Date: October 21, 2026 (Asia/Shanghai). Microsoft Edge 155.0.4283.62. **169 checks passed, zero failures:** 87 webpage/provider + 34 documents + 13 configurations + 17 layout/figures + 18 research.
+
+All five suites use isolated Edge profiles, generated papers/images/documents, synthetic credentials and local simulated APIs. No private user settings or live provider account was accessed. The research suite grants all-host access to its disposable test copy solely to exercise viewport capture; the production manifest keeps optional host permissions. Real-provider speed, availability, cost, model accuracy and generated-code correctness are not established by these tests.
+
+Research checks cover explicit webpage extraction, raster/SVG/offscreen images, safe streamed text, Skill import/export and stale edits, memory off by default, cross-page recall and notebook isolation, JSON/Markdown exports, pending-operation deletion/cancellation, memory caps/expiry and browser-restart persistence, and visible storage failure without losing a successful analysis. Python and R drafts download separately and remain inert text. PDF full-document analysis and original-page attribution after navigation are verified; DOCX/TXT/Markdown use the same workflow. Existing TXT parsing/analysis paths use the common text reader.
+
+Reports: validation-v0.7.0.json, validation-documents-v0.7.0.json, validation-configuration-v0.7.0.json, validation-layout-v0.7.0.json and validation-research-v0.7.0.json. Run the corresponding tools/*-check.cjs scripts to reproduce. UI screenshots were inspected for both webpage and PDF research panels. Known limits: heuristic extraction, 60,000-character paper input, bounded image resolution, no built-in scan-body OCR, no layout-preserving PDF/DOCX export, and no code execution.
+
+## Previous: QudadFlow Translator 0.6.0 verification
 
 Date: October 21, 2026 (Asia/Shanghai). Browser: Microsoft Edge 155.0.4283.62.
 

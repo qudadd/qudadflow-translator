@@ -2,7 +2,7 @@
 
 The extension has no QudadFlow account or login. Production translation calls a user-configured third-party API directly. Valid provider credentials are needed for live Google Cloud Translation, DeepL, Microsoft Translator, or OpenAI-compatible services. No shared production keys are supplied.
 
-For the 0.5.0 submission and 0.6.0 preview, Settings includes **启用 MyMemory 基础试用** (enable basic trial). Approve access to api.mymemory.translated.net and try a short English sentence. No key is needed; English → Simplified Chinese is preconfigured. The typical anonymous quota is 5,000 characters/day, with provider retention/usage terms. Source language must be selected manually. This is a public, limited trial, not an unlimited service. Full current review steps and document limitations are in [STORE_UPDATE_0.6.0.md](STORE_UPDATE_0.6.0.md) (prepared for 0.6.0; not yet submitted).
+For the 0.7.0 update, Settings includes **启用 MyMemory 基础试用** (enable basic trial). Approve access to api.mymemory.translated.net and try a short English sentence. No key is needed; English → Simplified Chinese is preconfigured. The typical anonymous quota is 5,000 characters/day, with provider retention/usage terms. Source language must be selected manually. This is a public, limited trial, not an unlimited service. Full current review steps and document limitations are in [STORE_UPDATE_0.7.0.md](STORE_UPDATE_0.7.0.md) (current 0.7.0 metadata).
 
 For functional review without a paid account, the source repository includes an optional local simulated API. It demonstrates the custom JSON path with the submitted extension's normal settings and optional host permission flow. It is not a translation engine and does not prove live-provider translation quality. It is not bundled in the runtime extension.
 
@@ -17,11 +17,20 @@ For functional review without a paid account, the source repository includes an 
 
 The current interface is Simplified Chinese. English and Simplified Chinese extension metadata and store listings are included. Page text is read only after a user action; API responses are rendered as text, never executed. The runtime contains no remotely hosted JavaScript. Browser internal/protected pages do not permit translation-script injection.
 
-## Document and configuration review (0.6.0 preview)
+## Document and configuration review
 
 1. Open **PDF / 文档左右对照** and choose a local text-based PDF, DOCX, TXT or Markdown. Opening sends no translation request. The default **沉浸原位** mode replaces text within the original page regions. Test **查看原文**, **原版左右对照** and **段落对照**. Oversized translations preserve the original and offer full text on click. Word uses browser rendering; fonts/complex layout can differ.
 2. With a traditional API or AI configured, translate the current page/all pages. Check ratios, picture/table positions, streaming, synchronization, stop/resume and bilingual TXT export. Scanned-page OCR replacement and layout-preserving document export are not included.
 3. Save a named OpenAI-compatible profile for a model/gateway that supports image input. Keep a traditional connection active for body translation. Expand **AI 图文工作流**, extract PDF/Word pictures or crop a PDF chart. No API call occurs during extraction. Choose the saved vision profile and explicitly click **翻译图文并解释**. Check streamed text, download/remove, cancellation, and unsupported-model errors. No shared vision API key is provided.
 4. Verify saved profile editing and popup switching. Keys stay in browser-local extension storage. Limits: 25 MB/document, 300 pages/reading sections, one million text characters; 20 extracted images/24 MB, 4 MB encoded per image, longest edge 1,600 pixels.
 
-151 isolated checks passed: 87 webpage/provider, 34 document, 13 configuration, 17 layout/figure. Use node tools/layout-check.cjs for generated PDF/Word fixtures and simulated vision responses. Automated tests do not access private settings or call paid/live providers. The local manual review server above supports text simulation only. The preview has not been submitted; 0.5.0 was last confirmed In review. See [VERIFICATION.md](VERIFICATION.md) and [third-party notices](../THIRD_PARTY_NOTICES.md).
+169 isolated checks passed: 87 webpage/provider, 34 document, 13 configuration, 17 layout/figure, 18 research. Use node tools/layout-check.cjs for generated PDF/Word fixtures and simulated vision responses. Automated tests do not access private settings or call paid/live providers. The local manual review server above supports text simulation only. Version 0.5.0 is Live; see STORE_SUBMISSION_0.7.0.md for the update status. See [VERIFICATION.md](VERIFICATION.md) and [third-party notices](../THIRD_PARTY_NOTICES.md).
+
+## Paper research review (0.7.0)
+
+1. On a regular article webpage, use the popup paper/figure action. Review extracted text, captions and candidates before analysis; loading a remote image is a separate source-permission action. Capture itself makes no AI request.
+2. Choose an AI profile and a Skill. Analyze the paper and export Markdown. In a PDF/DOCX/TXT/Markdown reader, expand the bottom paper controls and compare current-page/full-document scopes. Figure sources retain their extraction page.
+3. Duplicate or import a custom Skill in Settings, then select it for analysis. These are plain text prompts, not executable skills.
+4. Memory starts off. Enable it in a notebook, analyze another page and inspect related context. A different notebook must be isolated. Export JSON/Markdown, search and delete records. Disabling stops future memory use/saving but does not erase saved records.
+5. Analyze a figure, then generate separate Python and R drafts and download them with notes. Confirm the extension never runs code. Original data is needed for exact reproduction.
+6. Run node tools/research-check.cjs for generated paper/image fixtures and local simulated analysis. Tests access no user profile or live account.

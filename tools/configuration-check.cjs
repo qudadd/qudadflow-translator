@@ -18,7 +18,7 @@ const server=http.createServer(async(req,res)=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;let browserVersion;
   try{
     const extension=path.join(scratch,'extension');fs.mkdirSync(extension);
-    for(const file of ['manifest.json','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales'])fs.cpSync(path.join(root,file),path.join(extension,file),{recursive:true});
+    for(const file of ['manifest.json','research.html','research.css','research.js','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales'])fs.cpSync(path.join(root,file),path.join(extension,file),{recursive:true});
     const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json'),'utf8'));manifest.host_permissions=['http://127.0.0.1/*','https://api.mymemory.translated.net/*'];fs.writeFileSync(path.join(extension,'manifest.json'),JSON.stringify(manifest));
     context=await chromium.launchPersistentContext(path.join(scratch,'profile'),{channel:'msedge',headless:true,viewport:{width:1180,height:1200},args:['--disable-extensions-except='+extension,'--load-extension='+extension]});browserVersion=context.browser().version();
     const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'),id=new URL(worker.url()).host,base='chrome-extension://'+id+'/';
