@@ -1,6 +1,6 @@
 # QudadFlow Translator
 
-A Manifest V3 extension for Microsoft Edge, with immersive bilingual webpages, selection translation, and a side-by-side document reader for PDF, Word DOCX, TXT, and Markdown. Use your configured translation API throughout.
+A Manifest V3 extension for Microsoft Edge, with immersive bilingual webpages, selection translation, and in-place document translation for PDF, Word DOCX, TXT, and Markdown. Traditional translation APIs and AI both power the base reading features. Vision AI adds an optional picture/chart workflow at the bottom.
 
 [Website](https://qudadd.github.io/qudadflow-translator/) · [Privacy policy](https://qudadd.github.io/qudadflow-translator/privacy.html) · [中文网站指南](https://qudadd.github.io/qudadflow-translator/zh-CN.html) · [中文 README](README.zh-CN.md)
 
@@ -34,16 +34,26 @@ The free public service is quota-limited and may retain submitted text long-term
 
 Browser-internal pages and restricted store pages cannot host the webpage translation interface. For a PDF open in Edge, use **PDF / 文档左右对照** in the popup to open the separate document reader. Page-panel extraction is limited to 12,000 characters per action; immersive translation processes up to 80 text blocks.
 
-## Side-by-side documents (0.5.0)
+## Immersive documents (0.6.0)
 
-Open **PDF / 文档左右对照** from the popup, or use the document command in the page/link context menu. A current HTTP(S) document URL is prefilled; click **打开文档** and allow access to that document host. For local files, authenticated links that cannot be fetched, or browser blob URLs, download the file and choose **打开文件**, or drag it into the reader. Opening a file does not start a translation request.
+Open **PDF / 文档左右对照** from the popup or the document command in the page/link context menu. Open the prefilled HTTP(S) document URL after granting its source host, or choose/drop a local file. Download authenticated or blob documents first if the reader cannot fetch them. Opening a document sends no translation request.
 
-- PDF: original rendered page and selectable text on the left; translated paragraphs from that page on the right, with page navigation and proportional synchronized scrolling.
-- Word DOCX, TXT, Markdown: extracted text in corresponding, height-aligned paragraph blocks. Reading sections are generated for long text. Word images, headers, footers, tables, and pagination are not reproduced; table-cell body text is extracted in document order. Markdown is displayed as literal text.
-- Translate the current page or entire document, see streamed results where the provider supports them, stop and resume incomplete paragraphs, and export bilingual TXT. Up to two translation requests are active per reader; completed paragraphs remain available in the open tab.
-- Limits: 25 MB per file, 300 PDF pages/reading sections, and one million extracted characters. Text must be UTF-8 or BOM-tagged UTF-16. Old `.doc`, spreadsheets, presentations, and scanned-image OCR are not supported. Complex PDF layouts, equations, and unusual font encodings may need manual checking; two-column reading order is heuristic. This is a reading view, not a layout-preserving translated PDF/Word exporter.
+- **沉浸原位 — In-place immersive:** PDF preserves the original page ratio and keeps images/vector charts in position. Translated text replaces the source text region. Long or unsupported text retains its original and a clickable full-translation link; nothing pushes later content down. Click a translation to inspect its original. **查看原文** toggles the source page.
+- **原版左右对照 — Original-layout comparison:** original and translated pages appear side by side at the same scale. **段落对照 — Paragraph comparison:** reflows text for comfortable reading and height-aligns corresponding paragraphs.
+- Word DOCX renders pages, tables, embedded raster images, margins and text locally. Translation overlays stay in the measured paragraph regions. Browser fonts and complex Word layouts can differ from Microsoft Word; use a PDF when strict layout fidelity is needed. TXT and literal Markdown retain their reading-paragraph positions in immersive mode, not original file pagination.
+- Translate the current page or all pages with **either traditional MT or AI**. Two requests at most per reader, streaming when supported, stop/resume and bilingual TXT export are available. Export does not generate a layout-preserving translated PDF or DOCX.
 
-PDF.js and fflate are bundled locally; no CDN or remote executable code is used. Files are parsed in the browser. Only after a translation action is extracted text sent to the configured API; the original file bytes are not uploaded to that API. The reader uses temporary tab memory. Closing it clears the current document/results; exported TXT files remain wherever you save them. See [third-party notices](THIRD_PARTY_NOTICES.md). Version 0.5.0 requires Chromium-based Edge 125+; automated checks run on Edge 155.
+### Optional bottom AI picture/chart workflow
+
+1. Save an OpenAI-compatible configuration with a model and gateway that support image input. The body can continue using Google, DeepL, Microsoft, MyMemory or another configured text API.
+2. Expand **AI 图文工作流** at the bottom. **提取本页图片** extracts PDF raster regions or Word images locally. For PDF vector charts use **框选图表**, or **提取整页** for a whole-page image. Preview, download or remove the extracted images.
+3. Choose the current AI connection or a separately saved AI profile. Click **翻译图文并解释**, or analyze the unfinished images. Only this click sends the selected image(s), target language and analysis instructions to that AI endpoint. Results stream as text; stop at any time. Image analysis does not rewrite chart artwork or replace scanned-page text.
+
+Images are bounded to a 1,600-pixel longest edge, 4 MB encoded per image, and 20 images/24 MB total. Images and analysis results stay in tab memory and bypass the text cache. Downloaded images and exported TXT persist in your chosen folder. Opening/extracting pictures does not call AI. Check AI transcriptions and numerical explanations against the original.
+
+Files are limited to 25 MB, 300 pages/reading sections and one million extracted characters. Text must be UTF-8 or BOM-tagged UTF-16. Old .doc, spreadsheets and presentations are unsupported. Scanned PDFs need external OCR for body replacement; the optional vision workflow can inspect a page image. Complex columns, overlapping text, equations, unusual encodings and special fonts can require the paragraph mode or manual checking.
+
+PDF.js, fflate, docx-preview and JSZip are bundled locally, with no CDN or remote executable code. The browser parses files locally. Body translation sends extracted text; optional figure analysis sends chosen images. Original PDF/DOCX file bytes and passwords are never sent to translation APIs. Requires Chromium-based Edge 125+; checks run on Edge 155. See [third-party notices](THIRD_PARTY_NOTICES.md).
 
 For OpenAI-compatible services, enter a full `/v1/chat/completions` or `/v1/responses` endpoint and a model supported by that service. A domain or `/v1` base URL defaults to Chat Completions. Streaming is enabled by default; turn it off if your gateway does not support it. Leave Temperature empty to use the provider default. A rejected temperature parameter is removed for one retry only. The request timeout defaults to 45 seconds and can be set to 10–180 seconds.
 
@@ -78,9 +88,10 @@ npm install --no-save playwright
 node tools/functional-check.cjs functional-results.json
 node tools/document-check.cjs document-results.json
 node tools/configuration-check.cjs configuration-results.json
+node tools/layout-check.cjs layout-results.json
 ```
 
-Version 0.5.0 passed 134 checks on Edge 155.0.4283.62: 87 webpage/provider regressions, 34 document checks, and 13 saved-profile/basic-provider checks. They use synthetic credentials, local HTTP fixtures, generated documents, and isolated Edge profiles. Only the test copy receives a localhost permission. The unchanged production manifest also opens and renders a real PDF without host grants. Coverage includes local parsing, page order, streaming, text safety, bounds, aligned paragraphs, synchronized scrolling, stop/resume, port isolation, URL errors, and bilingual export. Live provider credentials, billing, translation quality, and physical keyboard-shortcut activation were not tested. See [verification details](docs/VERIFICATION.md).
+Version 0.6.0 verification covers webpage/provider behavior, documents, saved configurations, original-position replacements and the optional vision workflow. Suites use generated documents, synthetic keys, local HTTP fixtures and isolated Edge profiles. No private provider settings or live API credentials are accessed. These checks verify behavior, not real-provider speed, availability or translation quality. See [verification details](docs/VERIFICATION.md).
 
 ## Publishing
 

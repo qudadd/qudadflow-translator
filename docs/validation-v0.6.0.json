@@ -1,0 +1,458 @@
+{
+  "generatedAt": "2026-10-21T02:35:01.132Z",
+  "extensionVersion": "0.6.0",
+  "browser": "155.0.4283.62",
+  "scope": "Local synthetic HTTP API integration; test-only localhost host permission; original manifest side-load checked separately; provider billing/accounts not tested",
+  "passed": 87,
+  "failed": 0,
+  "measurements": {
+    "memoryCache": {
+      "firstRequestMs": 218,
+      "repeatRequestMs": 0,
+      "httpRequestsForTwoTranslations": 1,
+      "fixtureDelayMs": 200
+    },
+    "immersiveStreaming": {
+      "firstVisibleTextMs": 66,
+      "completedMs": 298,
+      "fixtureRemainderDelayMs": 220
+    }
+  },
+  "results": [
+    {
+      "name": "google-translate-v2: HTTP request and response",
+      "passed": true,
+      "milliseconds": 28
+    },
+    {
+      "name": "microsoft-translator: HTTP request and response",
+      "passed": true,
+      "milliseconds": 6
+    },
+    {
+      "name": "deepl: HTTP request and response",
+      "passed": true,
+      "milliseconds": 4
+    },
+    {
+      "name": "openai-compatible: HTTP request and response",
+      "passed": true,
+      "milliseconds": 5
+    },
+    {
+      "name": "custom-json: HTTP request and response",
+      "passed": true,
+      "milliseconds": 8
+    },
+    {
+      "name": "DeepL: Chinese source uses ZH while target uses variant",
+      "passed": true,
+      "milliseconds": 15
+    },
+    {
+      "name": "Custom template safely escapes quotes and line breaks",
+      "passed": true,
+      "milliseconds": 4
+    },
+    {
+      "name": "Missing key",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Permission denied",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Empty input",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Oversized input",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "HTTP 401",
+      "passed": true,
+      "milliseconds": 13
+    },
+    {
+      "name": "Missing response path",
+      "passed": true,
+      "milliseconds": 7
+    },
+    {
+      "name": "Invalid header object",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Invalid template",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Header timeout",
+      "passed": true,
+      "milliseconds": 93
+    },
+    {
+      "name": "Body timeout",
+      "passed": true,
+      "milliseconds": 94
+    },
+    {
+      "name": "OpenAI: full endpoint trailing slash and query are preserved correctly",
+      "passed": true,
+      "milliseconds": 6
+    },
+    {
+      "name": "Responses: explicit endpoint, instructions, input and store:false",
+      "passed": true,
+      "milliseconds": 7
+    },
+    {
+      "name": "OpenAI: array content excludes reasoning and accepts text",
+      "passed": true,
+      "milliseconds": 5
+    },
+    {
+      "name": "Chat Completions: SSE deltas, split UTF-8 and reasoning exclusion",
+      "passed": true,
+      "milliseconds": 270
+    },
+    {
+      "name": "Responses: SSE deltas, split UTF-8 and reasoning exclusion",
+      "passed": true,
+      "milliseconds": 281
+    },
+    {
+      "name": "OpenAI: stream requested but ordinary JSON response remains compatible",
+      "passed": true,
+      "milliseconds": 15
+    },
+    {
+      "name": "OpenAI: unsupported temperature retries only once without that parameter",
+      "passed": true,
+      "milliseconds": 19
+    },
+    {
+      "name": "OpenAI: Repeated temperature rejection",
+      "passed": true,
+      "milliseconds": 33
+    },
+    {
+      "name": "OpenAI: Model rejection",
+      "passed": true,
+      "milliseconds": 11
+    },
+    {
+      "name": "OpenAI: Authentication rejection",
+      "passed": true,
+      "milliseconds": 16
+    },
+    {
+      "name": "OpenAI: HTML returned with HTTP 200",
+      "passed": true,
+      "milliseconds": 10
+    },
+    {
+      "name": "OpenAI: Provider stream error",
+      "passed": true,
+      "milliseconds": 275
+    },
+    {
+      "name": "OpenAI: Stream disconnected before completion",
+      "passed": true,
+      "milliseconds": 263
+    },
+    {
+      "name": "OpenAI: Truncated SSE model output",
+      "passed": true,
+      "milliseconds": 275
+    },
+    {
+      "name": "OpenAI: Truncated JSON model output",
+      "passed": true,
+      "milliseconds": 16
+    },
+    {
+      "name": "Configured deadline covers streaming body and closes the connection",
+      "passed": true,
+      "milliseconds": 120
+    },
+    {
+      "name": "Cancellation is isolated by sender and aborts HTTP rather than waiting for timeout",
+      "passed": true,
+      "milliseconds": 111
+    },
+    {
+      "name": "Cache: repeated complete translation uses zero additional HTTP requests",
+      "passed": true,
+      "milliseconds": 221
+    },
+    {
+      "name": "Cache: context, target language, model and credentials never reuse incompatible results",
+      "passed": true,
+      "milliseconds": 54
+    },
+    {
+      "name": "Cache: connection test always contacts the provider and revoked permission is enforced",
+      "passed": true,
+      "milliseconds": 46
+    },
+    {
+      "name": "Cache: expired and failed or incomplete responses are not reused",
+      "passed": true,
+      "milliseconds": 604
+    },
+    {
+      "name": "Edge resolves localized manifest metadata and English product name",
+      "passed": true,
+      "milliseconds": 102
+    },
+    {
+      "name": "Provider switch resets endpoint and isolates credentials",
+      "passed": true,
+      "milliseconds": 66
+    },
+    {
+      "name": "Edge service worker: google-translate-v2",
+      "passed": true,
+      "milliseconds": 13
+    },
+    {
+      "name": "Edge service worker: microsoft-translator",
+      "passed": true,
+      "milliseconds": 8
+    },
+    {
+      "name": "Edge service worker: deepl",
+      "passed": true,
+      "milliseconds": 11
+    },
+    {
+      "name": "Edge service worker: openai-compatible",
+      "passed": true,
+      "milliseconds": 9
+    },
+    {
+      "name": "Edge service worker: custom-json",
+      "passed": true,
+      "milliseconds": 8
+    },
+    {
+      "name": "Context menus and command entries are registered",
+      "passed": true,
+      "milliseconds": 5
+    },
+    {
+      "name": "Options: reject arrays as custom headers",
+      "passed": true,
+      "milliseconds": 236
+    },
+    {
+      "name": "Options: save and connection test via actual extension worker",
+      "passed": true,
+      "milliseconds": 49
+    },
+    {
+      "name": "Options: testing blocks duplicate clicks and editing until it completes",
+      "passed": true,
+      "milliseconds": 257
+    },
+    {
+      "name": "Options: streaming preference, optional temperature and timeout persist",
+      "passed": true,
+      "milliseconds": 385
+    },
+    {
+      "name": "Selection translation through content script and worker",
+      "passed": true,
+      "milliseconds": 184
+    },
+    {
+      "name": "Selection: streaming text appears in the page before the request finishes",
+      "passed": true,
+      "milliseconds": 332
+    },
+    {
+      "name": "Duplicate in-flight translation commands share a single request",
+      "passed": true,
+      "milliseconds": 284
+    },
+    {
+      "name": "Repeated injection keeps exactly one listener and panel",
+      "passed": true,
+      "milliseconds": 80
+    },
+    {
+      "name": "API output renders as text, without HTML execution",
+      "passed": true,
+      "milliseconds": 30
+    },
+    {
+      "name": "Clipboard failure reports failure",
+      "passed": true,
+      "milliseconds": 131
+    },
+    {
+      "name": "Immersive translation skips editors, invisible and opted out content",
+      "passed": true,
+      "milliseconds": 173
+    },
+    {
+      "name": "Nested excluded spans are omitted from both page modes",
+      "passed": true,
+      "milliseconds": 97
+    },
+    {
+      "name": "Restore preserves original markup and link behavior",
+      "passed": true,
+      "milliseconds": 175
+    },
+    {
+      "name": "Damaged batch markers trigger per-paragraph fallback",
+      "passed": true,
+      "milliseconds": 151
+    },
+    {
+      "name": "Immersive results are inserted batch by batch before the whole page finishes",
+      "passed": true,
+      "milliseconds": 464
+    },
+    {
+      "name": "Repeated marker loss is bounded and retains already inserted translations",
+      "passed": true,
+      "milliseconds": 309
+    },
+    {
+      "name": "Restore during translation prevents late reinsertion",
+      "passed": true,
+      "milliseconds": 128
+    },
+    {
+      "name": "Page translation excludes previously inserted translations",
+      "passed": true,
+      "milliseconds": 154
+    },
+    {
+      "name": "Closing panel cancels pending page result",
+      "passed": true,
+      "milliseconds": 242
+    },
+    {
+      "name": "Newest selection result wins over older request",
+      "passed": true,
+      "milliseconds": 157
+    },
+    {
+      "name": "Page translation splits long text into bounded requests",
+      "passed": true,
+      "milliseconds": 160
+    },
+    {
+      "name": "Page chunks use at most two simultaneous requests and keep original order",
+      "passed": true,
+      "milliseconds": 628
+    },
+    {
+      "name": "Long immersive paragraph is chunked and restored as one block",
+      "passed": true,
+      "milliseconds": 264
+    },
+    {
+      "name": "Page size limit is visible to the user",
+      "passed": true,
+      "milliseconds": 194
+    },
+    {
+      "name": "Immersive: nested direct text, spaces between spans and line breaks stay paired",
+      "passed": true,
+      "milliseconds": 194
+    },
+    {
+      "name": "Immersive: flex/grid cards, lists and tables retain horizontal geometry and original links",
+      "passed": true,
+      "milliseconds": 283
+    },
+    {
+      "name": "Immersive: actual partial paragraph appears before its streaming batch completes",
+      "passed": true,
+      "milliseconds": 429
+    },
+    {
+      "name": "Immersive: streaming failure removes incomplete lines and allows a clean retry",
+      "passed": true,
+      "milliseconds": 533
+    },
+    {
+      "name": "Immersive: current viewport is translated first on long pages with a bounded block count",
+      "passed": true,
+      "milliseconds": 330
+    },
+    {
+      "name": "Immersive: repeated same-page action reuses complete batches without HTTP",
+      "passed": true,
+      "milliseconds": 199
+    },
+    {
+      "name": "Selection chip: no activation or network traffic until the site is enabled",
+      "passed": true,
+      "milliseconds": 612
+    },
+    {
+      "name": "Selection chip: one click streams locally, guards duplicate clicks and copies text safely",
+      "passed": true,
+      "milliseconds": 1074
+    },
+    {
+      "name": "Selection chip: repeat text uses cache and errors expose a retry action",
+      "passed": true,
+      "milliseconds": 1139
+    },
+    {
+      "name": "Selection chip: Escape aborts HTTP and late results stay closed",
+      "passed": true,
+      "milliseconds": 584
+    },
+    {
+      "name": "Selection chip: editing and opt-out text, including mixed selections, are excluded",
+      "passed": true,
+      "milliseconds": 1110
+    },
+    {
+      "name": "Selection chip: result stays inside viewport edges after scrolling and resizing",
+      "passed": true,
+      "milliseconds": 812
+    },
+    {
+      "name": "Selection chip: reading a result preserves immersive work and two-request limit",
+      "passed": true,
+      "milliseconds": 1030
+    },
+    {
+      "name": "Selection chip: cancelling its request preserves immersive work and two-request limit",
+      "passed": true,
+      "milliseconds": 1018
+    },
+    {
+      "name": "Popup buttons translate and restore the selected tab",
+      "passed": true,
+      "milliseconds": 5169
+    },
+    {
+      "name": "Popup site opt-in persists across navigation and disabling updates already open pages",
+      "passed": true,
+      "milliseconds": 7476
+    },
+    {
+      "name": "Protected browser page rejects content injection",
+      "passed": true,
+      "milliseconds": 354
+    }
+  ]
+}

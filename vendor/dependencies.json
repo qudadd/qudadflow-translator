@@ -24,5 +24,39 @@
       "umd/index.js",
       "LICENSE"
     ]
+  },
+  {
+    "name": "docx-preview",
+    "version": "0.4.1",
+    "directory": "docx-preview",
+    "integrity": "sha512-Dv4g+LeE0swHpPvNC0lAT0YsR5Zq5pAxw7d3vHQ8EChBLgIrqqe9VPL5nVt2HBJap8bEZbXUI0TJob7kBeNU9w==",
+    "paths": [
+      {
+        "source": "dist/docx-preview.min.js",
+        "destination": "docx-preview.min.js"
+      },
+      "LICENSE",
+      "README.md"
+    ]
+  },
+  {
+    "name": "jszip",
+    "version": "3.10.2",
+    "directory": "jszip",
+    "integrity": "sha512-3l+rb15IOWtUhU0H5MFqES/T6Kh7abYwjosBey/vD6hDt8zoEffkSC5Ws5SGtgVw3gBx2NEbhTeSW1+kWkpyTQ==",
+    "paths": [
+      {
+        "source": "dist/jszip.min.js",
+        "destination": "jszip.min.js"
+      },
+      {
+        "source": "LICENSE.markdown",
+        "destination": "LICENSE"
+      },
+      {
+        "source": "README.markdown",
+        "destination": "README.md"
+      }
+    ]
   }
 ]

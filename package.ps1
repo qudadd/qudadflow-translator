@@ -46,6 +46,7 @@ $files = @(
   'manifest.json', 'popup.html', 'popup.css', 'popup.js',
   'options.html', 'options.css', 'options.js', 'privacy.html',
   'src\background.js', 'src\content.js', 'src\document-format.mjs', 'src\docx-worker.js',
+  'src\layout-view.mjs', 'src\word-layout.mjs', 'src\figure-workflow.mjs',
   'src\profile-store.js', 'src\my-memory.js',
   'reader.html', 'reader.css', 'reader.js', 'THIRD_PARTY_NOTICES.md',
   '_locales\en\messages.json', '_locales\zh_CN\messages.json',

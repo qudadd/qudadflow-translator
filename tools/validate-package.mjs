@@ -65,7 +65,7 @@ for (const file of ["popup.html", "options.html", "privacy.html", "reader.html"]
 }
 
 assert(manifest.content_security_policy?.extension_pages === "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'", "文档阅读器仅允许本地脚本与本地 WASM");
-for (const file of ['reader.js','src/document-format.mjs','src/docx-worker.js','vendor/pdfjs/legacy/build/pdf.mjs','vendor/pdfjs/legacy/build/pdf.worker.mjs','vendor/pdfjs/wasm/openjpeg.wasm','vendor/pdfjs/standard_fonts/LiberationSans-Regular.ttf','vendor/pdfjs/cmaps/Adobe-GB1-UCS2.bcmap','vendor/pdfjs/LICENSE','vendor/fflate/umd/index.js','vendor/fflate/LICENSE','vendor/dependencies.json','THIRD_PARTY_NOTICES.md']) {
+for (const file of ['reader.js','src/document-format.mjs','src/docx-worker.js','src/layout-view.mjs','src/word-layout.mjs','src/figure-workflow.mjs','vendor/docx-preview/docx-preview.min.js','vendor/docx-preview/LICENSE','vendor/jszip/jszip.min.js','vendor/jszip/LICENSE','vendor/pdfjs/legacy/build/pdf.mjs','vendor/pdfjs/legacy/build/pdf.worker.mjs','vendor/pdfjs/wasm/openjpeg.wasm','vendor/pdfjs/standard_fonts/LiberationSans-Regular.ttf','vendor/pdfjs/cmaps/Adobe-GB1-UCS2.bcmap','vendor/pdfjs/LICENSE','vendor/fflate/umd/index.js','vendor/fflate/LICENSE','vendor/dependencies.json','THIRD_PARTY_NOTICES.md']) {
   assert(fs.existsSync(path.join(root,file)), `缺少文档运行资源：${file}`);
 }
 for(const file of ['src/profile-store.js','src/my-memory.js'])assert(fs.existsSync(path.join(root,file)),`缺少配置/基础翻译资源：${file}`);

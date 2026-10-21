@@ -1,15 +1,13 @@
 # 隐私政策托管
 
-英文政策保存在根目录 `privacy.html`，GitHub Pages 使用 `docs/privacy.html`。两份应保持一致。
+英文政策源文件 privacy.html 与 GitHub Pages 的 docs/privacy.html 必须完全一致。中文政策为 docs/privacy.zh-CN.html。
 
-公开网址：https://qudadd.github.io/qudadflow-translator/privacy.html
+- 英文：https://qudadd.github.io/qudadflow-translator/privacy.html
+- 中文：https://qudadd.github.io/qudadflow-translator/privacy.zh-CN.html
+- 支持/隐私邮箱：lcf1249288484@outlook.com
 
-发布前检查：
+0.6.0 政策区分正文翻译与可选图文 AI：正文只发送提取文字；在底部点击分析后才发送所选图片（包括手动框选或整页截图）。图片、分析结果存于标签页内存并绕过正文缓存。原 PDF/DOCX 文件和密码不上传给翻译服务。下载产物保留在用户指定位置。
 
-1. 英文政策已加入确认的开发者联系邮箱 lcf1249288484@outlook.com，0.4.4 更新日期为 2026-10-21。
-2. 说明所支持的第三方 API 服务可能处理用户发送的文本，并链接这些服务商的隐私政策。
-3. 说明 API Key 保存在浏览器扩展本地存储；成功译文使用工作线程内存缓存，五分钟后不再复用，过期条目在下次查询时清理，不写入磁盘；用户可在 `edge://extensions` 移除扩展以删除持久设置。
-4. 说明划词按钮为按站点选择性开启，只有用户点击按钮后才会发送所选文字。
-5. 将页面部署到公开 HTTPS URL，并在 Edge Partner Center 填写相同 URL。
+配置、API Key 与站点设置保存在浏览器本地。文字缓存五分钟、最多 128 条/250000 字符，位于工作线程内存，不是持久翻译历史。政策也说明来源文档下载的 Cookie、按站点启用划词按钮和 MyMemory 保留/额度条款。0.5.0 尚无图文 AI 工作流，该部分仅适用于 0.6.0 及以后。
 
-不要把本地 `privacy.html` 文件路径当作商店隐私政策 URL。
+发布时填写公开 HTTPS 政策 URL，不能填写本地路径。更新后检查两种语言的公开页面。

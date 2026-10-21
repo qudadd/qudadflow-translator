@@ -73,7 +73,7 @@ const server=http.createServer(async(req,res)=>{
       await page.locator('#file').setInputFiles({name:'production.pdf',mimeType:'application/pdf',buffer:pdf});
       await page.waitForFunction(()=>document.querySelector('.textLayer')?.textContent.includes('Hello world'));
       assert.equal(await page.locator('#pageCount').textContent(),'3');assert.equal(await page.locator('#status').evaluate(e=>e.classList.contains('error')),false);
-      const permissions=await smokeWorker.evaluate(()=>chrome.permissions.getAll());assert.ok(!permissions.origins?.length);assert.equal(await page.locator('.pdf-sheet > canvas').count(),1);
+      const permissions=await smokeWorker.evaluate(()=>chrome.permissions.getAll());assert.ok(!permissions.origins?.length);assert.equal(await page.locator('#sourceContent .pdf-sheet > canvas').count(),1);
     });
     await smoke.close();smoke=undefined;
     const extension=path.join(scratch,'extension');fs.mkdirSync(extension);
@@ -84,10 +84,10 @@ const server=http.createServer(async(req,res)=>{
     const page=await context.newPage();page.setDefaultTimeout(8000);page.on('pageerror',e=>browserErrors.push(e.message));
     context.on('request',request=>{if(/^https?:/.test(request.url())&&!request.url().startsWith(origin))unexpectedUrls.push(request.url().split('?')[0]);});
     async function configure(extra={}){mode='normal';await worker.evaluate(settings=>chrome.storage.local.set(settings),{apiStyle:'openai-compatible',endpoint:origin+'/v1/chat/completions',apiKey:'SYNTHETIC-DOCUMENT-TEST-KEY',model:'document-'+(++scenario),targetLanguage:'zh-CN',sourceLanguage:'auto',streamOpenAi:true,requestTimeoutSeconds:45,...extra});await delay(40);}
-    async function openFile(name,buffer){await page.locator('#file').setInputFiles({name,mimeType:'application/octet-stream',buffer:Buffer.from(buffer)});await page.waitForFunction(()=>document.querySelector('#cancelLoad').hidden);}
-    async function ready(){await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('文档已打开'));}
+    async function openFile(name,buffer){if(buffer.byteLength>1024*1024){const fixture=path.join(scratch,name);fs.writeFileSync(fixture,buffer);await page.locator('#file').setInputFiles(fixture);}else await page.locator('#file').setInputFiles({name,mimeType:'application/octet-stream',buffer:Buffer.from(buffer)});await page.waitForFunction(()=>document.querySelector('#cancelLoad').hidden);}
+    async function ready(){await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('文档已打开')||document.querySelector('#status').classList.contains('error'));assert.match(await page.locator('#status').textContent(),/文档已打开/);}
     async function translated(){await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('翻译完成'));}
-    await configure();await page.goto(base+'reader.html');
+    await configure();await page.goto(base+'reader.html');await page.locator('#layoutMode').selectOption('paragraph',{force:true});
     await check('PDF: render real pages locally; opening does not call API',async()=>{const before=requests.length;await openFile('sample.pdf',pdf);await ready();assert.equal(requests.length,before);assert.match(await page.locator('.textLayer').textContent(),/QudadFlow Document Reader/);assert.equal(await page.locator('#sourceLabel').textContent(),'PDF 原页 · 文字可选');});
     await check('PDF: streamed translation appears before completion',async()=>{mode='slow';await page.locator('#translatePage').click();await page.waitForFunction(()=>document.querySelector('#translationContent .pending')?.textContent.length>0);assert.ok(requests.some(r=>!r.finished));await translated();assert.match(await page.locator('#translationContent').textContent(),/你好，世界/);assert.doesNotMatch(await page.locator('#translationContent').textContent(),/__QF_DOC_/);mode='normal';});
     await check('PDF: two-column extraction reads left column before right',async()=>{await page.locator('#next').click();await page.waitForFunction(()=>document.querySelector('.textLayer')?.textContent.includes('Left column'));await page.locator('#translatePage').click();await translated();const sent=requests.at(-1).text;assert.ok(sent.indexOf('Left column line 6')<sent.indexOf('Right column line 1'),sent);});

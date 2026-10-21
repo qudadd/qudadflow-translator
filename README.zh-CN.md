@@ -1,6 +1,6 @@
 # QudadFlow Translator（Microsoft Edge 扩展）
 
-这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，可在 Microsoft Edge 中侧载。它直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.5.0 新增 PDF、Word DOCX、TXT 和 Markdown 左右对照阅读、API 配置方案保存及 MyMemory 免 Key 基础试用。0.5.0 已于 2026 年 10 月 21 日（北京时间）替换旧版待审提交，Partner Center 确认状态为 **In review**；尚未审核通过或在商店正式发布。见[提交记录](docs/STORE_SUBMISSION_0.5.0.md)。
+这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，可在 Microsoft Edge 中侧载。它直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.6.0 开发预览版新增文档原位替换和底部 AI 图文工作流。传统接口与 AI 均可提供基础沉浸式翻译；支持图片输入的 AI 额外翻译图中文字、解释图表。0.6.0 尚未提交商店。0.5.0 已于 2026 年 10 月 21 日（北京时间）替换旧版待审提交，Partner Center 确认状态为 **In review**；尚未审核通过或在商店正式发布。见[提交记录](docs/STORE_SUBMISSION_0.5.0.md)。
 
 ## 当前功能
 
@@ -33,7 +33,7 @@
 
 扩展无法向 `edge://` 页面、内置 PDF 阅读器、Edge 加载项商店等保护页面注入网页翻译界面。浏览器打开的 PDF 可以通过扩展弹窗的“PDF / 文档左右对照”进入独立文档阅读器。
 
-## PDF、Word 和文本左右对照
+## PDF、Word 和文本沉浸式翻译
 
 ### 配置方案与快速试用
 
@@ -43,15 +43,23 @@
 
 ### 文档阅读步骤
 
-1. 重新加载扩展后，打开浏览器中的 PDF，点击扩展图标 → **PDF / 文档左右对照**。阅读器会填入当前文档链接；点击“打开文档”并允许访问该文档域名。也可以在网页或文档链接上使用右键文档入口。
-2. 本地文件直接点击 **打开文件**，或拖入阅读器。需要登录、无法直接下载或 `blob:` 临时链接的文件，请先下载再选择；不需要开放所有本地文件访问权限。
-3. 选择目标语言，点击 **翻译当前页** 或 **翻译全文**。使用已有 API 配置，无需重复填写密钥；打开文件本身不会发送翻译请求。
-4. PDF 左侧保留原页和可选文字，右侧按页显示段落译文。Word、TXT 和 Markdown 提取正文，以等高段落左右对应；可翻页、同步滚动、停止并续译。每个阅读器最多两个并发请求，已完成段落留在当前标签页。
-5. 点击 **导出双语 TXT** 保存原文和译文；未翻译的部分会明确标注。关闭阅读器后，当前文档与显示的译文不保留。
+1. 在浏览器打开 PDF 后，点击扩展图标 → **PDF / 文档左右对照**，再打开预填的文档链接并允许来源域名。也可使用右键文档入口。登录下载或 blob 临时链接无法加载时，先下载文件，再点击 **打开文件** 或拖入阅读器。
+2. 默认 **沉浸原位**：PDF 保持原页比例、图片和图表位置，在原文本区域显示译文。放不下或特殊排版的段落保留原文，点击 ↗ 查看完整译文。点击译文可查看对应原文，**查看原文** 可切换整页。
+3. **原版左右对照** 同比例显示原页和译页；**段落对照** 重新排版文字，适合优先阅读内容。DOCX 保留浏览器渲染的页边距、表格、嵌入位图和段落位置；TXT、Markdown 固定阅读段落的位置，Markdown 按纯文本显示。
+4. 正文使用当前已配置的传统机器翻译或 AI，选择目标语言后点击 **翻译当前页** 或 **翻译全文**。支持流式显示、同步滚动、停止续译，每个阅读器最多两个并发请求。打开文件本身不发送翻译请求。
+5. **导出双语 TXT** 保存正文原文和译文，未翻译部分明确标注。当前不导出保留版式的译后 PDF/DOCX。
 
-支持最大 25 MB、300 页 PDF／阅读分段、100 万提取字符。TXT/Markdown 支持 UTF-8 或带 BOM 的 UTF-16。Word 仅支持 DOCX 正文：提取表格单元格文字，但不保留图片、页眉页脚、表格版式或原始分页；旧 DOC 请先另存为 DOCX。Markdown 按纯文本显示。扫描 PDF 需要先 OCR；当前没有内置 OCR。复杂多栏、公式和特殊字体的 PDF 可能存在阅读顺序或文字提取误差。此功能用于对照阅读，不生成保留原版式的译后 PDF/Word 文件。
+### 底部 AI 图文工作流
 
-解析使用随包提供的 PDF.js 和 fflate，在浏览器本地进行。点击翻译后，仅将提取文字发送给所配置 API，不向它上传原始文件。打开远程文档需另行授权来源域名，下载时浏览器可能使用该站点的登录 Cookie；无法下载时可改用本地文件。最低要求 Chromium 内核 Edge 125，集成测试使用 Edge 155。第三方许可见 `THIRD_PARTY_NOTICES.md`。
+1. 在 API 设置中保存一个支持图片输入的 OpenAI 兼容配置。正文仍可使用 Google、DeepL、Microsoft、MyMemory 等传统接口。
+2. 展开最下方 **AI 图文工作流**，点击 **提取本页图片**。PDF 矢量图表可使用 **框选图表**，也可以 **提取整页**。先预览图片，按需下载或移除；本地提取不调用 API。
+3. 在 **图表 AI** 中单独选择已保存的视觉模型配置，点击 **翻译图文并解释** 或 **分析未完成图片**。此时才向所选 AI 发送图片、目标语言和分析指令。结果逐步显示，可停止、重试。
+
+图片最长边限制为 1600 像素，单张编码不超过 4 MB，最多暂存 20 张/24 MB。图片和分析结果只存于当前标签页内存，不进入正文缓存；下载图片和导出 TXT 会保留在下载目录。AI 可能误读文字或数值，请核对原图。此工作流展示文字翻译和解释，不重绘图表，也不把扫描页自动变成原位译文。
+
+最大 25 MB、300 页/阅读分段、100 万提取字符。TXT/Markdown 支持 UTF-8 或带 BOM 的 UTF-16。Word 仅支持 DOCX；浏览器字体和复杂 Word 排版可能与 Microsoft Word 不同，严格保真请先另存 PDF。旧 DOC 请先转为 DOCX。扫描 PDF 的正文原位替换需先 OCR，当前无内置整页 OCR 替换；可将整页图片交给视觉 AI 阅读。复杂多栏、重叠文字、公式及特殊字体可能需段落模式或人工核对。
+
+PDF.js、fflate、docx-preview 和 JSZip 随包提供，在浏览器本地解析文件，无远程可执行代码。正文翻译发送提取文字；底部 AI 分析只在点击后发送所选图片，不上传原始 PDF/DOCX 文件或密码。远程文档下载需来源域名权限，可能携带该站点登录 Cookie。最低要求 Chromium 内核 Edge 125，集成测试使用 Edge 155。许可见 THIRD_PARTY_NOTICES.md。
 
 已有侧载安装更新时，在原目录替换运行文件后，到 `edge://extensions` 点击扩展的“重新加载”，再刷新需要翻译的网页。浏览器中的 API 配置会保留。
 
@@ -120,7 +128,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 .\package.ps1
 ```
 
-打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.5.0.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
+打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.6.0.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
 
 ## 项目与上架信息
 
@@ -144,9 +152,10 @@ npm install --no-save playwright
 node tools/functional-check.cjs functional-results.json
 node tools/document-check.cjs document-results.json
 node tools/configuration-check.cjs configuration-results.json
+node tools/layout-check.cjs layout-results.json
 ```
 
-0.5.0 已通过 134 项检查：87 项网页/接口回归检查、34 项文档检查和 13 项配置方案/基础试用接口检查。覆盖真实 PDF 渲染与文字层、双栏/旋转页面、DOCX 与文本、流式翻译、段落对齐、同步滚动、停止续译、连接隔离、边界与错误处理、双语导出。测试使用生成文档、虚构 Key、本地模拟 API 和独立 Edge 155 配置，只给测试副本加入 localhost 权限；未修改的正式 Manifest 也验证了无主机授权时本地 PDF 可正常显示。真实服务商的账号、额度、网络可达性和翻译质量仍需使用自己的 Key 验证。详见 `docs/VERIFICATION.md`。
+0.6.0 的自动检查覆盖网页/接口、文档、配置方案、原位翻译和底部 AI 工作流。测试使用生成文档、虚构 Key、本地模拟接口及独立 Edge 配置，不读取真实用户 API 设置。检查结果不能代表真实服务商速度、额度、可用性或翻译质量。具体结果见 [验证记录](docs/VERIFICATION.md)。
 
 网页面板每次最多翻译 12000 个字符并显示截断提示。沉浸式模式对正文进行有界扫描，每次最多处理视区附近的 80 个正文块，长段落自动拆分。滚动后重新翻译会替换上一轮译文。编辑区域、不可见内容和 translate=no 内容不会被自动提取。
 

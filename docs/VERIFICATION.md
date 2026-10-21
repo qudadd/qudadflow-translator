@@ -1,4 +1,24 @@
-# QudadFlow Translator 0.5.0 verification
+# QudadFlow Translator 0.6.0 verification
+
+Date: October 21, 2026 (Asia/Shanghai). Browser: Microsoft Edge 155.0.4283.62.
+
+**151 checks passed, zero failures:** 87 webpage/provider, 34 document, 13 configuration/basic-provider and 17 layout/figure checks. Reports: [webpage/provider](validation-v0.6.0.json), [documents](validation-documents-v0.6.0.json), [configuration](validation-configuration-v0.6.0.json), [layout/figures](validation-layout-v0.6.0.json).
+
+All tests use generated files, synthetic credentials, localhost APIs and isolated Edge profiles. No real user API configuration or private key was accessed. No live provider request was made for this release; real latency, quotas and translation/vision quality remain unverified. The earlier live MyMemory sample below belongs to 0.5.0.
+
+New verified behavior:
+
+- PDF page ratio, replacement positions and rotated-page resize; exact pixel equality for raster images and vector charts outside text regions. Source glyphs disappear only for fitted translations. Oversized fallback regions retain original canvas pixels with a full-text link. Translation while showing the original keeps valid geometry.
+- Word page dimensions, margins, tables and raster image positions, with matching heading font size/weight. Generated DOCX files lacking package relationships render. XML/external-resource guards and bounded ZIP parsing remain covered.
+- TXT/Markdown paragraph positions, original content before translation, retained original text on overflow and full-text inspection.
+- Local image extraction and duplicate prevention without API calls; PDF vector crop and image download; explicit bounded image upload with Chat Completions or Responses. Traditional body translation works alongside a separate saved vision AI configuration.
+- Streamed analysis, cancellation, unsupported vision errors, configuration changes during a stream, document replacement and stale-output cleanup. Reader-only requests reject invalid images and unauthorized extension pages. Profile summaries contain no keys or endpoints. No unexpected document network loads or page errors were observed.
+
+Important limits: Word uses browser layout and can differ from Microsoft Word. Arbitrary overlaps, equations, font encodings, complex columns and clipping are not fully covered; use paragraph comparison when needed. Scanned-page body replacement requires external OCR. AI image analysis does not rewrite chart artwork. Export remains bilingual TXT, with no layout-preserving PDF/DOCX export. Generated tests do not establish universal document fidelity or official store certification.
+
+The 0.6.0 package is a development preview, not an Edge Add-ons submission. Version 0.5.0 was last confirmed In review on October 21; its review and historical package are preserved. Updating unpacked runtime files requires an Edge extension reload to activate; file copying alone is not evidence of activation.
+
+## Previous 0.5.0 verification
 
 Date: October 21, 2026 (Asia/Shanghai). Browser: Microsoft Edge 155.0.4283.62.
 

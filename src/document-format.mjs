@@ -73,7 +73,11 @@ export function parseDocxXml(xml) {
 export function pdfBlocks(content, viewport, transform) {
   const items = content.items.filter(item => typeof item.str === 'string' && item.str.trim()).map(item => {
     const matrix = transform(viewport.transform, item.transform);
-    return {text: item.str, x: matrix[4], y: matrix[5], width: item.width, height: Math.max(4, Math.abs(item.height) || Math.hypot(matrix[2], matrix[3]))};
+    const height = Math.max(4, Math.abs(item.height) || Math.hypot(matrix[2], matrix[3]));
+    const ascent = content.styles?.[item.fontName]?.ascent ?? .85;
+    return {text: item.str, x: matrix[4], y: matrix[5], width: item.width, height,
+      top: matrix[5] - height * ascent, bottom: matrix[5] + height * (1-ascent),
+      supported: Math.abs(Math.atan2(matrix[1],matrix[0])) < .02 && !content.styles?.[item.fontName]?.vertical};
   });
   items.sort((a, b) => a.y - b.y || a.x - b.x);
   const rows = [];
@@ -88,11 +92,13 @@ export function pdfBlocks(content, viewport, transform) {
     let line;
     for (const item of row.items) {
       if (!line || item.x - line.right > Math.max(18, item.height * 2)) {
-        line = {text: '', x: item.x, y: row.y, right: item.x, height: item.height}; lines.push(line);
+        line = {text: '', x: item.x, y: row.y, right: item.x, height: item.height, top:item.top, bottom:item.bottom, supported:true, rects:[]}; lines.push(line);
       }
       const gap = item.x - line.right;
       const separator = line.text && gap > item.height * .15 && !/\s$/.test(line.text) ? ' ' : '';
       line.text += separator + item.text; line.right = item.x + item.width; line.height = Math.max(line.height, item.height);
+      line.top=Math.min(line.top,item.top);line.bottom=Math.max(line.bottom,item.bottom);line.supported &&= item.supported;
+      line.rects.push({x:item.x-.7,y:item.top-.7,width:item.width+1.4,height:item.bottom-item.top+1.4});
     }
   }
   const middle = viewport.width / 2;
@@ -109,14 +115,21 @@ export function pdfBlocks(content, viewport, transform) {
   const paragraphs = [];
   let current, previous;
   for (const line of ordered) {
-    const isNew = !previous || line.y < previous.y - 2 || line.y - previous.y > Math.max(line.height, previous.height) * 1.75 || Math.abs(line.x - previous.x) > line.height * 2.5;
-    if (isNew) { current = {text: '', kind: 'paragraph'}; paragraphs.push(current); }
+    const isNew = !previous || line.y < previous.y - 2 || line.y - previous.y > Math.max(line.height, previous.height) * 1.75 || Math.abs(line.x - previous.x) > line.height * 2.5 || Math.abs(line.height-previous.height)>previous.height*.2 || (current?.text.length||0)+line.text.length>1500 || !line.supported || !previous.supported;
+    if (isNew) { current = {text: '', kind: 'paragraph', lines:[]}; paragraphs.push(current); }
     const join = current.text && /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]$/u.test(current.text) && /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(line.text) ? '' : ' ';
     if (/[a-z]-$/.test(current.text) && /^[a-z]/.test(line.text)) current.text = current.text.slice(0, -1) + line.text;
     else current.text += (current.text ? join : '') + line.text;
+    current.lines.push(line);
     previous = line;
   }
-  return paragraphs.flatMap(paragraph => splitParagraph(paragraph.text).map(text => ({text, kind: paragraph.kind})));
+  return paragraphs.flatMap(paragraph => {
+    const {lines}=paragraph,x=Math.min(...lines.map(l=>l.x)),y=Math.min(...lines.map(l=>l.top));
+    const geometry={x,y,width:Math.max(...lines.map(l=>l.right))-x,height:Math.max(...lines.map(l=>l.bottom))-y,
+      fontSize:Math.max(...lines.map(l=>l.height)),rects:lines.flatMap(l=>l.rects),supported:lines.every(l=>l.supported)};
+    const parts=splitParagraph(paragraph.text);
+    return parts.map(text=>({text,kind:paragraph.kind,geometry:{...geometry,supported:geometry.supported&&parts.length===1}}));
+  });
 }
 
 export function translationBatches(blocks) {

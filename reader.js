@@ -1,19 +1,25 @@
 import {MAX_FILE_BYTES, MAX_TEXT_CHARS, MAX_PAGES, textPages, decodeText, parseDocxXml, pdfBlocks, translationBatches, markedTranslations} from './src/document-format.mjs';
+import {PdfLayoutView,fitText,blockDetail} from './src/layout-view.mjs';
+import {renderWord,WordLayoutView} from './src/word-layout.mjs';
+import {FigureWorkflow} from './src/figure-workflow.mjs';
 
 const $ = id => document.getElementById(id);
 let documentState, pdfLibrary, loadingTask, downloadController, renderTask, textLayer;
 let loadGeneration = 0, renderGeneration = 0, jobGeneration = 0, jobRunning = false, port, sequence = 0;
 let currentPage = 1, views = new Map(), syncing = false, resizeTimer, alignmentFrame;
+let layoutView,backgroundTask,figures;
+const layoutMode=()=>$('layoutMode').value;
 const pending = new Map();
 const status = (text, error = false) => { $('status').textContent = text; $('status').classList.toggle('error', error); };
 function controls() {
   const ready = Boolean(documentState);
-  for (const id of ['translatePage', 'translateAll']) $(id).disabled = !ready || jobRunning;
+  for (const id of ['translatePage', 'translateAll']) $(id).disabled = !ready || jobRunning || Boolean(figures?.busy);
   $('stop').hidden = !jobRunning;
   $('previous').disabled = !ready || currentPage <= 1;
   $('next').disabled = !ready || currentPage >= documentState.pageCount;
   $('pageNumber').disabled = !ready;
   $('export').disabled = !ready || !Array.from(documentState.cache.values()).some(page => page.blocks?.some(block => block.translation));
+  if(figures){figures.textBusy=jobRunning;figures.controls();}
 }
 function connect() {
   if (port) return port;
@@ -33,12 +39,12 @@ function connect() {
   });
   return connection;
 }
-function request(text, context, onProgress) {
+function request(text, context, onProgress,extra={}) {
   const requestId = `doc-${++sequence}`;
   const connection = connect(); let resolve;
   const promise = new Promise(done => {resolve = done;});
   pending.set(requestId, {resolve, promise, onProgress, connection});
-  try {connection.postMessage({type:'TRANSLATE', requestId, text, context, targetLanguage:$('targetLanguage').value});}
+  try {connection.postMessage({type:'TRANSLATE', requestId, text, context, targetLanguage:$('targetLanguage').value,...extra});}
   catch {pending.delete(requestId); resolve({ok:false,error:'扩展已重新加载，请刷新阅读器。'});}
   return promise.then(result => {if (!result.ok) throw new Error(result.error || '翻译失败。');return result.translation;});
 }
@@ -52,6 +58,7 @@ function cancelRequests() {
 }
 function stopTranslation(showNotice = false) {
   jobGeneration += 1; cancelRequests();
+  figures?.invalidate();
   jobRunning = false;
   for (const page of documentState?.cache.values() || []) for (const block of page.blocks || []) delete block.partial;
   updateTranslations(); controls();
@@ -62,14 +69,31 @@ function updateTranslations() {
     node.textContent = block.translation || block.partial || '等待翻译';
     node.className = block.translation ? 'translated' : block.partial ? 'pending' : 'placeholder';
   }
+  layoutView?.update();
   controls();
   scheduleAlignment();
 }
 function scheduleAlignment() {
   cancelAnimationFrame(alignmentFrame);
   alignmentFrame=requestAnimationFrame(()=>{
-    if(!documentState || documentState.kind==='PDF')return;
+    if(!documentState || documentState.kind==='PDF'||layoutView)return;
     const source=$('sourceContent').querySelectorAll('.document-block'), translated=$('translationContent').querySelectorAll('.document-block');
+    if(layoutMode()!=='paragraph'){
+      let overflow=0;
+      source.forEach((node,index)=>{
+        const target=translated[index];if(!target)return;target.style.height=`${node.offsetHeight}px`;
+        const text=target.lastElementChild,block=documentState.cache.get(currentPage)?.blocks[index];
+        const box={width:node.lastElementChild.clientWidth,height:node.lastElementChild.offsetHeight},fontSize=parseFloat(getComputedStyle(node.lastElementChild).fontSize);
+        text.textContent=block.translation||block.partial||block.text;text.style.height=`${box.height}px`;
+        const fits=fitText(text,box,fontSize);text.classList.toggle('layout-fallback',!fits);
+        if(!fits){overflow++;text.textContent=block.text;text.style.fontSize=`${fontSize}px`;}
+        text.title=fits?'点击查看原文和完整译文':'本段译文超出原区域，保留原文；点击查看完整译文';
+        text.onclick=()=>blockDetail(block);text.tabIndex=0;text.setAttribute('role','button');
+        text.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();blockDetail(block);}};
+      });
+      $('layoutNotice').textContent=overflow?`${overflow} 段译文超出原区域，保留原文；点击段落查看完整译文。`:'文本按阅读段落显示，原位模式固定每段位置；点击段落可查看原文和完整译文。';
+      return;
+    }
     for(const node of [...source,...translated])node.style.minHeight='';
     source.forEach((node,index)=>{if(translated[index]){const height=Math.max(node.offsetHeight,translated[index].offsetHeight);node.style.minHeight=translated[index].style.minHeight=`${height}px`;}});
   });
@@ -104,7 +128,8 @@ async function showPage(number, preserveScroll = false) {
   const state = documentState;if (!state) return;
   number = Math.max(1,Math.min(state.pageCount,Math.trunc(Number(number)||1)));currentPage = number;
   const generation = ++renderGeneration;
-  renderTask?.cancel();textLayer?.cancel();
+  renderTask?.cancel();backgroundTask?.cancel();textLayer?.cancel();layoutView=undefined;figures?.setContext(null);
+  const mode=layoutMode();$('workspace').classList.toggle('immersive',mode==='immersive');$('workspace').classList.toggle('text-immersive',mode!=='paragraph'&&state.kind!=='PDF'&&!state.wordLayout);$('showOriginal').hidden=mode!=='immersive';
   const scroll = ['sourcePane','translationPane'].map(id => $(id).scrollTop / Math.max(1,$(id).scrollHeight - $(id).clientHeight));
   $('pageNumber').value = number;$('pageCount').textContent = state.pageCount;controls();
   try {
@@ -112,14 +137,17 @@ async function showPage(number, preserveScroll = false) {
     if (generation !== renderGeneration || state !== documentState) return false;
     if(!jobRunning)status(`第 ${number}/${state.pageCount} 页 · ${page.blocks.filter(block=>block.translation).length}/${page.blocks.length} 段已翻译${page.blocks.length?'':'；此页无可提取文字'}。`);
     views = new Map();$('sourceContent').replaceChildren();$('translationContent').replaceChildren();
-    const translations = document.createElement('div');translations.className = 'translated-text';
-    if (!page.blocks.length) {translations.className='empty-page';translations.textContent='此页没有可提取的文字，可能是扫描图片或空白页。扫描 PDF 请先 OCR，再打开识别后的 PDF。';}
-    page.blocks.forEach((block,index) => translations.append(blockView(block,index,true)));
-    $('translationContent').append(translations);updateTranslations();
+    const positioned=mode!=='paragraph'&&(state.kind==='PDF'||state.wordLayout);
+    if(!positioned){
+      const translations=document.createElement('div');translations.className='translated-text';
+      if(!page.blocks.length){translations.className='empty-page';translations.textContent='此页没有可提取文字；扫描 PDF 请先 OCR。也可以在底部提取图表后分析。';}
+      page.blocks.forEach((block,index)=>translations.append(blockView(block,index,true)));$('translationContent').append(translations);
+    }
+    updateTranslations();
     if (state.kind === 'PDF') {
       const library = await pdfLibrary, pdfPage = await state.pdf.getPage(number);
       if (generation !== renderGeneration) return false;
-      const width = Math.max(160,$('sourcePane').clientWidth - 28);
+      const width = Math.min(1100,Math.max(160,($('sourcePane').clientWidth||$('translationPane').clientWidth) - 28));
       const base = pdfPage.getViewport({scale:1}), scale = width / base.width;
       const viewport = pdfPage.getViewport({scale});
       const ratio = Math.min(devicePixelRatio || 1,2,Math.sqrt(12000000/(viewport.width*viewport.height)));
@@ -127,14 +155,32 @@ async function showPage(number, preserveScroll = false) {
       const sheet = document.createElement('div');sheet.className='pdf-sheet';sheet.style.width=`${viewport.width}px`;sheet.style.height=`${viewport.height}px`;sheet.style.setProperty('--scale-factor',scale);
       const canvas = document.createElement('canvas');canvas.width=Math.ceil(viewport.width*ratio);canvas.height=Math.ceil(viewport.height*ratio);canvas.style.width=`${viewport.width}px`;canvas.style.height=`${viewport.height}px`;canvas.setAttribute('aria-label',`PDF 原文第 ${number} 页`);
       const layer = document.createElement('div');layer.className='textLayer';sheet.append(canvas,layer);$('sourceContent').append(sheet);
-      renderTask = pdfPage.render({canvasContext:canvas.getContext('2d'),viewport,transform:ratio===1?null:[ratio,0,0,ratio,0,0]});
+      renderTask = pdfPage.render({canvas,viewport,transform:ratio===1?null:[ratio,0,0,ratio,0,0],recordImages:true});
       await renderTask.promise;
       if (generation !== renderGeneration) return false;
       const content=await pdfPage.getTextContent();
       if (generation !== renderGeneration) return false;
       textLayer = new library.TextLayer({textContentSource:content,container:layer,viewport});await textLayer.render();
+      if(generation!==renderGeneration)return false;
+      if(positioned){
+        const originalBase=pdfPage.getViewport({scale:1,rotation:0}),background=document.createElement('canvas');background.width=canvas.width;background.height=canvas.height;
+        const operators=await pdfPage.getOperatorList();if(generation!==renderGeneration)return false;
+        if(operators.fnArray.length>150000)throw new Error('PDF 绘图指令过多，请使用段落对照模式。');
+        const textOps=new Set(['showText','showSpacedText','nextLineShowText','nextLineSetSpacingShowText'].map(name=>library.OPS[name]).filter(Number.isFinite));
+        const disabled=operators.fnArray.some((op,i)=>op===library.OPS.setTextRenderingMode&&operators.argsArray[i][0]>=4 || op===library.OPS.setFont&&pdfPage.commonObjs.get(operators.argsArray[i][0])?.isType3Font);
+        backgroundTask=pdfPage.render({canvas:background,viewport,transform:ratio===1?null:[ratio,0,0,ratio,0,0],operationsFilter:(index,list)=>!textOps.has(list.fnArray[index])});
+        await backgroundTask.promise;if(generation!==renderGeneration)return false;
+        const translatedSheet=sheet.cloneNode(false),replacement=document.createElement('div');replacement.className='replacement-layer';translatedSheet.append(replacement);$('translationContent').append(translatedSheet);
+        layoutView=new PdfLayoutView({page,source:canvas,background,sheet:translatedSheet,layer:replacement,viewport,base:originalBase,library,ratio,disabled});
+        if(!page.blocks.length){const empty=document.createElement('div');empty.className='empty-page';empty.textContent='此页没有可提取文字。扫描 PDF 需先 OCR；底部可提取整页交给 AI 识别与说明。';translatedSheet.append(empty);}
+      }else $('layoutNotice').textContent='段落对照会重新排版文字；切换“沉浸原位”可保持页面比例。';
+      figures.setContext({canvas,images:pdfPage.imageCoordinates,page:number});
+    } else if(state.wordLayout&&positioned){
+      const width=Math.min(1100,Math.max(160,($('sourcePane').clientWidth||$('translationPane').clientWidth)-28));
+      layoutView=new WordLayoutView({page,sourceContainer:$('sourceContent'),translationContainer:$('translationContent'),width});figures.setContext({element:layoutView.source,page:number});
     } else {
       const source = document.createElement('div');source.className='source-text';page.blocks.forEach((block,index)=>source.append(blockView(block,index)));$('sourceContent').append(source);
+      figures.setContext({element:page.template||source,page:number});$('layoutNotice').textContent=state.kind==='Word'?'Word 正文阅读模式；切换沉浸原位可保留表格、图片和页边距。':'文本按阅读段落显示；原位模式固定每段位置，长译文可点击展开。';
     }
     if (generation !== renderGeneration) return false;
     ['sourcePane','translationPane'].forEach((id,index)=>{$(id).scrollTop=preserveScroll?scroll[index]*Math.max(0,$(id).scrollHeight-$(id).clientHeight):0;});
@@ -194,7 +240,7 @@ function unzipWord(bytes, signal) {
     const done=(error,value)=>{clearTimeout(timer);worker.terminate();signal.removeEventListener('abort',abort);error?reject(error):resolve(value);};
     const abort=()=>done(new Error('文档加载已取消。'));
     timer=setTimeout(()=>done(new Error('Word 解析超时，请检查或拆分文件。')),8000);
-    worker.onmessage=({data})=>done(data.ok?null:new Error(data.error),data.xml);
+    worker.onmessage=({data})=>done(data.ok?null:new Error(data.error),data);
     worker.onerror=()=>done(new Error('无法解析 Word 文件。'));
     signal.addEventListener('abort',abort,{once:true});if(signal.aborted)return abort();
     worker.postMessage(bytes.buffer,[bytes.buffer]);
@@ -202,9 +248,9 @@ function unzipWord(bytes, signal) {
 }
 function startLoad() {
   const generation=++loadGeneration;downloadController?.abort();const controller=new AbortController();downloadController=controller;
-  stopTranslation();renderGeneration+=1;renderTask?.cancel();textLayer?.cancel();clearTimeout(resizeTimer);
+  stopTranslation();renderGeneration+=1;renderTask?.cancel();backgroundTask?.cancel();textLayer?.cancel();layoutView=undefined;figures?.reset();document.getElementById('wordStyles')?.remove();clearTimeout(resizeTimer);
   const old=documentState, oldTask=loadingTask;documentState=undefined;loadingTask=undefined;views.clear();controls();$('cancelLoad').hidden=false;
-  $('workspace').hidden=true;$('welcome').hidden=false;$('sourceContent').replaceChildren();$('translationContent').replaceChildren();
+  $('workspace').hidden=true;$('welcome').hidden=false;$('layoutBar').hidden=true;$('sourceContent').replaceChildren();$('translationContent').replaceChildren();
   $('fileName').textContent='正在打开文档…';$('fileDetail').textContent='PDF · Word DOCX · TXT · Markdown';$('pageCount').textContent='—';
   if(oldTask)oldTask.destroy().catch(()=>{});else old?.task?.destroy().catch(()=>{});
   return {generation,controller,signal:controller.signal};
@@ -228,23 +274,24 @@ async function openBytes(bytes,name,load) {
     if(pdf.numPages>MAX_PAGES){await task.destroy();if(loadingTask===task)loadingTask=undefined;throw new Error(`PDF 超过 ${MAX_PAGES} 页，请拆分后打开。`);}
     state={kind:'PDF',name,pdf,task,pageCount:pdf.numPages,cache:new Map(),inflight:new Map(),totalChars:0};
   } else {
-    let pages,kind;
-    if(bytes[0]===80&&bytes[1]===75) {kind='Word';pages=parseDocxXml(await unzipWord(bytes,load.signal));}
+    let pages,kind,wordLayout;
+    if(bytes[0]===80&&bytes[1]===75) {kind='Word';const decoded=await unzipWord(bytes,load.signal);parseDocxXml(decoded.xml);wordLayout=await renderWord(decoded.files,load.signal);pages=wordLayout.pages;}
     else {
       if(!/\.(txt|md|markdown)$/i.test(name))throw new Error('此链接或文件不是 PDF、DOCX、TXT 或 Markdown。网页登录页不能作为文档打开，请下载文件后选择它。');
       kind=/\.(md|markdown)$/i.test(name)?'Markdown':'TXT';const text=decodeText(bytes);
       if(text.length>MAX_TEXT_CHARS)throw new Error('文本超过 100 万字符，请拆分文件。');
       pages=textPages(text.split(/\n\s*\n/));
     }
-    state={kind,name,pageCount:pages.length,cache:new Map(pages.map((page,index)=>[index+1,page])),inflight:new Map()};
+    state={kind,name,pageCount:pages.length,cache:new Map(pages.map((page,index)=>[index+1,page])),inflight:new Map(),wordLayout:Boolean(wordLayout)};
+    if(wordLayout&&load.generation===loadGeneration){wordLayout.styles.id='wordStyles';document.body.append(wordLayout.styles);}
   }
   if(load.generation!==loadGeneration)return;
-  documentState=state;currentPage=1;$('welcome').hidden=true;$('workspace').hidden=false;
-  $('fileName').textContent=name;$('fileDetail').textContent=`${state.kind} · ${state.pageCount} ${state.kind==='PDF'?'页':'个阅读分段'} · 本地解析`;
-  $('sourceLabel').textContent=state.kind==='PDF'?'PDF 原页 · 文字可选':'正文阅读排版 · 非原文件分页';
-  $('translationLabel').textContent=state.kind==='PDF'?'按页对应 · 段落顺序':'逐段对应 · 流式显示';
+  documentState=state;currentPage=1;$('welcome').hidden=true;$('workspace').hidden=false;$('layoutBar').hidden=false;
+  $('fileName').textContent=name;$('fileDetail').textContent=`${state.kind} · ${state.pageCount} ${state.kind==='PDF'||state.wordLayout?'页':'个阅读分段'} · 本地解析`;
+  $('sourceLabel').textContent=state.kind==='PDF'?'PDF 原页 · 文字可选':state.kind==='Word'?'Word 浏览器排版':'正文阅读排版 · 非原文件分页';
+  $('translationLabel').textContent='原位替换 · 支持传统 / AI 翻译';
   $('pageNumber').max=state.pageCount;const shown=await showPage(1);controls();
-  if(shown&&load.generation===loadGeneration)status('文档已打开。点击“翻译当前页”或“翻译全文”开始左右对照。');
+  if(shown&&load.generation===loadGeneration)status('文档已打开。点击“翻译当前页”或“翻译全文”开始，传统与 AI 接口均可翻译正文。');
 }
 async function openFile(file) {
   if(!file)return;
@@ -305,15 +352,19 @@ $('settings').addEventListener('click',()=>chrome.runtime.openOptionsPage());
 $('translatePage').addEventListener('click',()=>translate());$('translateAll').addEventListener('click',()=>translate(true));
 $('stop').addEventListener('click',()=>stopTranslation(true));$('export').addEventListener('click',exportText);
 $('previous').addEventListener('click',()=>showPage(currentPage-1));$('next').addEventListener('click',()=>showPage(currentPage+1));$('pageNumber').addEventListener('change',()=>showPage($('pageNumber').value));
+$('layoutMode').addEventListener('change',()=>{$('workspace').classList.remove('show-original');$('showOriginal').setAttribute('aria-pressed','false');$('showOriginal').textContent='查看原文';showPage(currentPage,true);});
+$('showOriginal').addEventListener('click',()=>{const original=$('workspace').classList.toggle('show-original');$('showOriginal').setAttribute('aria-pressed',String(original));$('showOriginal').textContent=original?'返回译文':'查看原文';});
+figures=new FigureWorkflow({request:(imageData,profileId,onProgress)=>request('', 'figure',onProgress,{type:'FIGURE_ANALYZE',imageData,profileId}),cancel:cancelRequests,onBusy:()=>{for(const id of ['translatePage','translateAll'])$(id).disabled=!documentState||jobRunning||Boolean(figures?.busy);}});
+$('cropFigure').addEventListener('click',()=>{if(layoutMode()==='immersive'){$('workspace').classList.add('show-original');$('showOriginal').setAttribute('aria-pressed','true');$('showOriginal').textContent='返回译文';}});
 for(const id of ['sourcePane','translationPane'])$(id).addEventListener('scroll',()=>{
   if(syncing||!$('syncScroll').checked)return;const source=$(id),target=$(id==='sourcePane'?'translationPane':'sourcePane');
   syncing=true;target.scrollTop=source.scrollTop/Math.max(1,source.scrollHeight-source.clientHeight)*Math.max(0,target.scrollHeight-target.clientHeight);requestAnimationFrame(()=>{syncing=false;});
 });
-let previousWidth=0;new ResizeObserver(()=>{const width=$('sourcePane').clientWidth;if(Math.abs(width-previousWidth)<1)return;const changed=previousWidth>0;previousWidth=width;clearTimeout(resizeTimer);if(documentState?.kind==='PDF'&&changed)resizeTimer=setTimeout(()=>showPage(currentPage,true),150);else scheduleAlignment();}).observe($('sourcePane'));
+let previousWidth=0;new ResizeObserver(()=>{const width=$('sourcePane').clientWidth;if(Math.abs(width-previousWidth)<1)return;const changed=previousWidth>0;previousWidth=width;clearTimeout(resizeTimer);if((documentState?.kind==='PDF'||documentState?.wordLayout)&&changed)resizeTimer=setTimeout(()=>showPage(currentPage,true),150);else scheduleAlignment();}).observe($('sourcePane'));
 for(const type of ['dragenter','dragover'])document.addEventListener(type,event=>{if(event.dataTransfer?.types.includes('Files')){event.preventDefault();document.body.classList.add('dragging');}});
 document.addEventListener('dragleave',event=>{if(!event.relatedTarget)document.body.classList.remove('dragging');});
 document.addEventListener('drop',event=>{if(event.dataTransfer?.files.length){event.preventDefault();document.body.classList.remove('dragging');openFile(event.dataTransfer.files[0]);}});
-chrome.storage.onChanged.addListener(async(_changes,area)=>{if(area!=='local')return;await stopTranslation();for(const page of documentState?.cache.values()||[])for(const block of page.blocks)delete block.translation;const settings=await chrome.storage.local.get({targetLanguage:'zh-CN'});$('targetLanguage').value=settings.targetLanguage;updateTranslations();if(documentState)status('翻译配置已更改。请重新翻译文档。');});
+chrome.storage.onChanged.addListener(async(_changes,area)=>{if(area!=='local')return;await stopTranslation();figures.clearResults();for(const page of documentState?.cache.values()||[])for(const block of page.blocks)delete block.translation;const settings=await chrome.storage.local.get({targetLanguage:'zh-CN'});$('targetLanguage').value=settings.targetLanguage;updateTranslations();if(documentState)status('翻译配置已更改。请重新翻译文档。');});
 $('targetLanguage').addEventListener('change',()=>chrome.storage.local.set({targetLanguage:$('targetLanguage').value}));
 window.addEventListener('pagehide',()=>{clearInterval(heartbeat);cancelRequests();port?.disconnect();downloadController?.abort();loadingTask?.destroy();});
 const settings=await chrome.storage.local.get({targetLanguage:'zh-CN'});$('targetLanguage').value=settings.targetLanguage;
