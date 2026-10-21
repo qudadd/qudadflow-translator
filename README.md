@@ -6,6 +6,12 @@ A Manifest V3 extension for Microsoft Edge and Google Chrome, with immersive bil
 
 **QQ community: 1048123205** — search for this group number in QQ to join, share feedback and discuss the extension. You can also find it in the extension popup and Settings → 交流与支持.
 
+[![Webpage reading, selection translation, documents, paper research, figures and model settings](branding/store-0.7.1/preview.jpg)](docs/STORE_PRESENTATION_0.7.1.md)
+
+The [store presentation](docs/STORE_PRESENTATION_0.7.1.md) includes updated English/Chinese descriptions and six screenshots. Images show real extension UI with generated documents, simulated responses and an example model catalog; provider quality and speed vary.
+
+These listing materials are saved in Partner Center as a draft. Publication is currently blocked by the existing 0.7.1 review; see the [update record](docs/STORE_PRESENTATION_UPDATE_0.7.1.md) for the result recorded on 21 October 2026.
+
 ## Translation providers
 
 - Google Cloud Translation v2
