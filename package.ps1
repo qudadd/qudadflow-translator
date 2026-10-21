@@ -49,7 +49,7 @@ $files = @(
   'src\layout-view.mjs', 'src\word-layout.mjs', 'src\figure-workflow.mjs',
   'src\research-store.js', 'src\research-capture.js', 'src\research-service.js',
   'src\research-ui.mjs', 'src\research-settings.mjs', 'research.html', 'research.js', 'research.css',
-  'src\profile-store.js', 'src\my-memory.js',
+  'src\profile-store.js', 'src\my-memory.js', 'src\model-catalog.js',
   'reader.html', 'reader.css', 'reader.js', 'THIRD_PARTY_NOTICES.md',
   '_locales\en\messages.json', '_locales\zh_CN\messages.json',
   'assets\icon16.png', 'assets\icon32.png', 'assets\icon48.png', 'assets\icon128.png'

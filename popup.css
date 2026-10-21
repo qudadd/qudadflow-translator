@@ -27,3 +27,8 @@ button:disabled, input:disabled { cursor:wait; opacity:.6; }
 .footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #eef1f6; }
 .footer button, .footer a { width: auto; padding: 4px 0; border: 0; background: transparent; color: #315bc7; font-size: 12px; text-decoration: none; }
 .footer button:hover, .footer a:hover { text-decoration: underline; }
+.community { display:flex; align-items:center; gap:8px; margin-top:10px; padding:10px 12px; border:1px solid #e1e8f5; border-radius:8px; background:#f5f8ff; color:#315bc7; font-size:12px; text-decoration:none; }
+.community strong { font-variant-numeric:tabular-nums; }
+.community span { margin-left:auto; }
+.community:hover { background:#edf3ff; }
+.community:focus-visible { outline:2px solid #315bc7; outline-offset:2px; }

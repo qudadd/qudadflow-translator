@@ -1,4 +1,25 @@
-# QudadFlow Translator 0.7.0 verification
+# QudadFlow Translator 0.7.1 verification
+
+Date: October 21, 2026 (Asia/Shanghai). Microsoft Edge 155.0.4283.62. **191 checks passed, zero failures.**
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| Models/settings | 22 | [model results](validation-models-v0.7.1.json) |
+| Webpage/providers | 87 | [functional results](validation-v0.7.1.json) |
+| Documents | 34 | [document results](validation-documents-v0.7.1.json) |
+| Saved configurations | 13 | [configuration results](validation-configuration-v0.7.1.json) |
+| Layout/figures | 17 | [layout results](validation-layout-v0.7.1.json) |
+| Research/Skills/memory | 18 | [research results](validation-research-v0.7.1.json) |
+
+All suites use generated documents, synthetic keys, local simulated APIs and isolated Edge profiles. They do not read a real user's API settings. No live-provider request was made for this release; latency, quality, billing, service availability and vision accuracy are not measured.
+
+New checks cover root/base/full endpoint routes; model list response variants, duplicates and caps; explicit selection without replacing existing models; reported versus unknown capabilities; safe metadata rendering; draft tests without applying/saving; cancellation, stale requests and tab isolation; errors, redirects, response-size limits and 15-second deadlines; options-page authorization and secret redaction. Responsive settings were checked at 1440, 900, 600 and 390 pixels with no horizontal overflow. Desktop and mobile screenshots were visually inspected.
+
+A separate installed-Google-Chrome attempt passed two pure logic checks, then timed out waiting for the extension service worker after 30 seconds. Report: [Chrome attempt](validation-chrome-attempt-v0.7.1.json). No Chrome UI/integration checks ran. The cause is not established; this is an incomplete Chrome validation, not a Chrome pass. The shared Manifest V3 package has no Edge-only update URL. Actual Chrome installation and store review remain separate pending steps.
+
+Run the six corresponding tools/*-check.cjs scripts to reproduce the Edge checks. Runtime packaging validates the explicit resource allowlist and matching English privacy copies. Known limits from 0.7.0 remain: heuristic extraction, no scan-body OCR, no layout-preserving PDF/DOCX export, and no execution of generated Python/R.
+
+## Previous: QudadFlow Translator 0.7.0 verification
 
 Date: October 21, 2026 (Asia/Shanghai). Microsoft Edge 155.0.4283.62. **169 checks passed, zero failures:** 87 webpage/provider + 34 documents + 13 configurations + 17 layout/figures + 18 research.
 

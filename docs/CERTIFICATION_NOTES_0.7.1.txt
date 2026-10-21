@@ -1,0 +1,18 @@
+QudadFlow Translator 0.7.1 provides user-initiated webpage/document translation and optional analysis of the same reading material. No extension account, shared provider key or developer proxy is required. Provider keys must be supplied by the reviewer; vision analysis needs an image-capable model. The optional MyMemory trial is quota-limited and for short non-private samples.
+
+New in 0.7.1: open Settings, enter an OpenAI-compatible endpoint/key, click Read upstream models, search the returned list, inspect reported capabilities and explicitly fill a model. Missing capability data is unknown; no model is selected automatically. A provider may not expose /v1/models. The list stays in the settings tab and includes no page material. Model fetches have bounded size/time and reject redirects.
+
+Test connection sends the fixed sentence "This is a connection test." using the unsaved draft and bypasses cache; it neither saves nor enables that draft. It does not validate vision input. Saving applies the configuration. API-host grants can persist even without saving. Check model-loading cancellation and changing the connection while model loading is pending.
+
+191 isolated Edge checks passed using generated files, localhost fixtures and synthetic credentials. No live-provider quality is claimed. A separate installed-Chrome attempt could not load the extension service worker; Chrome integration remains unverified. No keys are included in the package.
+
+Review guide and local simulated API:
+https://github.com/qudadd/qudadflow-translator/blob/main/docs/REVIEWER_GUIDE.md
+
+Exercise immersive and selection translation on a normal webpage. Enable selection UI for that site; selecting alone sends no request. Open PDF/DOCX/TXT/Markdown in the separate reader for in-place or paired reading. Basic translation supports traditional MT or AI. Documents parse locally; original file bytes and passwords are not uploaded to translation APIs. Scanned-body OCR and layout-preserving PDF/DOCX export are not included.
+
+Webpage paper extraction and document research share Skills, paper analysis and figure inspection. Extraction itself calls no AI. Clicking analysis sends chosen material, source metadata, Skill and optional context to the chosen API. Memory defaults off, uses bounded notebook-isolated IndexedDB and supports export/deletion. Temporary web captures expire after one hour with lazy cleanup. Python/R generation downloads inert text only; no generated code runs.
+
+All parsers and WASM are bundled. No remote executable code, ads or telemetry. API responses and generated code are data. QQ community: 1048123205 (search in QQ).
+Privacy: https://qudadd.github.io/qudadflow-translator/privacy.html
+Support: lcf1249288484@outlook.com

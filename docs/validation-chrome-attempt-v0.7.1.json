@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-10-21T05:41:25.946Z",
+  "extensionVersion": "0.7.1",
+  "browser": "156.0.8078.47",
+  "scope": "Isolated browser, synthetic credentials and localhost fixtures only. Live provider credentials, pricing and image support are not tested.",
+  "passed": 2,
+  "failed": 1,
+  "results": [
+    {
+      "name": "Models: same-origin URL derivation preserves prefixes and query",
+      "passed": true
+    },
+    {
+      "name": "Models: accepted list formats, validation, deduplication and bounds",
+      "passed": true
+    },
+    {
+      "name": "suite setup",
+      "passed": false,
+      "error": "browserContext.waitForEvent: Timeout 30000ms exceeded while waiting for event \"serviceworker\""
+    }
+  ]
+}

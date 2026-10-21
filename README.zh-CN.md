@@ -1,6 +1,8 @@
-# QudadFlow Translator（Microsoft Edge 扩展）
+# QudadFlow Translator（Edge / Chrome 扩展）
 
-这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，可在 Microsoft Edge 中侧载。它直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.7.0 提供文档原位翻译、网页图表提取、论文分析、自定义 Skill、可选跨页记忆及 Python/R 复现草稿。传统接口与 AI 均支持基础翻译，额外分析使用所选 AI。0.5.0 已在 Edge 商城上线（2026 年 10 月 21 日确认）；0.7.0 更新的官方状态见[提交记录](docs/STORE_SUBMISSION_0.7.0.md)。
+这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，面向 Microsoft Edge 和 Google Chrome；Edge 已完成集成验证，Chrome 尚未上架，功能验收仍待完成。它直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.7.0 提供文档原位翻译、网页图表提取、论文分析、自定义 Skill、可选跨页记忆及 Python/R 复现草稿。传统接口与 AI 均支持基础翻译，额外分析使用所选 AI。0.5.0 已在 Edge 商城上线（2026 年 10 月 21 日确认）；0.7.0 更新的官方状态见[提交记录](docs/STORE_SUBMISSION_0.7.0.md)。
+
+**QQ 交流群：1048123205**。在 QQ 中搜索群号加入，交流使用体验、反馈问题与功能建议。扩展弹窗和“设置 → 交流与支持”也可查看群号。0.7.1 同时新增上游模型读取、明确选型、草稿测试及此交流入口，见[更新说明](docs/RELEASE_NOTES_0.7.1.md)。
 
 ## 当前功能
 
@@ -20,9 +22,17 @@
 - API 域名使用可选权限：保存端点时只请求该端点所在的域名。
 - 不加载远程脚本，不使用广告或遥测。
 
-## 在 Edge 中测试
+## 上游模型读取与明确选型（0.7.1）
 
-1. 打开 `edge://extensions`，开启“开发人员模式”。
+设置页增加配置方案、连接与模型、翻译偏好、论文记忆及交流支持导航，窄屏也可使用。OpenAI 兼容配置填写端点、Key 和必要请求头后，点击 **读取上游模型**；仅向端点同源的模型地址（通常为 `/v1/models`）发送鉴权信息，不附带网页正文。列表只保留在本次设置标签页内存，15 秒超时，最多 1000 个去重模型。
+
+可搜索模型 ID，按上游实际返回的文本/图片能力筛选，查看上下文等元数据，再明确点击 **填入此模型**。不会默认选择第一项或覆盖现有模型。缺失能力标为“未知”，不凭模型名称推断读图、速度、价格或质量。上游没有模型接口时，可按其文档手动填写。
+
+**测试连接** 使用当前未保存草稿发送固定短句，绕过缓存并显示耗时；不保存、不启用该草稿，也不验证图片能力。允许访问 API 域名的权限可保留。完成后点击 **保存设置** 才应用配置。模型读取可取消，连接更改后旧的模型读取和验证结果失效。
+
+## 在 Edge / Chrome 中测试
+
+1. 打开 `edge://extensions`（Edge）或 `chrome://extensions`（Chrome），开启“开发人员模式”。
 2. 点击“加载解压缩的扩展”，选择本目录。
 3. 打开扩展的“详细信息 → 扩展选项”，填入 API 端点、Key 和模型。
 4. 保存设置并允许 API 域名权限；点击“测试连接”。
@@ -142,7 +152,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 .\package.ps1
 ```
 
-打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.7.0.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
+打包脚本会先验证 Manifest，再生成 `outputs/qudadflow-translator-v0.7.1.zip` 和独立源码包。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
 
 ## 项目与上架信息
 
@@ -152,10 +162,11 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 - 英文隐私政策：https://qudadd.github.io/qudadflow-translator/privacy.html
 - 中文隐私政策：https://qudadd.github.io/qudadflow-translator/privacy.zh-CN.html
 - 支持邮箱：lcf1249288484@outlook.com；商店截图位于 `branding/screenshots`。
+- QQ 交流群：**1048123205**（在 QQ 中搜索群号加入）。
 - 按目标 API 服务商的条款确认用户文本和 Key 的处理方式。
 - 使用真实 API 在干净的 Edge 配置中完成侧载验收，再提交商店审核。
 
-详细步骤和审核说明见 `docs/STORE_SUBMISSION.md`。
+Edge 提交资料见 `docs/STORE_UPDATE_0.7.1.md`；Chrome 提交包与商店文案见 [Chrome 上架资料](docs/CHROME_STORE_SUBMISSION_0.7.1.md)。GitHub 发布与商店审核状态分别记录。
 
 ## 自动功能验证
 
@@ -168,9 +179,10 @@ node tools/document-check.cjs document-results.json
 node tools/configuration-check.cjs configuration-results.json
 node tools/layout-check.cjs layout-results.json
 node tools/research-check.cjs research-results.json
+node tools/model-check.cjs model-results.json
 ```
 
-0.7.0 的 169 项自动检查覆盖网页/接口、文档、配置方案、原位翻译和底部 AI 工作流。测试使用生成文档、虚构 Key、本地模拟接口及独立 Edge 配置，不读取真实用户 API 设置。检查结果不能代表真实服务商速度、额度、可用性或翻译质量。具体结果见 [验证记录](docs/VERIFICATION.md)。
+0.7.1 已在 Edge 通过 191 项自动检查（含 22 项模型/设置检查），覆盖网页/接口、文档、配置方案、原位翻译和底部 AI 工作流。测试使用生成文档、虚构 Key、本地模拟接口及独立 Edge 配置，不读取真实用户 API 设置。检查结果不能代表真实服务商速度、额度、可用性或翻译质量。独立 Chrome 检查未能加载扩展服务工作线程，不能据此宣称已在 Chrome 验证通过。具体结果见 [验证记录](docs/VERIFICATION.md)。
 
 网页面板每次最多翻译 12000 个字符并显示截断提示。沉浸式模式对正文进行有界扫描，每次最多处理视区附近的 80 个正文块，长段落自动拆分。滚动后重新翻译会替换上一轮译文。编辑区域、不可见内容和 translate=no 内容不会被自动提取。
 

@@ -4,7 +4,7 @@ const DEFAULTS = {
   apiStyle: "openai-compatible",
   endpoint: "https://api.openai.com/v1/chat/completions",
   apiKey: "",
-  model: "gpt-4o-mini",
+  model: "",
   providerRegion: "",
   sourceLanguage: "auto",
   targetLanguage: "zh-CN",
@@ -55,10 +55,108 @@ const providerDrafts = new Map();
 let renderedStyle;
 let testing = false;
 let savedProfiles = [], selectedProfileId = '', profileRevision = 0;
+let savedEditorState = '', draftTestState = '', draftTestResult = '';
+let modelList = [], modelConnection = '', modelRequestId = '';
+const MODEL_CONNECTION_FIELDS = ['apiStyle', 'endpoint', 'apiKey', 'customHeaders'];
+
+function editorState() {
+  return JSON.stringify({ values: formValues(), name: $('profileName').value, profileId: selectedProfileId });
+}
+
+function connectionState() {
+  const values = formValues();
+  return JSON.stringify(MODEL_CONNECTION_FIELDS.map(key => values[key]));
+}
+
+function updateSaveState() {
+  const dirty = savedEditorState && editorState() !== savedEditorState;
+  $('saveState').textContent = dirty ? '有未保存的更改' : selectedProfileId ? '当前配置已保存' : '新建配置 · 保存后应用';
+  $('saveState').classList.toggle('dirty', Boolean(dirty));
+}
+
+function updateVerification() {
+  const matches = draftTestState && draftTestState === JSON.stringify(formValues());
+  $('modelVerification').textContent = matches ? draftTestResult : '尚未测试当前配置。测试连接发送固定短文本，不验证图片能力。';
+  $('modelVerification').classList.toggle('verified', Boolean(matches));
+}
+
+function syncModelControls() {
+  $('fetchModels').disabled = testing || Boolean(modelRequestId);
+  $('cancelModels').hidden = !modelRequestId;
+  $('cancelModels').disabled = testing;
+  $('applyModel').disabled = testing || !modelList.some(model => model.id === $('modelCandidates').value);
+}
+
+function stopModelRequest() {
+  if (modelRequestId) chrome.runtime.sendMessage({ type: 'CANCEL_MODELS', requestId: modelRequestId }).catch(() => {});
+  modelRequestId = '';
+  syncModelControls();
+}
+
+function resetModelList() {
+  stopModelRequest();
+  modelList = []; modelConnection = '';
+  $('modelBrowser').hidden = true;
+  $('modelCandidates').replaceChildren();
+  $('modelSearch').value = '';
+  $('modelFilter').value = 'all';
+  $('modelStatus').textContent = '填写端点和 Key 后读取；列表不会自动替换当前模型。';
+  $('modelStatus').classList.remove('error');
+  showModelDetail();
+}
+
+function modelDetailRows(model) {
+  const modalities = values => values.length ? values.join('、') + '（上游声明）' : '未知 · 上游未提供';
+  return [
+    ['模型 ID', model.id],
+    ...(model.name && model.name !== model.id ? [['名称', model.name]] : []),
+    ['提供方', model.owner || '未知 · 上游未提供'],
+    ['输入能力', modalities(model.inputModalities)],
+    ['输出能力', modalities(model.outputModalities)],
+    ['上下文上限', model.contextWindow ? model.contextWindow.toLocaleString() + ' tokens（上游声明）' : '未知 · 上游未提供'],
+    ['最大输出', model.maxOutput ? model.maxOutput.toLocaleString() + ' tokens（上游声明）' : '未知 · 上游未提供'],
+    ['接口类型', model.endpoints.length ? model.endpoints.join('、') + '（上游声明）' : '未知 · 需测试当前端点'],
+    ['速度 / 价格', '未提供 · 请查服务商说明，测试仅显示本次耗时'],
+    ...(model.shutdownDate ? [['计划停用', model.shutdownDate + '（上游声明）']] : []),
+    ...(model.description ? [['说明', model.description]] : [])
+  ];
+}
+
+function showModelDetail() {
+  const model = modelList.find(item => item.id === $('modelCandidates').value);
+  $('modelDetailEmpty').hidden = Boolean(model);
+  $('modelMetadata').hidden = !model;
+  $('modelMetadata').replaceChildren();
+  if (model) for (const [label, value] of modelDetailRows(model)) {
+    const term = document.createElement('dt'), detail = document.createElement('dd');
+    term.textContent = label; detail.textContent = value;
+    $('modelMetadata').append(term, detail);
+  }
+  syncModelControls();
+}
+
+function renderModelList() {
+  const previous = $('modelCandidates').value;
+  const query = $('modelSearch').value.trim().toLocaleLowerCase();
+  const filter = $('modelFilter').value;
+  const visible = modelList.filter(model => {
+    if (query && ![model.id, model.name, model.owner].join(' ').toLocaleLowerCase().includes(query)) return false;
+    if (filter === 'vision') return model.inputModalities.includes('image');
+    if (filter === 'text') return model.inputModalities.includes('text') && model.outputModalities.includes('text');
+    if (filter === 'unknown') return !model.inputModalities.length || !model.outputModalities.length;
+    return true;
+  });
+  $('modelCandidates').replaceChildren(...visible.map(model => new Option(model.id, model.id)));
+  // A listbox may select its first option implicitly. An explicit choice is required.
+  $('modelCandidates').selectedIndex = visible.some(model => model.id === previous) ? visible.findIndex(model => model.id === previous) : -1;
+  $('modelCount').textContent = `${visible.length} / ${modelList.length} 个模型${visible.length ? ' · 选择后查看详情' : ' · 无匹配结果，可调整筛选'}`;
+  showModelDetail();
+}
+
 function lockEditor() {
   testing=true;const controls=[...document.querySelectorAll('input,select,textarea,button')],disabled=controls.map(control=>control.disabled);
   controls.forEach(control=>control.disabled=true);
-  return ()=>{controls.forEach((control,index)=>control.disabled=disabled[index]);$('deleteProfile').disabled=!selectedProfileId;testing=false;};
+  return ()=>{controls.forEach((control,index)=>control.disabled=disabled[index]);$('deleteProfile').disabled=!selectedProfileId;testing=false;syncModelControls();};
 }
 
 function setStatus(message, error = false) {
@@ -162,6 +260,10 @@ function renderApiStyle() {
   $("modelWrap").classList.toggle("field-hidden", DIRECT_STYLES.has(style));
   $("regionWrap").classList.toggle("visible", style === "microsoft-translator");
   $("streamWrap").classList.toggle("field-hidden", style !== "openai-compatible");
+  $('fetchModels').hidden = style !== 'openai-compatible';
+  $('modelStatus').hidden = style !== 'openai-compatible';
+  $('modelBrowser').hidden = style !== 'openai-compatible' || !modelConnection;
+  $('modelVerification').hidden = style !== 'openai-compatible';
   $("apiKeyWrap").classList.toggle("field-hidden",style==='mymemory');
   $("customHeadersWrap").classList.toggle("field-hidden",style==='mymemory');
   $("sourceLanguage").querySelector('option[value="auto"]').disabled=style==='mymemory';
@@ -184,7 +286,9 @@ function switchProvider() {
   for (const key of CONNECTION_FIELDS) $(key).value = draft[key] ?? "";
   if(style==='mymemory' && $('sourceLanguage').value==='auto')$('sourceLanguage').value='en';
   renderedStyle = style;
+  resetModelList();
   renderApiStyle();
+  updateSaveState(); updateVerification();
   setStatus("已切换接口；请检查连接信息并保存设置。");
   askForEndpointPermission(false);
 }
@@ -198,6 +302,8 @@ function showValues(values) {
     else if (element) element.value = value;
   }
   renderedStyle=values.apiStyle;renderApiStyle();
+  resetModelList(); updateVerification();
+  if (values.customHeaders && values.customHeaders.trim() !== '{}') $('customHeadersWrap').open = true;
 }
 async function profileMessage(message) {
   const result=await chrome.runtime.sendMessage(message);
@@ -215,18 +321,21 @@ async function saveProfile(values,asNew=false) {
   const name=$('profileName').value.trim()||$('apiStyle').selectedOptions[0].textContent;
   await profileMessage({type:'PROFILE_SAVE',revision:profileRevision,profileId:asNew?'':selectedProfileId,name,values});
   await loadProfiles();
+  savedEditorState = editorState(); updateSaveState();
 }
 async function load() {
   await loadProfiles();
   const values = await chrome.storage.local.get(DEFAULTS);
   showValues(values);
   await askForEndpointPermission(false);
+  savedEditorState = editorState(); updateSaveState();
   document.body.dataset.ready='true';
 }
 
 $("settingsForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (testing) return;
+  stopModelRequest();
   let unlock;
   try {
     const values = formValues();
@@ -243,19 +352,22 @@ $("settingsForm").addEventListener("submit", async (event) => {
 
 $('savedProfile').addEventListener('change',()=>{
   selectedProfileId=$('savedProfile').value;const profile=savedProfiles.find(profile=>profile.id===selectedProfileId);
-  if(profile){showValues(profile.values);$('profileName').value=profile.name;}else{$('profileName').value='';}
+  if(profile){showValues(profile.values);$('profileName').value=profile.name;}else{showValues(DEFAULTS);$('profileName').value='';}
+  updateSaveState();
   $('deleteProfile').disabled=!profile;setStatus('方案已载入编辑器。编辑后点击“保存设置”应用，或另存为新方案。');askForEndpointPermission(false);
 });
 $('saveAsProfile').addEventListener('click',async()=>{
-  if(testing)return;let unlock;try{const values=formValues();validate(values);const permission=askForEndpointPermission();unlock=lockEditor();await saveProfile(values,true);const granted=await permission;setStatus(granted?'新方案已保存并启用。':'新方案已保存，请允许 API 域名访问。',!granted);}catch(error){setStatus(error.message,true);}finally{unlock?.();}
+  if(testing)return;stopModelRequest();let unlock;try{const values=formValues();validate(values);const permission=askForEndpointPermission();unlock=lockEditor();await saveProfile(values,true);const granted=await permission;setStatus(granted?'新方案已保存并启用。':'新方案已保存，请允许 API 域名访问。',!granted);}catch(error){setStatus(error.message,true);}finally{unlock?.();}
 });
 $('deleteProfile').addEventListener('click',async()=>{
   if(testing||!selectedProfileId)return;
   if(!confirm('删除这个本地配置方案？若它正在使用，将同时清空当前连接中的密钥。'))return;
+  stopModelRequest();
   const unlock=lockEditor();try{await profileMessage({type:'PROFILE_DELETE',profileId:selectedProfileId,revision:profileRevision});await load();setStatus('配置方案已删除。');}catch(error){setStatus(error.message,true);}finally{unlock();}
 });
 $('useTrial').addEventListener('click',async()=>{
   if(testing)return;
+  stopModelRequest();
   const permission=permissionRequest(['https://api.mymemory.translated.net/*']),unlock=lockEditor();
   try{await profileMessage({type:'PROFILE_TRIAL'});await load();const granted=await permission;setStatus(granted?'MyMemory 基础试用已启用：English → 简体中文。可测试连接或返回网页翻译。':'基础试用已保存；请允许 MyMemory 域名访问。',!granted);}catch(error){setStatus(error.message,true);}finally{unlock();}
 });
@@ -270,33 +382,107 @@ $("toggleKey").addEventListener("click", () => {
 });
 $("testApi").addEventListener("click", async () => {
   if (testing) return;
-  testing = true;
-  const controls = [...document.querySelectorAll("input,select,textarea,button")];
-  const wasDisabled = controls.map((element) => element.disabled);
-  let timer;
+  stopModelRequest();
+  let timer, unlock;
   try {
     const values = formValues();
     validate(values);
     const permissionPromise = askForEndpointPermission();
-    controls.forEach((element) => { element.disabled = true; });
-    await saveProfile(values);
+    unlock = lockEditor();
     const granted = await permissionPromise;
     if (!granted) return;
     const started = Date.now();
     const render = () => setStatus(`正在测试 API…已等待 ${Math.floor((Date.now() - started) / 1000)} 秒（超时 ${values.requestTimeoutSeconds} 秒）。`);
     render();
     timer = setInterval(render, 1000);
-    const response = await chrome.runtime.sendMessage({ type: "TRANSLATE_TEST" });
+    const response = await chrome.runtime.sendMessage({ type: "TRANSLATE_TEST_DRAFT", values });
     if (!response?.ok) throw new Error(`${response?.code ? `[${response.code}] ` : ""}${response?.error || "API 测试失败。"}`);
-    setStatus(`连接成功（${((response.elapsedMs || Date.now() - started) / 1000).toFixed(1)} 秒）：${response.translation}`);
+    const seconds = ((response.elapsedMs || Date.now() - started) / 1000).toFixed(1);
+    draftTestState = JSON.stringify(values);
+    draftTestResult = `当前模型文本连接通过 · 本次 ${seconds} 秒。图片能力尚未测试；配置仅在点击保存后应用。`;
+    updateVerification();
+    setStatus(`连接成功（${seconds} 秒）：${response.translation}。点击“保存设置”应用此配置。`);
   } catch (error) {
+    draftTestState = ''; updateVerification();
     setStatus(error.message, true);
   } finally {
     clearInterval(timer);
-    controls.forEach((element, index) => { element.disabled = wasDisabled[index]; });
-    $('deleteProfile').disabled=!selectedProfileId;
-    testing = false;
+    unlock?.();
   }
 });
+
+$('fetchModels').addEventListener('click', async () => {
+  if (testing || modelRequestId) return;
+  const values = formValues();
+  if (!endpointPattern() || !values.apiKey.trim()) {
+    $('modelStatus').textContent = '请先填写有效端点和 API Key，再读取模型列表。';
+    $('modelStatus').classList.add('error'); return;
+  }
+  const permission = askForEndpointPermission();
+  const requestId = crypto.randomUUID(), connection = connectionState();
+  modelRequestId = requestId;
+  modelList = []; modelConnection = '';
+  $('modelBrowser').hidden = true;
+  $('modelCandidates').replaceChildren(); showModelDetail();
+  $('modelStatus').textContent = '正在读取上游模型…最多等待 15 秒，可随时取消。';
+  $('modelStatus').classList.remove('error'); syncModelControls();
+  try {
+    const granted = await permission;
+    if (modelRequestId !== requestId) return;
+    if (!granted) throw new Error('未获得所填 API 域名权限，可授权后重试。');
+    const response = await chrome.runtime.sendMessage({ type: 'FETCH_MODELS', requestId, values });
+    if (modelRequestId !== requestId || connectionState() !== connection) return;
+    if (!response?.ok) throw new Error(response?.error || '未能读取模型，可手动填写准确 ID。');
+    modelList = response.models;
+    modelConnection = connection;
+    $('modelBrowser').hidden = false;
+    $('modelSearch').value = ''; $('modelFilter').value = 'all';
+    renderModelList();
+    const currentMissing = values.model && !modelList.some(model => model.id === values.model);
+    $('modelStatus').textContent = `已从 ${response.source} 读取 ${modelList.length} 个模型。${currentMissing ? '当前模型未在列表中，已保留；可手动测试。' : '当前模型未更改，请选择并查看详情。'}${response.truncated ? '列表较大或上游还有分页，当前仅显示本批最多 1000 个。' : ''}${response.skipped ? '已忽略无效条目。' : ''}`;
+  } catch (error) {
+    if (modelRequestId === requestId) {
+      $('modelStatus').textContent = error.message;
+      $('modelStatus').classList.add('error');
+    }
+  } finally {
+    if (modelRequestId === requestId) modelRequestId = '';
+    syncModelControls();
+  }
+});
+
+$('cancelModels').addEventListener('click', () => {
+  stopModelRequest();
+  $('modelStatus').textContent = '已取消读取模型，当前配置未更改。';
+});
+$('modelSearch').addEventListener('input', renderModelList);
+$('modelFilter').addEventListener('change', renderModelList);
+$('modelCandidates').addEventListener('change', showModelDetail);
+$('applyModel').addEventListener('click', () => {
+  const model = modelList.find(item => item.id === $('modelCandidates').value);
+  if (!model || testing || connectionState() !== modelConnection) return;
+  $('model').value = model.id;
+  updateSaveState(); updateVerification();
+  setStatus('已填入所选模型。可测试文本连接，确认后点击“保存设置”。');
+});
+for (const eventName of ['input', 'change']) $('settingsForm').addEventListener(eventName, event => {
+  if (MODEL_CONNECTION_FIELDS.includes(event.target.id)) resetModelList();
+  updateSaveState(); updateVerification();
+});
+window.addEventListener('pagehide', stopModelRequest);
+
+const navLinks = [...document.querySelectorAll('.settings-nav nav a')];
+const sectionObserver = new IntersectionObserver(entries => {
+  const entry = entries.find(item => item.isIntersecting);
+  if (!entry) return;
+  for (const link of navLinks) {
+    if (link.hash === '#' + entry.target.id) link.setAttribute('aria-current', 'location');
+    else link.removeAttribute('aria-current');
+  }
+}, { rootMargin: '-5% 0px -65% 0px' });
+for (const link of navLinks) {
+  const section = document.querySelector(link.hash);
+  if (section) sectionObserver.observe(section);
+}
 
 load().catch((error) => setStatus(`读取设置失败：${error.message}`, true));

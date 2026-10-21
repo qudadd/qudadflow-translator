@@ -3,23 +3,38 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>QudadFlow Translator设置</title>
+  <title>QudadFlow Translator · 设置</title>
   <link rel="stylesheet" href="options.css">
-<link rel="stylesheet" href="research.css"></head>
+  <link rel="stylesheet" href="research.css">
+</head>
 <body>
+  <a class="skip-link" href="#connectionSettings">跳至 API 连接</a>
+  <div class="settings-shell">
+  <aside class="settings-nav">
+    <a class="nav-brand" href="#profileSettings"><img src="assets/icon48.png" width="40" height="40" alt=""><span>QudadFlow<small>TRANSLATOR</small></span></a>
+    <p class="nav-label">设置中心</p>
+    <nav aria-label="设置导航">
+      <a href="#profileSettings"><span aria-hidden="true">01</span>配置方案</a>
+      <a href="#connectionSettings"><span aria-hidden="true">02</span>连接与模型</a>
+      <a href="#translationSettings"><span aria-hidden="true">03</span>翻译偏好</a>
+      <a href="#researchSettings"><span aria-hidden="true">04</span>论文与记忆</a>
+      <a href="#communitySupport"><span aria-hidden="true">05</span>交流与支持</a>
+    </nav>
+    <p class="nav-note">你的服务，你的选择。<br>配置保存在此浏览器。</p>
+  </aside>
   <main class="page">
-    <header class="header"><div class="brand"><img src="assets/icon48.png" alt=""><div><h1>QudadFlow Translator设置</h1><p>配置第三方翻译 API，密钥只保存在本浏览器的扩展存储中。</p></div></div></header>
+    <header class="header"><p class="eyebrow">QudadFlow Translator</p><h1>让翻译，顺着你的习惯。</h1><p>连接翻译服务，选择模型，再调整阅读与研究偏好。</p></header>
     <form id="settingsForm" novalidate>
-      <section class="card">
-        <h2>保存的配置方案</h2>
-        <label for="savedProfile">选择历史方案</label><select id="savedProfile"><option value="">新建方案</option></select>
-        <label for="profileName">方案名称</label><input id="profileName" maxlength="60" placeholder="例如：DeepL 日常阅读 / OpenAI 学术翻译">
+      <section class="card" id="profileSettings" aria-labelledby="profilesTitle">
+        <div class="section-heading"><h2 id="profilesTitle">保存的配置方案</h2><span class="badge">仅本地保存</span></div>
+        <div class="grid"><div><label for="savedProfile">选择方案</label><select id="savedProfile"><option value="">新建方案</option></select></div>
+        <div><label for="profileName">方案名称</label><input id="profileName" maxlength="60" placeholder="例如：日常阅读 / 论文图表"></div></div>
         <div class="profile-actions"><button type="button" class="secondary" id="saveAsProfile">另存为新方案并使用</button><button type="button" class="secondary" id="deleteProfile" disabled>删除选中方案</button></div>
-        <p class="hint" id="profileStatus">最多保存 20 个方案，包括 API Key；只保存在此浏览器本地。选中后可编辑，点击底部“保存设置”才会切换当前配置。</p>
+        <p class="hint" id="profileStatus">最多 20 个方案，包含各自的 API Key。载入方案仅用于编辑，点击“保存设置”才会应用。</p>
       </section>
-      <section class="card trial-card"><h2>快速试用 · 无需 API Key</h2><p>MyMemory 提供基础机器翻译与翻译记忆匹配。默认 English → 简体中文；其他源语言请手动选择。</p><button type="button" class="primary" id="useTrial">启用 MyMemory 基础试用</button><p class="hint">匿名额度通常为 5000 字符/天，适合短文试用。文字通过 HTTPS 查询发送给 MyMemory，服务商可能长期保留；请勿用于私密文件。长文建议选用自己的 Google、DeepL、Microsoft 或兼容 API。<a href="https://mymemory.translated.net/terms-and-conditions" target="_blank" rel="noreferrer">服务与隐私条款</a> · <a href="https://mymemory.translated.net/doc/usagelimits.php" target="_blank" rel="noreferrer">额度说明</a></p></section>
-      <section class="card">
-        <h2>API 连接</h2>
+      <section class="card" id="connectionSettings" aria-labelledby="connectionTitle">
+        <div class="section-heading"><h2 id="connectionTitle">API 连接与模型</h2><span class="badge">直连所选服务</span></div>
+        <p class="section-intro">填写服务商提供的端点和密钥。AI 模型可从上游读取，也可手动输入准确 ID。</p>
         <label for="apiStyle">接口类型</label>
         <select id="apiStyle">
           <option value="mymemory">MyMemory（免 Key 基础试用）</option>
@@ -39,28 +54,38 @@
         <div class="secret"><input id="apiKey" type="password" autocomplete="off" placeholder="sk-…"><button type="button" id="toggleKey">显示</button></div>
         <p class="hint" id="apiKeyHint">扩展只会按接口类型把密钥发送到指定端点，不会上传到本项目服务器。</p></div>
 
-        <div id="modelWrap"><label for="model">模型</label><input id="model" type="text" placeholder="gpt-4o-mini" autocomplete="off"></div>
+        <div id="modelWrap">
+          <label for="model">当前模型 ID</label>
+          <div class="model-input"><input id="model" type="text" placeholder="读取列表后选择，或手动填写准确 ID" autocomplete="off" maxlength="256"><button type="button" class="secondary" id="fetchModels">读取上游模型</button><button type="button" class="secondary" id="cancelModels" hidden>取消读取</button></div>
+          <p class="hint" id="modelStatus" role="status">填写端点和 Key 后读取；列表不会自动替换当前模型。</p>
+          <div class="model-browser" id="modelBrowser" hidden>
+            <div class="model-filters"><div><label for="modelSearch">搜索上游模型</label><input type="search" id="modelSearch" placeholder="模型 ID、名称或提供方" maxlength="200"></div><div><label for="modelFilter">按上游声明筛选</label><select id="modelFilter"><option value="all">全部模型</option><option value="text">明确声明文本输入与输出</option><option value="vision">明确声明图片输入</option><option value="unknown">能力信息不完整</option></select></div></div>
+            <div class="model-picker"><div><label for="modelCandidates">返回的模型</label><select id="modelCandidates" size="7" aria-describedby="modelCount"></select><p class="hint" id="modelCount"></p></div><section class="model-detail" aria-label="上游模型信息"><p id="modelDetailEmpty">先选择一个模型查看信息，再决定是否填入。</p><dl id="modelMetadata" hidden></dl><button type="button" class="secondary" id="applyModel" disabled>填入此模型</button></section></div>
+            <p class="hint">以上为上游返回的信息；未提供的能力显示“未知”，不按模型名称推断速度、价格或读图能力。</p>
+          </div>
+          <p id="modelVerification" class="model-verification" role="status">尚未测试当前配置。测试连接发送固定短文本，不验证图片能力。</p>
+        </div>
         <div id="streamWrap"><label><input id="streamOpenAi" type="checkbox" checked> 流式接收译文（推荐）</label><p class="hint">尽早显示返回的文字；如果网关不支持 stream，可取消勾选。</p></div>
 
         <div id="regionWrap" class="conditional-field"><label for="providerRegion">Azure 区域（可选）</label><input id="providerRegion" type="text" placeholder="eastus" autocomplete="off"><p class="hint">也可以在自定义请求头中填写 <code>Ocp-Apim-Subscription-Region</code>。</p></div>
 
-        <div id="customHeadersWrap"><label for="customHeaders">自定义请求头（JSON，可选）</label>
+        <details id="customHeadersWrap" class="advanced"><summary>自定义请求头 <span>按服务商要求填写</span></summary><label for="customHeaders">请求头 JSON（可选）</label>
         <textarea id="customHeaders" rows="3" spellcheck="false">{}</textarea>
-        <p class="hint">可用占位符：<code>{{apiKey}}</code>、<code>{{model}}</code>。例如 <code>{"X-API-Key":"{{apiKey}}"}</code>。</p></div>
+        <p class="hint">可用占位符：<code>{{apiKey}}</code>、<code>{{model}}</code>。例如 <code>{"X-API-Key":"{{apiKey}}"}</code>。读取模型列表也使用这些请求头。</p></details>
       </section>
 
-      <section class="card">
+      <section class="card" id="translationSettings">
         <h2>翻译偏好</h2>
         <div class="grid">
           <div><label for="sourceLanguage">源语言</label><select id="sourceLanguage"><option value="auto">自动检测</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="es">Español</option><option value="ru">Русский</option></select></div>
           <div><label for="targetLanguage">目标语言</label><select id="targetLanguage"><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="es">Español</option><option value="ru">Русский</option></select></div>
         </div>
-        <label for="temperature">Temperature（0–1，可选）</label>
+        <div class="grid"><div><label for="temperature">Temperature（0–1，可选）</label>
         <input id="temperature" type="number" min="0" max="1" step="0.1">
-        <p class="hint">留空时由服务商决定；模型拒绝温度参数时会自动去除并重试一次。</p>
-        <label for="requestTimeoutSeconds">单次请求超时（秒）</label>
+        <p class="hint">留空由服务商决定；不支持时自动去除并重试一次。</p></div>
+        <div><label for="requestTimeoutSeconds">单次请求超时（秒）</label>
         <input id="requestTimeoutSeconds" type="number" min="10" max="180" step="1" value="45">
-        <p class="hint">默认 45 秒。先用“测试连接”检查短文本；增加超时不会让模型变快。</p>
+        <p class="hint">默认 45 秒，可设 10–180 秒。增加超时不会让模型变快。</p></div></div>
       </section>
 
       <section class="card custom-only" id="customSection">
@@ -73,17 +98,25 @@
         <p class="hint">使用点号和数组下标，例如 <code>data.translation</code> 或 <code>choices[0].message.content</code>。</p>
       </section>
 
+      <section class="card trial-card"><div class="section-heading"><h2>快速试用 · 无需 API Key</h2><span class="badge">MyMemory</span></div><p>默认 English → 简体中文。匿名额度通常为 5000 字符/天，适合非私密短文；其他源语言需手动选择。</p><button type="button" class="secondary" id="useTrial">启用 MyMemory 基础试用</button><p class="hint">文字通过 HTTPS 查询发送给 MyMemory，服务商可能长期保留。<a href="https://mymemory.translated.net/terms-and-conditions" target="_blank" rel="noreferrer">服务与隐私条款</a> · <a href="https://mymemory.translated.net/doc/usagelimits.php" target="_blank" rel="noreferrer">额度说明</a></p></section>
       <section class="card permission-card">
         <h2>API 域名访问权限</h2>
         <p id="permissionStatus">保存时会请求访问你填写的 API 域名。扩展只会向该域名发送翻译请求。</p>
         <button type="button" class="secondary" id="requestPermission">请求/检查 API 域名权限</button>
       </section>
 
-      <div class="actions"><button type="button" class="secondary" id="testApi">测试连接</button><button type="submit" class="primary">保存设置</button><span id="status" role="status"></span></div>
+      <div class="actions"><div class="save-info"><span id="saveState">正在读取本地配置…</span><span id="status" role="status"></span></div><div class="save-buttons"><button type="button" class="secondary" id="testApi">测试连接</button><button type="submit" class="primary">保存设置</button></div></div>
     </form>
     <section class="card research-manager" id="researchSettings"></section>
-    <footer><a href="privacy.html" target="_blank">隐私说明</a> · <a href="https://learn.microsoft.com/en-us/microsoft-edge/extensions/publish/publish-extension" target="_blank">Edge 商店发布文档</a></footer>
+    <section class="card community-support" id="communitySupport" aria-labelledby="communityTitle">
+      <h2 id="communityTitle">交流与支持</h2>
+      <p class="community-group">QQ 交流群：<strong>1048123205</strong></p>
+      <p class="hint">在 QQ 中搜索群号加入，交流使用体验、反馈问题与功能建议。</p>
+      <p class="community-links"><a href="https://github.com/qudadd/qudadflow-translator/issues" target="_blank" rel="noopener noreferrer">GitHub 问题反馈 ↗</a><a href="mailto:lcf1249288484@outlook.com">lcf1249288484@outlook.com</a></p>
+    </section>
+    <footer><a href="privacy.html" target="_blank">隐私说明</a> · <a href="https://github.com/qudadd/qudadflow-translator" target="_blank" rel="noopener noreferrer">GitHub 项目</a></footer>
   </main>
+  </div>
   <script src="options.js"></script>
   <script type="module" src="src/research-settings.mjs"></script>
 </body>

@@ -9,8 +9,8 @@
 <body><main class="page">
   <p><a href="zh-CN.html">← 中文使用指南</a> · <a href="privacy.html" lang="en">English policy</a></p>
   <h1>QudadFlow Translator 隐私政策</h1>
-  <small>版本 0.7.0 · 生效日期：2026 年 10 月 21 日</small>
-  <p>本政策说明 Microsoft Edge 扩展 QudadFlow Translator 如何处理信息。开发者支持与隐私联系邮箱：<a href="mailto:lcf1249288484@outlook.com">lcf1249288484@outlook.com</a>。</p>
+  <small>版本 0.7.1 · 生效日期：2026 年 10 月 21 日</small>
+  <p>本政策说明 Microsoft Edge / Google Chrome 扩展 QudadFlow Translator 如何处理信息。开发者支持与隐私联系邮箱：<a href="mailto:lcf1249288484@outlook.com">lcf1249288484@outlook.com</a>。</p>
   <h2>处理的信息</h2>
   <p>你主动发起翻译后，扩展读取选中文本或当前网页中的可见文本，并将其与源语言、目标语言以及所选 API 必需的鉴权和配置字段直接发送至你配置的端点。根据接口类型，请求还可能包括模型名称、翻译指令、段落标记、自定义字段或请求头。</p>
   <p>扩展不会自动收集浏览历史或在后台自动翻译网页。网页提取会跳过编辑区域、隐藏内容、已插入的译文及标记为排除的内容。你明确选中的文字仍可能在划词翻译时发送。</p>
@@ -31,6 +31,9 @@
   <h2>翻译服务商</h2>
   <p>QudadFlow Translator 不运营翻译服务器或代理。你自行选择 Google Cloud Translation、DeepL、Microsoft Translator、OpenAI 兼容服务或自定义 JSON 服务及其端点。该服务商接收翻译请求，并适用其自己的隐私、数据保留、安全和计费条款。请选择可信端点，远程服务请使用 HTTPS。</p>
   <p>服务商隐私信息：<a href="https://policies.google.com/privacy">Google</a>、<a href="https://www.deepl.com/privacy">DeepL</a>、<a href="https://privacy.microsoft.com/privacystatement">Microsoft</a>。其他端点请查阅相应服务商的政策。</p>
+  <h2>可选的上游模型读取和草稿测试（0.7.1）</h2>
+  <p>点击“读取上游模型”后，当前草稿的 API Key 和自定义请求头直接发送到 OpenAI 兼容端点同源的模型地址（通常 /v1/models），不附带网页正文、文档、研究记忆或图片。请求不携带 Cookie、不跟随重定向，15 秒超时，响应最多 2 MB、最多 1000 个去重模型。返回的模型 ID 和能力元数据仅保留在当前设置标签页内存，不保存为配置历史。</p>
+  <p>你明确点击后才把模型 ID 填入草稿，缺失能力显示未知。“测试连接”将固定短句“This is a connection test.”及当前草稿配置发送到翻译端点，绕过缓存，不保存或启用草稿，也不验证图片输入。读取及测试可请求持久的 API 域名可选权限；取消或未保存离开不会撤销该权限，可在浏览器扩展设置中撤销。</p>
   <h2>本地存储与 API 密钥</h2>
   <p>最多可以保存 20 个具名配置方案，包括各自的 Key、端点、请求头和偏好，均保存在浏览器扩展本地存储中。首次使用时会保留原有已配置连接。选中方案进行编辑后，需要保存才会应用；弹窗也可直接切换已保存方案。删除当前方案同时清空其活动连接，其他方案继续保留各自凭据。方案不会同步到 GitHub 或发送给开发者；这是配置历史，不是翻译内容历史。</p>
   <p>API Key、端点、模型、语言偏好及自定义 API 设置保存在浏览器的扩展本地存储中。扩展不会同步这些信息，也不会将其发送给开发者。API Key 和自定义鉴权字段会发送到你配置的端点，以验证请求。设置页切换服务商时会保留独立的临时配置草稿，不会自动复用另一服务商的 Key。</p>

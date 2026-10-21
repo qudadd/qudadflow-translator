@@ -1,8 +1,10 @@
 # QudadFlow Translator
 
-A Manifest V3 extension for Microsoft Edge, with immersive bilingual webpages, selection translation, and in-place document translation for PDF, Word DOCX, TXT, and Markdown. Traditional translation APIs and AI both power the base reading features. Vision AI adds an optional picture/chart workflow at the bottom.
+A Manifest V3 extension for Microsoft Edge and Google Chrome, with immersive bilingual webpages, selection translation, and in-place document translation for PDF, Word DOCX, TXT, and Markdown. Traditional translation APIs and AI both power the base reading features. Vision AI adds an optional picture/chart workflow at the bottom.
 
 [Website](https://qudadd.github.io/qudadflow-translator/) · [Privacy policy](https://qudadd.github.io/qudadflow-translator/privacy.html) · [中文网站指南](https://qudadd.github.io/qudadflow-translator/zh-CN.html) · [中文 README](README.zh-CN.md)
+
+**QQ community: 1048123205** — search for this group number in QQ to join, share feedback and discuss the extension. You can also find it in the extension popup and Settings → 交流与支持.
 
 ## Translation providers
 
@@ -23,9 +25,17 @@ For a quick start, choose **启用 MyMemory 基础试用** in Settings and allow
 
 The free public service is quota-limited and may retain submitted text long-term; use it for non-private short samples. See [API documentation](https://mymemory.translated.net/doc/spec.php), [usage limits](https://mymemory.translated.net/doc/usagelimits.php), and [terms/privacy](https://mymemory.translated.net/terms-and-conditions). No free unlimited public API is promised. For extensive reading, use your own provider or self-host a compatible translation service.
 
+## Choose an upstream model (0.7.1)
+
+Settings groups saved configurations, connection/model selection, translation preferences, research memory and support in a responsive sidebar layout. For OpenAI-compatible services, enter your endpoint, key and optional headers, then click **读取上游模型**. This explicitly requests a same-origin models route derived from your endpoint (normally `/v1/models`), without page text. The list stays in the current settings tab, with a 15-second deadline and up to 1,000 unique entries.
+
+Search returned IDs, filter reported text/image capabilities, inspect metadata, then click **填入此模型**. No model is selected automatically and an existing value is not replaced. Missing metadata is labeled unknown; names alone do not establish vision support, speed, cost or quality. Some gateways do not expose model lists; use an ID from their documentation in that case.
+
+**测试连接** tests the current unsaved draft with a fixed short sentence and reports elapsed time. It bypasses the cache, does not save/apply the draft, and does not validate image input. It can request persistent access to that API host. Click **保存设置** to apply. Model loading can be cancelled; editing the connection invalidates previous discovery and verification results.
+
 ## Install for development
 
-1. Open `edge://extensions` and enable **Developer mode**.
+1. Open `edge://extensions` (Edge) or `chrome://extensions` (Chrome) and enable **Developer mode**.
 2. Choose **Load unpacked** and select this repository folder.
 3. Open the extension options, select your provider, enter the endpoint and API key, and save.
 4. Allow access to the API domain and use **Test connection**.
@@ -93,7 +103,7 @@ Requires Node.js and PowerShell. Runtime libraries are checked into `vendor/`; n
 .\package.ps1 -OutputDirectory .\dist
 ```
 
-The script validates the manifest, local scripts, and icons, then creates a runtime ZIP and a separate source ZIP. Upload the runtime ZIP to Edge Add-ons. Never include your API keys in a package or commit.
+The script validates the manifest, local scripts, and icons, then creates a runtime ZIP and a separate source ZIP. The runtime ZIP is the upload package for Edge Add-ons and Chrome Web Store; the source ZIP is for development. Never include your API keys in a package or commit.
 
 ## Verification
 
@@ -104,10 +114,11 @@ node tools/document-check.cjs document-results.json
 node tools/configuration-check.cjs configuration-results.json
 node tools/layout-check.cjs layout-results.json
 node tools/research-check.cjs research-results.json
+node tools/model-check.cjs model-results.json
 ```
 
-Version 0.7.0 passed 169 checks with zero failures and covers webpage/provider behavior, documents, saved configurations, original-position replacements and the optional vision workflow. Suites use generated documents, synthetic keys, local HTTP fixtures and isolated Edge profiles. No private provider settings or live API credentials are accessed. These checks verify behavior, not real-provider speed, availability or translation quality. See [verification details](docs/VERIFICATION.md).
+Version 0.7.1 passed 191 checks with zero failures on Edge, including 22 model/settings checks, and covers webpage/provider behavior, documents, saved configurations, original-position replacements and the optional vision workflow. Suites use generated documents, synthetic keys, local HTTP fixtures and isolated Edge profiles. No private provider settings or live API credentials are accessed. These checks verify behavior, not real-provider speed, availability or translation quality. A separate installed-Chrome run could not load the extension service worker; Chrome functionality remains unverified. See [verification details](docs/VERIFICATION.md).
 
 ## Publishing
 
-Version 0.5.0 is Live in Edge Add-ons, confirmed in Partner Center on October 21, 2026. Version 0.7.0 is the current release update; see the [submission record](docs/STORE_SUBMISSION_0.7.0.md) for its verified official status and [release notes](docs/RELEASE_NOTES_0.7.0.md).
+Version 0.7.1 adds upstream model discovery, explicit selection, draft connection tests and QQ community support; see the [release notes](docs/RELEASE_NOTES_0.7.1.md). Version 0.5.0 is Live in Edge Add-ons, confirmed in Partner Center on October 21, 2026. Version 0.7.0 was submitted for review; see its [submission record](docs/STORE_SUBMISSION_0.7.0.md). [Chrome submission materials](docs/CHROME_STORE_SUBMISSION_0.7.1.md) are prepared; no Chrome listing is published. GitHub release availability does not indicate approval by either store.

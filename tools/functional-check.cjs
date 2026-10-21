@@ -131,7 +131,7 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
 (async()=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const origin = `http://127.0.0.1:${server.address().port}`;
-  const base = {apiKey:'SYNTHETIC-TEST-KEY',targetLanguage:'zh-CN',sourceLanguage:'auto'};
+  const base = {apiKey:'SYNTHETIC-TEST-KEY',model:'synthetic-translation-model',targetLanguage:'zh-CN',sourceLanguage:'auto'};
   let browser;
   let browserVersion;
   try {
@@ -343,13 +343,14 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
     await options.reload();
     await options.waitForFunction(()=>document.querySelector('#apiStyle').value==='custom-json');
     await check('Options: reject arrays as custom headers',async()=>{
+      await options.locator('#customHeadersWrap > summary').click();
       await options.locator('#customHeaders').fill('[]');
       await options.locator('button[type=submit]').click();
       await delay(150);
       assert.match(await options.locator('#status').textContent(),/JSON 对象/);
       await options.locator('#customHeaders').fill('{}');
     });
-    await check('Options: save and connection test via actual extension worker',async()=>{
+    await check('Options: draft connection test via actual extension worker',async()=>{
       await options.locator('#customHeaders').fill('{}');
       await options.locator('#testApi').click();
       await options.waitForFunction(()=>document.querySelector('#status').textContent.includes('连接成功'));

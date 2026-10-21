@@ -4,7 +4,7 @@ const DEFAULTS = {
   apiStyle: "openai-compatible",
   endpoint: "https://api.openai.com/v1/chat/completions",
   apiKey: "",
-  model: "gpt-4o-mini",
+  model: "",
   providerRegion: "",
   sourceLanguage: "auto",
   targetLanguage: "zh-CN",
@@ -21,11 +21,12 @@ const DEFAULTS = {
   responsePath: "choices[0].message.content"
 };
 
-if (typeof importScripts === "function") importScripts("profile-store.js", "my-memory.js", "research-store.js", "research-service.js");
+if (typeof importScripts === "function") importScripts("profile-store.js", "my-memory.js", "research-store.js", "research-service.js", "model-catalog.js");
 
 const MAX_INPUT_CHARS = 12000;
 const REQUEST_TIMEOUT_MS = 45000;
 const activeRequests = new Map();
+const activeModelRequests = new Map();
 const translationCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const CACHE_MAX_CHARS = 250000;
@@ -127,14 +128,10 @@ function permissionsContains(origins) {
 
 function openAiEndpoint(endpoint) {
   const url = new URL(endpoint);
-  url.pathname = url.pathname.replace(/\/+$/, "");
+  let pathname = url.pathname.replace(/\/+$/, "");
   url.hash = "";
-  if (/\/(chat\/completions|responses)$/.test(url.pathname)) return url.toString();
-  if (url.pathname.endsWith("/v1")) {
-    url.pathname += "/chat/completions";
-  } else {
-    url.pathname += "/v1/chat/completions";
-  }
+  if (!/\/(chat\/completions|responses)$/.test(pathname)) pathname += pathname.endsWith("/v1") ? "/chat/completions" : "/v1/chat/completions";
+  url.pathname = pathname;
   return url.toString();
 }
 
@@ -407,8 +404,9 @@ async function translateText(request, controller = new AbortController(), onProg
   if (controller.signal.aborted) throw translationError("翻译已取消。", "CANCELLED");
 
   const context = request.context || "web page";
-  const cached = imageData||analysisInstructions?{}:cachedTranslation(effectiveSettings, text, context);
-  const remember=value=>imageData||analysisInstructions?value:rememberTranslation(cached.key,value,effectiveSettings);
+  const cacheable = !request.skipCache && !imageData && !analysisInstructions;
+  const cached = cacheable ? cachedTranslation(effectiveSettings, text, context) : {};
+  const remember = value => cacheable ? rememberTranslation(cached.key, value, effectiveSettings) : value;
   // A connection test must always reach the provider.
   if (!request.skipCache && cached.translation) {
     metadata.cached = true;
@@ -422,7 +420,7 @@ async function translateText(request, controller = new AbortController(), onProg
   let timedOut = false;
   const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
   try {
-    if(effectiveSettings.apiStyle==='mymemory')return rememberTranslation(cached.key,await translateMyMemory(effectiveSettings,text,controller,onProgress),effectiveSettings);
+    if(effectiveSettings.apiStyle==='mymemory')return remember(await translateMyMemory(effectiveSettings,text,controller,onProgress));
     // Retry only a rejected temperature parameter, once, within the original deadline.
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const response = await fetch(endpoint, {
@@ -585,6 +583,34 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (['FETCH_MODELS', 'CANCEL_MODELS', 'TRANSLATE_TEST_DRAFT'].includes(message?.type)) {
+    const ownOptions = sender.id === chrome.runtime.id && sender.url?.split(/[?#]/)[0] === chrome.runtime.getURL('options.html');
+    if (!ownOptions) { sendResponse({ ok: false, code: 'FORBIDDEN', error: '此操作仅限扩展设置页。' }); return false; }
+    const owner = sender.tab?.id ?? 'options';
+    if (message.type === 'CANCEL_MODELS') {
+      const active = activeModelRequests.get(owner);
+      if (active?.requestId === message.requestId) active.controller.abort();
+      sendResponse({ ok: true }); return false;
+    }
+    if (message.type === 'FETCH_MODELS') {
+      if (typeof message.requestId !== 'string' || message.requestId.length > 80) { sendResponse({ ok: false, error: '无效的请求编号。' }); return false; }
+      activeModelRequests.get(owner)?.controller.abort();
+      const active = { requestId: message.requestId, controller: new AbortController() };
+      activeModelRequests.set(owner, active);
+      QFModelCatalog.fetchModels(message.values, active.controller)
+        .then(result => sendResponse({ ok: true, ...result }))
+        .catch(error => sendResponse({ ok: false, code: error.code || 'MODEL_LIST_FAILED', error: QFModelCatalog.errorText(error, message.values) }))
+        .finally(() => { if (activeModelRequests.get(owner) === active) activeModelRequests.delete(owner); });
+      return true;
+    }
+    const started = Date.now();
+    Promise.resolve().then(() => {
+      if (!message.values || typeof message.values !== 'object' || Array.isArray(message.values) || JSON.stringify(message.values).length > 80000) throw new Error('连接配置无效或过大。');
+      return translateText({ text: 'This is a connection test.', context: 'API connection test', skipCache: true }, new AbortController(), () => {}, {}, normalizeSettings(message.values));
+    }).then(translation => sendResponse({ ok: true, translation: QFModelCatalog.errorText({ message: translation }, message.values), elapsedMs: Date.now() - started }))
+      .catch(error => sendResponse({ ok: false, code: error.code || 'TRANSLATION_FAILED', error: QFModelCatalog.errorText(error, message.values), elapsedMs: Date.now() - started }));
+    return true;
+  }
   if(message?.type?.startsWith('RESEARCH_')) {
     const own=page=>sender.id===chrome.runtime.id&&sender.url?.split(/[?#]/)[0]===chrome.runtime.getURL(page);
     const allowed=own('options.html')||(['RESEARCH_STATE','RESEARCH_PREFS','RESEARCH_GET_CAPTURE','RESEARCH_IMAGE_FETCH','RESEARCH_DROP_CAPTURE'].includes(message.type)&&(own('reader.html')||own('research.html')))||message.type==='RESEARCH_CAPTURE'&&own('popup.html');
