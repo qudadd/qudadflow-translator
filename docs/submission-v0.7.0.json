@@ -1,0 +1,23 @@
+{
+  "version": "0.7.0",
+  "status": "In review",
+  "liveVersion": "0.5.0",
+  "observedAt": "2026-10-21T03:54:04.084Z",
+  "url": "https://partner.microsoft.com/en-us/dashboard/microsoftedge/9f4adbe4-d6a4-47d4-a038-f832abc37c84/packages/dashboard",
+  "runtimeSha256": "2416159864902e3077b425814ccba8c9458e1beccc3c9ccfc266dccc40bd0253",
+  "locales": [
+    "English",
+    "Chinese (China)"
+  ],
+  "dataCategories": [
+    "Authentication information",
+    "Web history (explicitly selected source titles and URLs)",
+    "Website content"
+  ],
+  "privacyFields": {
+    "singlePurpose": "Translate and understand user-selected webpages and documents with the user's chosen API. Immersive/selection translation, paper and chart explanations, editable analysis Skills, optional notebook context and downloadable Python/R chart drafts serve this reading workflow. Files parse locally; analysis sends selected text/images and sources only after a user action. Code is never executed. Notebook memory is off by default and exportable/deletable. API, image/document source and per-site selection permissions are optional. No passive browsing-history collection, developer proxy, ads or telemetry.",
+    "perm-activeTab": "Access the active page after a translation or paper-extraction action to read selected/article text and figures, or open its document URL in the reader. A temporary active-viewport screenshot may be cropped locally for visible SVG/canvas charts; only the selected figure crop is retained. No passive history collection. Protected PDF viewers use the separate reader.",
+    "perm-scripting": "Inject bundled text/figure extraction and translation UI after explicit actions, or the selection UI on sites the user has enabled. Paper extraction excludes editable and hidden content. Document parsers, renderers and WASM are bundled locally. Skills and generated Python/R are text data, never executed. No remote executable code.",
+    "perm-storage": "Keep up to 20 API profiles, keys, language and UI preferences in browser-local storage. Separate IndexedDB stores Skills and optional notebook research memory (off by default, 300 records/two million content characters, retention/context limits, export and deletion). Temporary webpage captures: up to four, one-hour expiry with lazy cleanup. Document images stay in tab memory. No automatic cloud sync; basic translation history is not persisted."
+  }
+}

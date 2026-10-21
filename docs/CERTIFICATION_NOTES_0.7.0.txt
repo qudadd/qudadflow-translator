@@ -1,3 +1,14 @@
-No QudadFlow account or shared API key. Enable the optional MyMemory trial for short non-private text; its quota and retention terms apply. Live research analysis requires the reviewer's own OpenAI-compatible AI profile, with image input for figures. Source repository includes isolated simulated tests; see REVIEWER_GUIDE.md.
+QudadFlow Translator 0.7.0 has no extension account or shared API key. It calls the user-selected provider directly. Settings offers an explicit MyMemory no-key trial for short non-private English text (typical anonymous quota 5,000 characters/day; provider retention terms apply). Live paper analysis needs the tester's OpenAI-compatible AI profile; figures require an image-capable model.
 
-169 checks passed with generated fixtures and synthetic credentials, not live model quality. Inspect in-place PDF/Word reading, explicit webpage extraction, image upload only after analysis, Skills, memory off by default, notebook isolation, exports/deletion, cancellation and Python/R downloads. Generated code is displayed/downloaded, never executed. Research memory uses bounded IndexedDB; temporary captures expire after one hour with lazy cleanup. API/domain permissions remain optional. Updated English/Chinese privacy policies disclose sources, context and storage. Scanned-body OCR and layout-preserving document export are not included.
+Review guide and local simulated API/test instructions:
+https://github.com/qudadd/qudadflow-translator/blob/main/docs/REVIEWER_GUIDE.md
+169 isolated checks passed using generated fixtures and synthetic credentials. Live model quality is not claimed. No keys are included in the package.
+
+Test immersive/selection translation and PDF/DOCX/TXT/Markdown in-place reading. Open a normal article, click the popup paper/figure action, review extracted material, choose a Skill and analyze. Extraction makes no AI call. Remote pictures need an explicit source-domain grant. Analysis sends chosen material, source metadata, Skill and optional context to the chosen AI.
+
+Research memory defaults off. Enable it in a notebook, analyze another page, then test notebook isolation, export and deletion in Settings. Memory uses bounded IndexedDB with retention limits; temporary webpage captures expire after one hour with lazy cleanup. Basic translation remains stateless.
+
+Recognize a figure, then generate/download Python and R drafts with data requirements. Generated code is text and is never executed. All parsers/WASM are bundled. No remote executable code, telemetry or developer proxy. Check cancellation and retained source-page attribution. Scanned-body OCR and layout-preserving PDF/DOCX export are not included.
+
+Privacy: https://qudadd.github.io/qudadflow-translator/privacy.html
+Support: lcf1249288484@outlook.com

@@ -1,5 +1,7 @@
 # QudadFlow Translator 0.7.0
 
+Edge Add-ons update submitted October 21, 2026: **In review**. The store currently serves 0.5.0 Live; 0.7.0 approval is pending.
+
 Paper research now works across webpages and PDF, Word DOCX, TXT and Markdown, alongside immersive and selection translation.
 
 - Extract webpage article text, figure captions and images into an editable research workspace. Visible SVG/canvas charts support viewport crops; remote images load only after an explicit action and source permission.
