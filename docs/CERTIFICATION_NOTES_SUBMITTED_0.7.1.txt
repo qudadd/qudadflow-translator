@@ -1,0 +1,15 @@
+QudadFlow Translator 0.7.1 needs no extension account. APIs use the reviewer's own endpoint/key; no shared key is bundled. Optional MyMemory trial supports short non-private samples with quotas. AI research needs an OpenAI-compatible profile; figures need image input.
+
+Guide and local simulated API:
+https://github.com/qudadd/qudadflow-translator/blob/main/docs/REVIEWER_GUIDE.md
+191 isolated Edge checks passed with synthetic keys/local fixtures; live-provider quality is not claimed.
+
+New Settings: enter endpoint/key, click Read upstream models, inspect reported metadata and explicitly fill a model. No automatic choice or capability guessing; missing data is unknown. Some providers lack /v1/models. Lists stay in the settings tab and send no page text. Loading is bounded/cancellable. Test connection uses the unsaved draft and fixed sentence, bypasses cache, reports time, and neither saves nor enables it; it does not test vision. Saving applies configuration. Optional API-host grants can persist independently.
+
+On a normal webpage test immersive and selection translation. Selection alone sends nothing. Open PDF/DOCX/TXT/Markdown in the reader for in-place or paired reading; parsing is local. Original file bytes/passwords are not uploaded. Scanned-body OCR and layout-preserving export are excluded.
+
+Use the popup paper action to extract text/captions/figures without AI calls. Analysis sends selected material, source, Skill and optional context to the chosen API. Memory defaults off, is bounded and notebook-isolated, and supports export/deletion. Python/R drafts download as inert text; no code runs. Parsers/WASM are bundled. No remote executable code, ads, telemetry or developer proxy.
+
+QQ: 1048123205
+Privacy: https://qudadd.github.io/qudadflow-translator/privacy.html
+Support: lcf1249288484@outlook.com

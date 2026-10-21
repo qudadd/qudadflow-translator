@@ -1,5 +1,7 @@
 # QudadFlow Translator 0.7.0 submission
 
+Update on October 21, 2026: Partner Center now confirms **0.7.0 Live**. The newer 0.7.1 update is In review; see the [current record](STORE_SUBMISSION_0.7.1.md). The text below preserves the original submission observation.
+
 **Submitted successfully. Partner Center shows Version 0.7.0 — In review.** Confirmed at 2026-10-21T03:54:04.084Z on October 21, 2026. Microsoft displays an estimate of seven business days; approval and publication are not yet confirmed. The existing 0.5.0 remains Live and publicly visible.
 
 - Product ID: 9f4adbe4-d6a4-47d4-a038-f832abc37c84

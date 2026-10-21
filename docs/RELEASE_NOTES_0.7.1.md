@@ -20,4 +20,8 @@ Validation: **191 Edge checks passed, zero failures**: 22 model/settings, 87 web
 
 产品和 GitHub 中英文资料加入 **QQ 交流群：1048123205**，在 QQ 搜索群号加入。同步准备 Edge 更新与 Chrome 商店资料，并补充双语隐私说明。
 
-Edge **191 项检查通过、0 失败**。独立 Chrome 检查未能加载扩展服务工作线程，不能宣称 Chrome 已验收或已上架。模拟接口结果不代表真实服务商速度、质量或图表精确复现。详情见 [验证记录](VERIFICATION.md)。
+Edge **191 项检查通过、0 失败**。独立 Chrome 检查未能加载扩展服务工作线程，不能宣称 Chrome 已验收或已上架。模拟接口结果不代表真实服务商速度、质量或图表精确复现。详情见 [验证记录](https://github.com/qudadd/qudadflow-translator/blob/v0.7.1/docs/VERIFICATION.md)。
+
+Published on October 21, 2026: GitHub 0.7.1 is available. Edge Add-ons confirms 0.7.0 Live and 0.7.1 In review; [submission evidence](https://github.com/qudadd/qudadflow-translator/blob/main/docs/STORE_SUBMISSION_0.7.1.md). Microsoft estimates seven business days for review; 0.7.1 approval is pending.
+
+2026 年 10 月 21 日：GitHub 0.7.1 已发布；Edge 0.7.0 已上线，0.7.1 已提交审核。微软页面预计七个工作日，0.7.1 尚待批准。

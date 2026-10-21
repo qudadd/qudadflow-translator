@@ -60,14 +60,14 @@
       <h2>0.7.0：网页论文、Skill 与图表复现</h2><p>扩展弹窗新增“论文分析 / 提取网页图表”。提取正文、图注与图片后，可编辑材料并用 Skill 分析研究方法和证据；PDF、Word、TXT、Markdown 共用这套流程。设置可编辑和导入/导出 Skill，作为纯文本分析模板使用。</p><p>跨页记忆默认关闭，开启后按笔记本隔离并限制容量，可在设置搜索、删除和导出。识别图表后可下载 Python/R 复现草稿及数据要求说明；扩展不自动执行代码，也不把图中估读值当作原始数据。<a href="https://github.com/qudadd/qudadflow-translator/blob/main/README.zh-CN.md">查看完整研究使用指南 →</a></p><h2>最下方的 AI 图文工作流</h2>
       <p>在 API 设置保存支持图片输入的 OpenAI 兼容配置后，展开底部“AI 图文工作流”，提取 PDF/Word 图片。PDF 矢量图表可框选或提取整页。预览后点击“翻译图文并解释”，才把所选图片发送给单独选择的 AI 配置。正文可以继续使用传统接口。图片可下载、移除，分析可停止；AI 的文字识别和数值解释需核对原图。</p>
       <p>文件最大 25 MB、300 页/阅读分段、100 万字符；图文工作流最多暂存 20 张/24 MB。Word 的复杂排版与字体可能与 Microsoft Word 有差异，严格保真请另存 PDF；旧 DOC 先转 DOCX。扫描 PDF 的正文原位替换需先 OCR，AI 阅读整页图片不会自动替换扫描文字。Markdown 按纯文本显示。不导出版式保真的译后 PDF/DOCX。最低要求 Chromium 内核 Edge 125。</p>
-      <p>文件与图片提取在本地完成。正文翻译发送提取文字；点击底部 AI 分析才发送所选图片。原 PDF/DOCX 文件及密码不上传给翻译 API。0.7.0 的官方状态以提交记录为准。</p>
+      <p>文件与图片提取在本地完成。正文翻译发送提取文字；点击底部 AI 分析才发送所选图片。原 PDF/DOCX 文件及密码不上传给翻译 API。商店更新状态以提交记录为准。</p>
       <h2>使用范围与数据处理</h2>
       <p>浏览器内部页面、内置 PDF 阅读器、Edge 商店等受保护页面无法注入网页翻译界面；PDF 通过独立文档阅读器使用。网页面板单次最多提取 12,000 个字符并提示截断；沉浸式模式在有界扫描的正文中优先处理视区附近的 80 个块，长段落自动拆分。滚动后再次翻译会替换上一轮译文。双语内容会增加段落高度；固定高度、虚拟滚动和内嵌内容等复杂页面仍可能需要专门适配。</p>
       <p>翻译仅在你主动操作后开始。待翻译文本和鉴权信息直接发送至你配置的 API；服务商按自己的隐私、保留和收费规则处理。请使用可信的 HTTPS 端点。沉浸式译文插入网页后，网页脚本可能读到这些译文。详情见 <a href="privacy.zh-CN.html">中文隐私政策</a>。</p>
       <p>0.7.1 已在 Edge 通过 191 项检查：22 项模型/设置检查、87 项网页/接口回归、34 项文档检查、13 项配置方案/基础试用接口检查、17 项原位显示/图表检查和 18 项研究工作流检查，使用生成文档、本地模拟 API 与独立 Edge 配置。真实 Google、DeepL、Microsoft 等账号的有效性、额度、网络可达性、速度和翻译质量仍需使用自己的 Key 验证。</p>
     </section>
     <section class="support" id="community"><div><p class="eyebrow">交流与支持</p><h2>一起交流，让阅读更顺畅。</h2><p>交流使用体验、反馈问题与功能建议。</p></div><div class="support-contacts"><p class="community-group">QQ 交流群 <strong>1048123205</strong></p><p>在 QQ 中搜索群号加入。</p><a href="mailto:lcf1249288484@outlook.com">lcf1249288484@outlook.com <span aria-hidden="true">↗</span></a></div></section>
-    <p class="disclosure">QudadFlow Translator 为独立扩展，与所列服务商无隶属关系。扩展本身不附带翻译服务订阅，第三方账号、费用和条款由对应服务商决定。0.5.0 已正式上线，2026 年 10 月 21 日在 Partner Center 确认 Live。0.7.0 已提交，状态为 In review（审核中），见<a href="https://github.com/qudadd/qudadflow-translator/blob/main/docs/STORE_SUBMISSION_0.7.0.md">提交记录 ↗</a>。</p>
+    <p class="disclosure">QudadFlow Translator 为独立扩展，与所列服务商无隶属关系。扩展本身不附带翻译服务订阅，第三方账号、费用和条款由对应服务商决定。2026 年 10 月 21 日在 Partner Center 确认：0.7.0 已正式上线（Live），0.7.1 已提交审核（In review），见<a href="https://github.com/qudadd/qudadflow-translator/blob/main/docs/STORE_SUBMISSION_0.7.1.md">提交记录 ↗</a>。<a href="https://github.com/qudadd/qudadflow-translator/releases/tag/v0.7.1">GitHub 0.7.1</a> 已发布。</p>
   </main>
   <footer class="wrap"><span>© 2026 QudadFlow Translator</span><a href="privacy.zh-CN.html">隐私政策</a><a href="./" lang="en">English</a><a href="https://github.com/qudadd/qudadflow-translator">源代码</a></footer>
 </body>

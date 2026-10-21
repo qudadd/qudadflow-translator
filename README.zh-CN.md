@@ -1,6 +1,6 @@
 # QudadFlow Translator（Edge / Chrome 扩展）
 
-这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，面向 Microsoft Edge 和 Google Chrome；Edge 已完成集成验证，Chrome 尚未上架，功能验收仍待完成。它直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.7.0 提供文档原位翻译、网页图表提取、论文分析、自定义 Skill、可选跨页记忆及 Python/R 复现草稿。传统接口与 AI 均支持基础翻译，额外分析使用所选 AI。0.5.0 已在 Edge 商城上线（2026 年 10 月 21 日确认）；0.7.0 更新的官方状态见[提交记录](docs/STORE_SUBMISSION_0.7.0.md)。
+这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，面向 Microsoft Edge 和 Google Chrome；Edge 已完成集成验证，Chrome 尚未上架，功能验收仍待完成。它直接调用用户配置的 Google Cloud Translation、DeepL API、Microsoft Translator，也支持 OpenAI 兼容的 Chat Completions、Responses 和自定义 JSON 接口。0.7.0 提供文档原位翻译、网页图表提取、论文分析、自定义 Skill、可选跨页记忆及 Python/R 复现草稿。传统接口与 AI 均支持基础翻译，额外分析使用所选 AI。2026 年 10 月 21 日确认：0.7.0 已在 Edge 商城上线（Live），0.7.1 更新已提交审核（In review），见[提交记录](docs/STORE_SUBMISSION_0.7.1.md)。[GitHub 0.7.1](https://github.com/qudadd/qudadflow-translator/releases/tag/v0.7.1) 已发布安装包、源码包及校验文件。
 
 **QQ 交流群：1048123205**。在 QQ 中搜索群号加入，交流使用体验、反馈问题与功能建议。扩展弹窗和“设置 → 交流与支持”也可查看群号。0.7.1 同时新增上游模型读取、明确选型、草稿测试及此交流入口，见[更新说明](docs/RELEASE_NOTES_0.7.1.md)。
 
