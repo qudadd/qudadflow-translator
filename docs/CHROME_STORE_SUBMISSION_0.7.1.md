@@ -1,14 +1,27 @@
 # Chrome Web Store submission — QudadFlow Translator 0.7.1
 
-Status on October 21, 2026: package/listing preparation; no Chrome item ID, upload or review submission confirmed. The connected browser refuses scripting the extensions gallery. The user's open tab is titled “Chrome 应用商店 - 开发者协议” at the developer registration URL. Developer registration, any required fee and agreement must be completed by the account holder. Do not treat this file as evidence of store submission.
+Status confirmed on October 21, 2026, 15:57 China Standard Time (07:57 UTC): **0.7.1 submitted to Chrome Web Store; Pending review; automatic publication selected for approval.** The dashboard displayed “已将您的扩展程序提交送审” (extension submitted for review), then “待审核” and “该草稿尚待审核” on the status page. The package page reported version 0.7.1, both English and Chinese locales, and activeTab/contextMenus/scripting/storage permissions. This is a successful review submission, not confirmation of approval or public availability.
+
+![Chrome Web Store pending-review status](chrome-store-pending-review-v0.7.1.png)
+
+- Publisher ID: `40a6be45-5eb1-405c-81c6-ebd93724eb16`.
+- Item ID: `dfecnbleolbeddoflpfmailolehhnaih`.
+- [Dashboard](https://chrome.google.com/webstore/devconsole/40a6be45-5eb1-405c-81c6-ebd93724eb16/dfecnbleolbeddoflpfmailolehhnaih/edit).
+- English description (3,872 characters) and Chinese description (1,503 characters) saved, with the product name unchanged. The text comes from [STORE_PRESENTATION_0.7.1.md](STORE_PRESENTATION_0.7.1.md), replacing the Edge minimum-version wording with Chrome/Chromium 125+.
+- Store icon and five global screenshots saved. Category: **Tools**, under Productivity. Homepage and support URLs saved.
+- Single-purpose and all four permission explanations saved; remote code declared **No**. Authentication information, web history/source metadata, and website content disclosed. All three limited-use certifications and the English privacy-policy URL saved.
+- Distribution currently shows **Free**, **Public**, and **All regions**.
+- A 400-character reviewer note saved, describing the optional MyMemory trial and linking to the full reviewer guide. No private credentials supplied.
+
+The account holder completed verification of **lcf1249288484@outlook.com**. Reloading publisher settings confirmed it as a verified email, and the Submit for review action became available. The final confirmation retained “Automatically publish after review” as checked. The submission completed successfully. **Approval and public availability remain pending Google's review.**
 
 ## Upload package and assets
 
 - Runtime: qudadflow-translator-v0.7.1.zip. Use this ZIP, not the separate source ZIP; manifest.json is at its root.
 - Title: **QudadFlow Translator** (keep the same English title in every language).
 - English summary (under 132 characters): **Immersive webpage and document translation with your own API, selection translation, and optional paper and figure analysis.**
-- Category suggestion: Productivity. Interface language: Simplified Chinese; English product/listing text with optional Simplified Chinese listing.
-- Store icon: assets/icon128.png. Screenshots: branding/screenshots/ (use the current settings screenshot when available). Existing simulated-translation screenshots are labeled examples and do not demonstrate live-provider quality.
+- Saved category: Tools, under Productivity. Interface language: Simplified Chinese; English and Simplified Chinese listings.
+- Saved store icon: assets/icon128.png. Five global screenshots from branding/store-0.7.1/: immersive, selection, documents, figures-code, and model-settings. Chrome permits at most five; the separate paper-analysis image was omitted. Simulated-translation screenshots are labeled examples and do not demonstrate live-provider quality.
 - Homepage: https://qudadd.github.io/qudadflow-translator/
 - Support: https://github.com/qudadd/qudadflow-translator/issues
 - Support email: lcf1249288484@outlook.com
@@ -16,7 +29,7 @@ Status on October 21, 2026: package/listing preparation; no Chrome item ID, uplo
 - Chinese privacy: https://qudadd.github.io/qudadflow-translator/privacy.zh-CN.html
 - Community: QQ 1048123205; search the number in QQ.
 
-## English description
+## Earlier prepared English copy (submitted text linked above)
 
 QudadFlow Translator helps you read webpages and documents in another language using your own translation provider.
 
@@ -39,7 +52,7 @@ Privacy: https://qudadd.github.io/qudadflow-translator/privacy.html
 
 ## 中文说明（可选本地化）
 
-名称保持 QudadFlow Translator。中文详细说明使用 [0.7.1 商店文案的 Chinese description](STORE_UPDATE_0.7.1.md)，运行要求改为 Chrome/Chromium 125+，不要把 Edge 审核状态写为 Chrome 上架状态。
+名称保持 QudadFlow Translator。已保存的中文详细说明使用 [0.7.1 展示文案的 Chinese description](STORE_PRESENTATION_0.7.1.md)，运行要求改为 Chrome/Chromium 125+。Edge 审核状态不代表 Chrome 上架状态。
 
 ## Privacy practices and permission explanations
 
@@ -64,4 +77,4 @@ Reviewer instructions: [CERTIFICATION_NOTES_0.7.1.txt](CERTIFICATION_NOTES_0.7.1
 
 191 Edge integration checks passed. An installed-Chrome test stopped before integration because the extension service worker did not load; only two pure logic checks passed. This does not verify Chrome operation or official certification. Before review, install the runtime using Chrome's Load unpacked UI and verify settings/model list, a normal webpage and a generated document with a test endpoint.
 
-After developer registration, use New item → upload runtime ZIP → complete Store listing / Privacy practices / Distribution / Test instructions → resolve dashboard validation → Submit for review. Record item ID, upload validation and final review status only after observing them. Never pay a registration fee or accept a legal agreement on behalf of the account holder without the required user action/confirmation.
+Next: await Google's review result. Automatic publication was selected, so an approved item should publish through the normal store flow; confirm availability before describing it as live or distributing a public store installation link. Do not cancel the pending submission just to re-upload the same package. Never pay a registration fee or accept a legal agreement on behalf of the account holder without the required user action/confirmation.
