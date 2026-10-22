@@ -1,4 +1,4 @@
-import {MAX_PAGES,MAX_TEXT_CHARS} from './document-format.mjs';
+import {MAX_PAGES} from './document-format.mjs';
 import {fitText,replacementNode} from './layout-view.mjs';
 const decode=bytes=>new TextDecoder(bytes[0]===255&&bytes[1]===254?'utf-16le':bytes[0]===254&&bytes[1]===255?'utf-16be':'utf-8',{fatal:true}).decode(bytes);
 const attribute=(node,name)=>Array.from(node.attributes).find(a=>a.localName===name)?.value;
@@ -54,7 +54,7 @@ export async function renderWord(files,signal) {
       const blocks=[];
       for(const p of section.querySelectorAll('p')) {
         const text=p.textContent.trim();if(!text)continue;
-        chars+=text.length;if(chars>MAX_TEXT_CHARS)throw new Error('文档文字超过 100 万字符，请拆分文件。');
+        chars+=text.length;
         const box=p.getBoundingClientRect(),style=getComputedStyle(p),typography=paragraphTypography(p);
         if(!box.width||!box.height)continue;
         const index=blocks.length;p.dataset.qfBlock=index;

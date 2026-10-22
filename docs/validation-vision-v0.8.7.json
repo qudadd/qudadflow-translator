@@ -1,0 +1,108 @@
+{
+  "version": "0.8.7",
+  "scope": "Isolated Edge with a test-only all-host grant, synthetic credentials, local HTML/image fixtures and simulated AI. No live AI accuracy claim.",
+  "passed": 25,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Generic capture includes semantic sibling figures and image tables but excludes hidden, navigation and unrelated panels",
+      "passed": true
+    },
+    {
+      "name": "One paper entry extracts locally, flags a referenced CSS table, then supplements the same window without losing edits or questions",
+      "passed": true
+    },
+    {
+      "name": "Supplement rejects scrolling during capture and creates no misleading image or window",
+      "passed": true
+    },
+    {
+      "name": "Duplicate supplementation is idempotent and stored previews do not expose browser binding or raw URL queries",
+      "passed": true
+    },
+    {
+      "name": "Reopening captured material restores local supplement previews without sending AI or selecting images",
+      "passed": true
+    },
+    {
+      "name": "PNG screenshot import retains provenance, does not select/send it, and detects duplicate content",
+      "passed": true
+    },
+    {
+      "name": "JPEG and WebP imports decode locally and normalize to bounded JPEG previews",
+      "passed": true
+    },
+    {
+      "name": "Clipboard accepts an image while ordinary text paste stays available",
+      "passed": true
+    },
+    {
+      "name": "Unsupported, oversized and corrupt files are rejected without adding cards or network calls",
+      "passed": true
+    },
+    {
+      "name": "Explicit image-table analysis sends pixels and row/column transcription rules and renders Markdown tables safely",
+      "passed": true
+    },
+    {
+      "name": "Import is unavailable during AI analysis and paste cannot change the active request",
+      "passed": true
+    },
+    {
+      "name": "Streaming renderer coalesces rapid fragments and immediately flushes final text without duplicate DOM replacement",
+      "passed": true
+    },
+    {
+      "name": "Stopping flushes received text and clearing a view prevents a queued render from reviving old content",
+      "passed": true
+    },
+    {
+      "name": "Rapid burst output preserves all content while batching visible DOM updates",
+      "passed": true
+    },
+    {
+      "name": "Rapid codeburst output preserves all content while batching visible DOM updates",
+      "passed": true
+    },
+    {
+      "name": "Viewport preview preserves all 100 source candidates and reports candidates beyond the storage limit",
+      "passed": true
+    },
+    {
+      "name": "Remote figure metadata lookup avoids decoding stored images and still rejects expired captures",
+      "passed": true
+    },
+    {
+      "name": "Document reader shares screenshot import and discards an in-flight import when a new document replaces the source",
+      "passed": true
+    },
+    {
+      "name": "AI supplement can feed paper Q&A and never rewrites captured material or clears existing answers",
+      "passed": true
+    },
+    {
+      "name": "Original-tab activation is explicit; another active tab cannot be captured into this paper",
+      "passed": true
+    },
+    {
+      "name": "Switching away and back during screenshot capture cannot bypass source checks",
+      "passed": true
+    },
+    {
+      "name": "Same-document URL changes, reloads, closed tabs, lost permission and expired captures fail without adding images",
+      "passed": true
+    },
+    {
+      "name": "Webpages and other extension views cannot invoke source-focus or screenshot messages",
+      "passed": true
+    },
+    {
+      "name": "Screenshot controls and table previews fit a narrow companion",
+      "passed": true
+    },
+    {
+      "name": "No uncaught browser errors",
+      "passed": true
+    }
+  ]
+}

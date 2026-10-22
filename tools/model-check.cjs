@@ -2,6 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http'),vm=require('node:vm'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(__dirname,'..'),reportPath=path.resolve(process.argv[2]||'model-results.json');
+const version=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'))).version;
 const scratch=fs.mkdtempSync(path.join(os.tmpdir(),'qudadflow-models-')),results=[],calls=[];
 const key='SYNTHETIC-MODEL-KEY',headerSecret='SYNTHETIC-HEADER-SECRET';let context,browserVersion,mode='normal';
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -17,11 +18,12 @@ const server=http.createServer(async(req,res)=>{
   const record={url:new URL(req.url,'http://local'),headers:req.headers,method:req.method,aborted:false};calls.push(record);res.on('close',()=>{record.aborted=!res.writableEnded;});
   if(req.method==='POST'){
     let raw='';for await(const part of req)raw+=part;record.body=JSON.parse(raw);res.setHeader('Content-Type','application/json');
+    if(mode==='stall')return;
     return res.end(JSON.stringify({choices:[{message:{content:mode==='echo-secret'?key+' '+headerSecret:'连接测试通过'}}]}));
   }
   if(record.url.pathname.endsWith('/models')){
     if(mode==='stall')return;
-    if(mode==='slow'){await delay(700);if(res.destroyed)return;}
+    if(mode==='slow'||mode==='long'){await delay(mode==='long'?17000:700);if(res.destroyed)return;}
     if(mode==='401'||mode==='404'||mode==='429'){res.writeHead(Number(mode));return res.end(key);}
     if(mode==='redirect'){res.writeHead(302,{Location:'/leak'});return res.end();}
     if(mode==='html')return res.end('<html>Login</html>');
@@ -56,9 +58,9 @@ const server=http.createServer(async(req,res)=>{
     const get=()=>worker.evaluate(()=>chrome.storage.local.get(null));
     const invoke=message=>page.evaluate(message=>chrome.runtime.sendMessage(message),message);
     const values=extra=>({...initial,...extra});
-    async function reset(){mode='normal';await worker.evaluate(v=>chrome.storage.local.set(v),initial);await page.goto(base+'options.html');await page.waitForFunction(()=>document.body.dataset.ready==='true');}
+    async function reset(){mode='normal';await worker.evaluate(v=>chrome.storage.local.set(v),initial);await page.goto(base+'options.html');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.locator('#expandSettings').click();}
     async function read(){await page.locator('#fetchModels').click();await page.waitForFunction(()=>document.querySelector('#cancelModels').hidden);}
-    await check('Models: new installation has no guessed default model',async()=>{await page.goto(base+'options.html');await page.waitForFunction(()=>document.body.dataset.ready==='true');assert.equal(await page.locator('#model').inputValue(),'');assert.equal(calls.length,0);});
+    await check('Models: new installation has no guessed default model',async()=>{await page.goto(base+'options.html');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.locator('#expandSettings').click();assert.equal(await page.locator('#model').inputValue(),'');assert.equal(calls.length,0);});
     await reset();const savedBefore=await get();
     await check('Models: explicit GET uses configured prefix, bearer and custom headers',async()=>{
       await read();const last=calls.at(-1);assert.equal(last.method,'GET');assert.equal(last.url.pathname,'/gateway/v1/models');assert.equal(last.headers.authorization,'Bearer '+key);assert.equal(last.headers['x-access'],headerSecret);assert.equal(last.headers.cookie,undefined);assert.equal(await page.locator('#model').inputValue(),'original-model');assert.deepEqual(await get(),savedBefore);
@@ -92,35 +94,44 @@ const server=http.createServer(async(req,res)=>{
       mode='empty';await read();assert.equal(await page.locator('#modelCandidates option').count(),0);assert.match(await page.locator('#modelCount').textContent(),/无匹配/);assert.equal(await page.locator('#model').inputValue(),'original-model');
       mode='many';await read();assert.equal(await page.locator('#modelCandidates option').count(),1000);assert.match(await page.locator('#modelStatus').textContent(),/最多 1000/);
     });
-    await check('Models: timeout aborts HTTP after the documented 15-second limit',async()=>{
-      mode='stall';const before=calls.length,started=Date.now();const response=await invoke({type:'FETCH_MODELS',requestId:crypto.randomUUID(),values:values()});assert.equal(response.code,'TIMEOUT');assert.ok(Date.now()-started>=14500);await until(()=>calls[before]?.aborted);
+    await check('Models: slow catalog waits beyond former 15-second deadline and returns normally',async()=>{
+      mode='long';const before=calls.length,started=Date.now();const response=await invoke({type:'FETCH_MODELS',requestId:crypto.randomUUID(),values:values()});assert.equal(response.ok,true,response.error);assert.ok(Date.now()-started>=16500);assert.equal(calls[before].aborted,false);
+    });
+    await check('Draft tests: cancellation belongs to its settings tab; closing the owner aborts pending HTTP',async()=>{
+      mode='stall';const other=await context.newPage();await other.goto(base+'options.html');await other.waitForFunction(()=>document.body.dataset.ready==='true');
+      const before=calls.length,requestId='owned-draft';const pending=other.evaluate(message=>chrome.runtime.sendMessage(message),{type:'TRANSLATE_TEST_DRAFT',requestId,values:values()}).catch(()=>null);
+      try{
+        await until(()=>calls.length>before);await invoke({type:'CANCEL_TEST_DRAFT',requestId});await delay(100);assert.equal(calls[before].aborted,false);
+        await other.close();await until(()=>calls[before].aborted);await pending;
+        assert.equal(await worker.evaluate(()=>activeDraftRequests.size),0);
+      }finally{if(!other.isClosed())await other.close();mode='normal';}
     });
     await check('Models: unsupported providers and absent permission never reach network',async()=>{
       const before=calls.length;const provider=await invoke({type:'FETCH_MODELS',requestId:'provider',values:values({apiStyle:'deepl'})});assert.equal(provider.code,'UNSUPPORTED_PROVIDER');
       const permission=await invoke({type:'FETCH_MODELS',requestId:'permission',values:values({endpoint:'https://example.invalid/v1'})});assert.equal(permission.code,'PERMISSION_REQUIRED');assert.equal(calls.length,before);
     });
     await check('Models: popup cannot read catalogs, cancel requests or test draft credentials',async()=>{
-      const popup=await context.newPage();await popup.goto(base+'popup.html');const before=calls.length;for(const type of ['FETCH_MODELS','CANCEL_MODELS','TRANSLATE_TEST_DRAFT']){const result=await popup.evaluate(message=>chrome.runtime.sendMessage(message),{type,requestId:'blocked',values:values()});assert.equal(result.code,'FORBIDDEN');}assert.equal(calls.length,before);await popup.close();
+      const popup=await context.newPage();await popup.goto(base+'popup.html');const before=calls.length;for(const type of ['FETCH_MODELS','CANCEL_MODELS','TRANSLATE_TEST_DRAFT','CANCEL_TEST_DRAFT']){const result=await popup.evaluate(message=>chrome.runtime.sendMessage(message),{type,requestId:'blocked',values:values()});assert.equal(result.code,'FORBIDDEN');}assert.equal(calls.length,before);await popup.close();
     });
     await check('Models: test output hides reflected authentication values',async()=>{
-      mode='echo-secret';const result=await invoke({type:'TRANSLATE_TEST_DRAFT',values:values()});assert.equal(result.ok,true,result.error);assert.ok(!result.translation.includes(key));assert.ok(!result.translation.includes(headerSecret));
+      mode='echo-secret';const result=await invoke({type:'TRANSLATE_TEST_DRAFT',requestId:crypto.randomUUID(),values:values()});assert.equal(result.ok,true,result.error);assert.ok(!result.translation.includes(key));assert.ok(!result.translation.includes(headerSecret));
     });
     await check('Models: root API URL derives valid model and translation routes',async()=>{
       mode='normal';
       const models=await invoke({type:'FETCH_MODELS',requestId:'root-url',values:values({endpoint:origin+'/?tenant=test#fragment'})});assert.equal(models.ok,true,models.error);assert.equal(calls.at(-1).url.pathname,'/v1/models');assert.equal(calls.at(-1).url.search,'?tenant=test');
-      const translated=await invoke({type:'TRANSLATE_TEST_DRAFT',values:values({endpoint:origin+'/?tenant=test#fragment'})});assert.equal(translated.ok,true,translated.error);assert.equal(calls.at(-1).url.pathname,'/v1/chat/completions');assert.equal(calls.at(-1).url.search,'?tenant=test');
+      const translated=await invoke({type:'TRANSLATE_TEST_DRAFT',requestId:crypto.randomUUID(),values:values({endpoint:origin+'/?tenant=test#fragment'})});assert.equal(translated.ok,true,translated.error);assert.equal(calls.at(-1).url.pathname,'/v1/chat/completions');assert.equal(calls.at(-1).url.search,'?tenant=test');
     });
     await reset();await read();await page.locator('#modelCandidates').selectOption('reader-vision');
     await check('Settings: QQ entry, model details and navigation render within desktop and narrow widths',async()=>{
       assert.match(await page.locator('#communitySupport').textContent(),/1048123205/);
       for(const width of [1440,900,600,390]){await page.setViewportSize({width,height:1050});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'horizontal overflow at '+width);}
-      await page.setViewportSize({width:1440,height:1050});await page.locator('#modelWrap').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(path.dirname(reportPath),'qudadflow-model-settings-v0.7.1.png')});
-      await page.setViewportSize({width:390,height:844});await page.locator('#modelBrowser').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(path.dirname(reportPath),'qudadflow-model-settings-mobile-v0.7.1.png')});
+      await page.setViewportSize({width:1440,height:1050});await page.locator('#modelWrap').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(path.dirname(reportPath),'qudadflow-model-settings-v'+version+'.png')});
+      await page.setViewportSize({width:390,height:844});await page.locator('#modelBrowser').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(path.dirname(reportPath),'qudadflow-model-settings-mobile-v'+version+'.png')});
     });
   }catch(error){results.push({name:'suite setup',passed:false,error:error.message});console.error(error);}
   finally{
     await context?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));
     fs.rmSync(scratch,{recursive:true,force:true,maxRetries:5,retryDelay:200});fs.mkdirSync(path.dirname(reportPath),{recursive:true});
-    const report={generatedAt:new Date().toISOString(),extensionVersion:'0.7.1',browser:browserVersion,scope:'Isolated browser, synthetic credentials and localhost fixtures only. Live provider credentials, pricing and image support are not tested.',passed:results.filter(r=>r.passed).length,failed:results.filter(r=>!r.passed).length,results};fs.writeFileSync(reportPath,JSON.stringify(report,null,2));console.log(JSON.stringify({passed:report.passed,failed:report.failed}));if(report.failed)process.exitCode=1;
+    const report={generatedAt:new Date().toISOString(),extensionVersion:version,browser:browserVersion,scope:'Isolated browser, synthetic credentials and localhost fixtures only. Live provider credentials, pricing and image support are not tested.',passed:results.filter(r=>r.passed).length,failed:results.filter(r=>!r.passed).length,results};fs.writeFileSync(reportPath,JSON.stringify(report,null,2));console.log(JSON.stringify({passed:report.passed,failed:report.failed}));if(report.failed)process.exitCode=1;
   }
 })();

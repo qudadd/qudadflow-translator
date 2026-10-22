@@ -23,17 +23,17 @@
     <p class="nav-note">你的服务，你的选择。<br>配置保存在此浏览器。</p>
   </aside>
   <main class="page">
-    <header class="header"><p class="eyebrow">QudadFlow Translator</p><h1>让翻译，顺着你的习惯。</h1><p>连接翻译服务，选择模型，再调整阅读与研究偏好。</p></header>
+    <header class="header"><p class="eyebrow">QudadFlow Translator</p><h1>让翻译，顺着你的习惯。</h1><p>连接翻译服务，选择模型，再调整阅读与研究偏好。</p><div class="settings-fold-actions"><button type="button" id="collapseSettings" class="secondary">收起全部</button><button type="button" id="expandSettings" class="secondary">展开全部</button><span>点击分区标题展开，折叠状态会保留。</span></div></header>
     <form id="settingsForm" novalidate>
-      <section class="card" id="profileSettings" aria-labelledby="profilesTitle">
-        <div class="section-heading"><h2 id="profilesTitle">保存的配置方案</h2><span class="badge">仅本地保存</span></div>
+      <details class="card settings-section" id="profileSettings" aria-labelledby="profilesTitle">
+        <summary class="section-heading"><h2 id="profilesTitle">保存的配置方案</h2><span class="badge">仅本地保存</span></summary>
         <div class="grid"><div><label for="savedProfile">选择方案</label><select id="savedProfile"><option value="">新建方案</option></select></div>
         <div><label for="profileName">方案名称</label><input id="profileName" maxlength="60" placeholder="例如：日常阅读 / 论文图表"></div></div>
         <div class="profile-actions"><button type="button" class="secondary" id="saveAsProfile">另存为新方案并使用</button><button type="button" class="secondary" id="deleteProfile" disabled>删除选中方案</button></div>
         <p class="hint" id="profileStatus">最多 20 个方案，包含各自的 API Key。载入方案仅用于编辑，点击“保存设置”才会应用。</p>
-      </section>
-      <section class="card" id="connectionSettings" aria-labelledby="connectionTitle">
-        <div class="section-heading"><h2 id="connectionTitle">API 连接与模型</h2><span class="badge">直连所选服务</span></div>
+      </details>
+      <details class="card settings-section" id="connectionSettings" aria-labelledby="connectionTitle" open>
+        <summary class="section-heading"><h2 id="connectionTitle">API 连接与模型</h2><span class="badge">直连所选服务</span></summary>
         <p class="section-intro">填写服务商提供的端点和密钥。AI 模型可从上游读取，也可手动输入准确 ID。</p>
         <label for="apiStyle">接口类型</label>
         <select id="apiStyle">
@@ -72,51 +72,80 @@
         <details id="customHeadersWrap" class="advanced"><summary>自定义请求头 <span>按服务商要求填写</span></summary><label for="customHeaders">请求头 JSON（可选）</label>
         <textarea id="customHeaders" rows="3" spellcheck="false">{}</textarea>
         <p class="hint">可用占位符：<code>{{apiKey}}</code>、<code>{{model}}</code>。例如 <code>{"X-API-Key":"{{apiKey}}"}</code>。读取模型列表也使用这些请求头。</p></details>
-      </section>
+      </details>
 
-      <section class="card" id="translationSettings">
-        <h2>翻译偏好</h2>
+      <details class="card settings-section" id="translationSettings">
+        <summary><h2>翻译偏好</h2></summary>
         <div class="grid">
           <div><label for="sourceLanguage">源语言</label><select id="sourceLanguage"><option value="auto">自动检测</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="es">Español</option><option value="ru">Русский</option></select></div>
           <div><label for="targetLanguage">目标语言</label><select id="targetLanguage"><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="es">Español</option><option value="ru">Русский</option></select></div>
         </div>
         <div class="grid"><div><label for="temperature">Temperature（0–1，可选）</label>
         <input id="temperature" type="number" min="0" max="1" step="0.1">
-        <p class="hint">留空由服务商决定；不支持时自动去除并重试一次。</p></div>
-        <div><label for="requestTimeoutSeconds">单次请求超时（秒）</label>
-        <input id="requestTimeoutSeconds" type="number" min="10" max="180" step="1" value="45">
-        <p class="hint">默认 45 秒，可设 10–180 秒。增加超时不会让模型变快。</p></div></div>
-      </section>
+        <p class="hint">留空由服务商决定；服务商不支持此参数时请留空。</p></div>
+        <div><p class="hint">API 调用不设固定超时。长文本会持续等待；接口或网络报错时停止，也可手动停止。网页翻译优先处理当前视区。</p></div></div>
+        <fieldset class="immersive-appearance" aria-describedby="immersiveColorHint">
+          <legend>沉浸式译文颜色 <span class="badge">自动保存</span></legend>
+          <div class="immersive-color-controls">
+            <label class="color-picker-label" for="immersiveColorPicker">选择颜色<input id="immersiveColorPicker" type="color" value="#315bc7"></label>
+            <label class="color-hex-label" for="immersiveColorHex">HEX 色值<input id="immersiveColorHex" type="text" placeholder="#315BC7" maxlength="7" spellcheck="false" autocomplete="off" aria-describedby="immersiveColorStatus"></label>
+            <button type="button" class="secondary" id="resetImmersiveColor">恢复默认</button>
+          </div>
+          <div class="immersive-color-previews" aria-label="译文颜色预览">
+            <div class="color-preview-light"><small>浅色背景</small><p id="immersiveColorPreviewLight">译文紧随原文，阅读更从容。</p></div>
+            <div class="color-preview-dark"><small>深色背景</small><p id="immersiveColorPreviewDark">译文紧随原文，阅读更从容。</p></div>
+          </div>
+          <p class="hint" id="immersiveColorHint">用于网页及文档的沉浸式译文。选色后即时应用；此偏好独立于 API 配置方案。</p>
+          <p class="hint" id="immersiveColorStatus" role="status">默认颜色随浅色、深色模式适配。</p>
+        </fieldset>
+        <fieldset class="immersive-appearance">
+          <legend>网页沉浸式快捷键 <span class="badge">本地保存</span></legend>
+          <div class="immersive-shortcut-controls">
+            <label for="immersiveShortcut">手动输入组合键，或点击录制<input id="immersiveShortcut" type="text" value="Shift+A" placeholder="例如 Shift+A 或 Ctrl+Shift+Y" autocomplete="off" spellcheck="false" aria-describedby="immersiveShortcutHint immersiveShortcutStatus"></label>
+            <button type="button" class="secondary" id="recordImmersiveShortcut" aria-pressed="false">录制快捷键</button>
+            <button type="button" class="secondary" id="applyImmersiveShortcut">保存快捷键</button>
+            <button type="button" class="secondary" id="resetImmersiveShortcut">恢复 Shift+A</button>
+            <button type="button" class="secondary" id="disableImmersiveShortcut">停用</button>
+          </div>
+          <p class="hint" id="immersiveShortcutHint">默认 Shift+A。点击“录制快捷键”后按组合键即保存，Esc 取消；也可手动输入后按 Enter 或点击保存。支持 Ctrl、Alt、Shift、Meta 搭配字母、数字、方向键、Space、Enter 或标点（如 Ctrl+/），F1–F12 可单独使用。仅在已授权网页正文触发；输入框与编辑器内正常输入，Ctrl+A 保留全选。浏览器或系统保留的组合键可能无法录制或触发。可在“网站与 API 访问权限”一次授权所有网站。</p>
+          <p class="hint" id="immersiveShortcutStatus" role="status">正在读取快捷键…</p>
+        </fieldset>
+      </details>
 
-      <section class="card custom-only" id="customSection">
-        <h2>自定义 JSON 映射</h2>
+      <details class="card settings-section custom-only" id="customSection" open>
+        <summary><h2>自定义 JSON 映射</h2></summary>
         <label for="requestTemplate">请求体模板</label>
         <textarea id="requestTemplate" rows="9" spellcheck="false"></textarea>
         <p class="hint">替换占位符后必须是 JSON。占位符要作为 JSON 值使用，例如 <code>"prompt": {{text}}</code>，可用 text、model、sourceLanguage、targetLanguage、context、apiKey。</p>
         <label for="responsePath">译文响应路径</label>
         <input id="responsePath" type="text" placeholder="choices[0].message.content">
         <p class="hint">使用点号和数组下标，例如 <code>data.translation</code> 或 <code>choices[0].message.content</code>。</p>
-      </section>
+      </details>
 
-      <section class="card trial-card"><div class="section-heading"><h2>快速试用 · 无需 API Key</h2><span class="badge">MyMemory</span></div><p>默认 English → 简体中文。匿名额度通常为 5000 字符/天，适合非私密短文；其他源语言需手动选择。</p><button type="button" class="secondary" id="useTrial">启用 MyMemory 基础试用</button><p class="hint">文字通过 HTTPS 查询发送给 MyMemory，服务商可能长期保留。<a href="https://mymemory.translated.net/terms-and-conditions" target="_blank" rel="noreferrer">服务与隐私条款</a> · <a href="https://mymemory.translated.net/doc/usagelimits.php" target="_blank" rel="noreferrer">额度说明</a></p></section>
-      <section class="card permission-card">
-        <h2>API 域名访问权限</h2>
+      <details class="card settings-section trial-card" id="trialSettings"><summary class="section-heading"><h2>快速试用 · 无需 API Key</h2><span class="badge">MyMemory</span></summary><p>默认 English → 简体中文。匿名额度通常为 5000 字符/天，适合非私密短文；其他源语言需手动选择。</p><button type="button" class="secondary" id="useTrial">启用 MyMemory 基础试用</button><p class="hint">文字通过 HTTPS 查询发送给 MyMemory，服务商可能长期保留。<a href="https://mymemory.translated.net/terms-and-conditions" target="_blank" rel="noreferrer">服务与隐私条款</a> · <a href="https://mymemory.translated.net/doc/usagelimits.php" target="_blank" rel="noreferrer">额度说明</a></p></details>
+      <details class="card settings-section permission-card" id="permissionSettings">
+        <summary><h2>网站与 API 访问权限</h2></summary>
         <p id="permissionStatus">保存时会请求访问你填写的 API 域名。扩展只会向该域名发送翻译请求。</p>
         <button type="button" class="secondary" id="requestPermission">请求/检查 API 域名权限</button>
-      </section>
+        <p class="hint">默认按需授权，浏览器会记住已授权的站点。也可一次允许所有 HTTP/HTTPS 网站，减少切换论文、载入原图和 API 时的确认。此权限允许扩展读取这些网站；只有你操作翻译或分析时才发送相应内容，不会自动启用全站划词。</p>
+        <p id="websitePermissionStatus" role="status">正在检查网站权限…</p>
+        <div class="permission-actions"><button type="button" class="secondary" id="grantAllWebsites">一次授权所有网站</button><button type="button" class="secondary" id="revokeAllWebsites" hidden>恢复按站点授权</button></div>
+        <p class="hint">恢复按站点授权会清除可选网站授权，使用时可重新授予。浏览器内置页面与商店页面仍受浏览器限制；本地文件访问需在扩展详情单独开启。</p>
+      </details>
 
-      <div class="actions"><div class="save-info"><span id="saveState">正在读取本地配置…</span><span id="status" role="status"></span></div><div class="save-buttons"><button type="button" class="secondary" id="testApi">测试连接</button><button type="submit" class="primary">保存设置</button></div></div>
+      <div class="actions"><div class="save-info"><span id="saveState">正在读取本地配置…</span><span id="status" role="status"></span></div><div class="save-buttons"><button type="button" class="secondary" id="testApi">测试连接</button><button type="button" class="secondary" id="cancelTestApi" hidden>停止测试</button><button type="submit" class="primary">保存设置</button></div></div>
     </form>
-    <section class="card research-manager" id="researchSettings"></section>
-    <section class="card community-support" id="communitySupport" aria-labelledby="communityTitle">
-      <h2 id="communityTitle">交流与支持</h2>
+    <details class="card settings-section research-manager" id="researchSettings"></details>
+    <details class="card settings-section community-support" id="communitySupport" aria-labelledby="communityTitle">
+      <summary><h2 id="communityTitle">交流与支持</h2></summary>
       <p class="community-group">QQ 交流群：<strong>1048123205</strong></p>
       <p class="hint">在 QQ 中搜索群号加入，交流使用体验、反馈问题与功能建议。</p>
       <p class="community-links"><a href="https://github.com/qudadd/qudadflow-translator/issues" target="_blank" rel="noopener noreferrer">GitHub 问题反馈 ↗</a><a href="mailto:lcf1249288484@outlook.com">lcf1249288484@outlook.com</a></p>
-    </section>
+    </details>
     <footer><a href="privacy.html" target="_blank">隐私说明</a> · <a href="https://github.com/qudadd/qudadflow-translator" target="_blank" rel="noopener noreferrer">GitHub 项目</a></footer>
   </main>
   </div>
+  <script src="src/immersive-shortcut.js"></script>
   <script src="options.js"></script>
   <script type="module" src="src/research-settings.mjs"></script>
 </body>

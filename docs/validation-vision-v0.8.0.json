@@ -1,0 +1,56 @@
+{
+  "version": "0.8.0",
+  "scope": "Isolated Edge with a test-only all-host grant, synthetic credentials, local HTML/image fixtures and simulated AI. No live AI accuracy claim.",
+  "passed": 12,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Generic capture includes semantic sibling figures and image tables but excludes hidden, navigation and unrelated panels",
+      "passed": true
+    },
+    {
+      "name": "Popup viewport action captures a CSS table with no DOM table semantics; preview remains local and unselected",
+      "passed": true
+    },
+    {
+      "name": "Viewport capture refuses a page that scrolls during capture and creates no misleading companion",
+      "passed": true
+    },
+    {
+      "name": "PNG screenshot import retains provenance, does not select/send it, and detects duplicate content",
+      "passed": true
+    },
+    {
+      "name": "JPEG and WebP imports decode locally and normalize to bounded JPEG previews",
+      "passed": true
+    },
+    {
+      "name": "Clipboard accepts an image while ordinary text paste stays available",
+      "passed": true
+    },
+    {
+      "name": "Unsupported, oversized and corrupt files are rejected without adding cards or network calls",
+      "passed": true
+    },
+    {
+      "name": "Explicit image-table analysis sends pixels and row/column transcription rules and renders Markdown tables safely",
+      "passed": true
+    },
+    {
+      "name": "Import is unavailable during AI analysis and paste cannot change the active request",
+      "passed": true
+    },
+    {
+      "name": "Document reader shares screenshot import and discards an in-flight import when a new document replaces the source",
+      "passed": true
+    },
+    {
+      "name": "Screenshot controls and table previews fit a narrow companion",
+      "passed": true
+    },
+    {
+      "name": "No uncaught browser errors",
+      "passed": true
+    }
+  ]
+}

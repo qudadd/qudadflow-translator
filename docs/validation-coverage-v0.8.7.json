@@ -1,0 +1,52 @@
+{
+  "version": "0.8.7",
+  "scope": "Conservative local reference checks; no semantic-completeness or AI-accuracy claim.",
+  "passed": 11,
+  "failed": 0,
+  "results": [
+    {
+      "name": "No table count is not a failure when the paper has no table references",
+      "passed": true
+    },
+    {
+      "name": "Numbered English and Chinese references identify only unmatched items",
+      "passed": true
+    },
+    {
+      "name": "Ranges are expanded conservatively and repeated references are deduplicated",
+      "passed": true
+    },
+    {
+      "name": "Image tables are offered for reading rather than falsely marked absent",
+      "passed": true
+    },
+    {
+      "name": "Supplementary items are distinct from main-paper numbering",
+      "passed": true
+    },
+    {
+      "name": "Cross-references inside captions do not establish another item as extracted",
+      "passed": true
+    },
+    {
+      "name": "Generated fallback labels do not hide a missing referenced figure",
+      "passed": true
+    },
+    {
+      "name": "Panel references match the whole numbered figure without treating punctuation as text",
+      "passed": true
+    },
+    {
+      "name": "Truncated native tables stay flagged even if their number matches",
+      "passed": true
+    },
+    {
+      "name": "Storage and structure limits remain visible without invented missing items",
+      "passed": true
+    },
+    {
+      "name": "Ordinary vocabulary and large numbers do not invent table references",
+      "passed": true
+    }
+  ]
+}

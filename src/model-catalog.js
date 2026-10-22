@@ -76,8 +76,7 @@ const QFModelCatalog = (() => {
     if (!(await permissionsContains([getOriginPattern(url.href)]))) throw fail('请先允许访问所填 API 域名，再读取模型列表。', 'PERMISSION_REQUIRED');
     if (controller.signal.aborted) throw fail('已取消读取模型。', 'CANCELLED');
     const secrets = secretsFor(values, headers);
-    let timedOut = false;
-    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, 15000);
+    const stopKeepAlive = keepApiAlive(controller);
     try {
       const response = await fetch(url.href, { method: 'GET', headers, credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer', cache: 'no-store', signal: controller.signal });
       if (!response.ok) {
@@ -90,10 +89,10 @@ const QFModelCatalog = (() => {
       try { payload = JSON.parse(raw); } catch { throw fail('模型接口未返回 JSON。请确认填写的是 API 地址而非网站首页。', 'MODEL_LIST_FORMAT'); }
       return { ...normalize(payload, secrets), source: redact(url.origin + url.pathname, secrets) };
     } catch (error) {
-      if (controller.signal.aborted) throw fail(timedOut ? '读取模型超时（15 秒），可重试或手动填写模型 ID。' : '已取消读取模型。', timedOut ? 'TIMEOUT' : 'CANCELLED');
+      if (controller.signal.aborted) throw fail('已取消读取模型。', 'CANCELLED');
       if (error.code) throw error;
       throw fail('无法读取模型列表。请检查网络、API 地址和权限；重定向地址不会被自动跟随。', 'NETWORK_ERROR');
-    } finally { clearTimeout(timer); }
+    } finally { stopKeepAlive(); }
   }
 
   return { endpoint, normalize, fetchModels, errorText };

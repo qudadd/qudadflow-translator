@@ -4,8 +4,12 @@
     "description": "所有语言均保留统一英文产品名称。"
   },
   "extensionDescription": {
-    "message": "支持网页沉浸式和划词翻译、PDF/Word 文档左右对照，保存切换 API 配置，提供免 Key 基础试用。"
+    "message": "网页沉浸式与划词翻译，PDF/Word/TXT/Markdown 阅读，论文问答、图表提取与可复制表格；自备 API，支持译文颜色及快捷键设置。"
   },
-  "translateSelection": { "message": "翻译当前选中文本" },
-  "translateImmersive": { "message": "沉浸式翻译当前网页" }
+  "translateSelection": {
+    "message": "翻译当前选中文本"
+  },
+  "translateImmersive": {
+    "message": "沉浸式翻译当前网页"
+  }
 }

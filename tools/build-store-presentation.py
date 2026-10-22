@@ -7,10 +7,12 @@ a product claim. Run from any directory with Python 3.
 from pathlib import Path
 import hashlib
 import json
+import shutil
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
-DEST = ROOT / "branding" / "store-0.7.1"
+VERSION = "0.8.7"
+DEST = ROOT / "branding" / f"store-{VERSION}"
 SOURCES = DEST / "sources"
 FONTS = Path("C:/Windows/Fonts")
 
@@ -22,7 +24,7 @@ def font(size, bold=False):
 SLIDES = [
     dict(slug="01-immersive", category="WEB READING", title="Read in two languages. Stay in context.",
          subtitle="Immersive webpage translation powered by your own translation API.",
-         source="qudadflow-functional-edge-v0.7.1.png", crop=(220, 100, 1220, 850), aside=[
+         source=f"qudadflow-functional-edge-v{VERSION}.png", crop=(220, 100, 1220, 850), aside=[
              ("Original + translation", "Read each translation beside\nits source paragraph."),
              ("Keep the context", "Preserve ordinary links\nand page structure."),
              ("Read as you scroll", "Nearby text gets priority\nwhen a page starts translating.")],
@@ -31,34 +33,37 @@ SLIDES = [
          caption_zh="网页沉浸双语阅读（模拟接口演示）"),
     dict(slug="02-selection", category="SELECTION TRANSLATION", title="Select a passage. Translate beside it.",
          subtitle="Use the nearby translation button, the context menu or Alt + Shift + T.",
-         source="qudadflow-functional-selection-v0.7.1.png", crop=(270, 185, 1190, 580), aside=[],
+         source=f"qudadflow-functional-selection-v{VERSION}.png", crop=(270, 185, 1190, 580), aside=[],
          note="Illustrative demo · Simulated API response and timing · Site button requires opt-in",
          caption_en="Nearby selection translation — simulated response and timing",
          caption_zh="就近划词翻译（模拟结果及耗时演示）"),
     dict(slug="03-documents", category="DOCUMENT READING", title="Keep the page. Change the language.",
          subtitle="PDF · Word DOCX · TXT · Markdown — immersive or side-by-side reading.",
-         source="qudadflow-inplace-pdf-v0.7.1.png", crop=(0, 65, 1440, 1030), aside=[
+         source=f"qudadflow-inplace-pdf-v{VERSION}.png", crop=(0, 65, 1440, 1030), aside=[
              ("PDF page proportions", "Keep images and charts\nin their original positions."),
              ("Choose your view", "In-place, original-layout\nor paired paragraphs."),
              ("Read the full meaning", "Open the complete translation\nwhen text cannot fit.")],
          note="Generated PDF · Simulated translation · No layout-preserving PDF/DOCX export",
          caption_en="PDF in-place and original-layout comparison — generated document demo",
          caption_zh="PDF 原位及原版对照阅读（生成文档演示）"),
-    dict(slug="04-paper-analysis", category="PAPER RESEARCH", title="Turn papers into a research workspace.",
-         subtitle="Extract text, captions and figure candidates from webpages or documents.",
-         source="qudadflow-research-web-v0.7.0.png", crop=(112, 695, 1328, 1060), aside=[],
-         note="Example paper and Skill · Optional memory shown enabled; default off · AI API required",
-         caption_en="Paper analysis, custom Skills and optional notebook memory — example setup",
-         caption_zh="论文分析、自定义 Skill 及可选笔记本记忆（示例设置，记忆默认关闭）"),
-    dict(slug="05-figures-code", category="FIGURES & CODE", title="From figures to Python & R drafts.",
-         subtitle="Recognize figure text, explain charts and download editable code drafts.",
-         source="qudadflow-research-pdf-v0.7.0.png", crop=(16, 538, 1420, 1100), aside=[],
-         note="Simulated AI response · Code is not executed · Original data needed for exact reproduction",
-         caption_en="Document figure workflow and downloadable Python/R drafts — simulated AI demo",
-         caption_zh="文档图表分析及 Python/R 复现草稿下载（模拟 AI 演示）"),
+    dict(slug="04-paper-figures", category="PAPER FIGURES & TABLES", title="Select the evidence. Ask better questions.",
+         subtitle="Caption-aware figures and image tables, batch originals and paper Q&A.",
+         source=f"qudadflow-publisher-picker-1440-v{VERSION}.png", crop=(0, 0, 832, 530), aside=[
+             ("Select all figures", "Choose the whole inventory\nor narrow it with search."),
+             ("Load original images", "Batch-load higher-resolution\nsource images when available."),
+             ("Copy table content", "Native tables copy locally;\nimage tables need vision AI.")],
+         note="Generated paper fixture · Selection/loading do not call AI · Check AI transcriptions",
+         caption_en="Figure overview, select all and image tables — generated paper fixture",
+         caption_zh="图表总览、一键全选与图片表格（生成论文样例）"),
+    dict(slug="05-reading-preferences", category="READING PREFERENCES", title="Your colors. Your reading shortcut.",
+         subtitle="Default Shift + A. Type or record a shortcut, then save your choice.",
+         source=f"qudadflow-reading-preferences-1180-v{VERSION}.png", crop=(20, 285, 842, 751), aside=[],
+         note="Real settings UI · Applies to granted webpage bodies · Inputs and editors keep their shortcuts",
+         caption_en="Custom immersive colors and editable Shift+A shortcut — real settings UI",
+         caption_zh="沉浸式颜色及可手动修改、录制的 Shift+A 快捷键（实际设置界面）"),
     dict(slug="06-model-settings", category="SETTINGS & MODELS", title="Choose a model your provider returns.",
          subtitle="Search upstream models, inspect reported capabilities and test before saving.",
-         source="qudadflow-model-settings-v0.7.1.png", crop=(380, 409, 1240, 960), aside=[
+         source=f"qudadflow-model-settings-v{VERSION}.png", crop=(380, 409, 1240, 960), aside=[
              ("Explicit model choice", "Browse the returned catalog,\nthen apply your selection."),
              ("Reported capabilities", "Missing metadata stays\nmarked as unknown."),
              ("Test your draft", "A connection test does not\nsave or activate changes.")],
@@ -80,7 +85,7 @@ def compose(index, spec):
     logo = Image.open(ROOT / "assets" / "icon128.png").convert("RGBA").resize((44, 44), Image.Resampling.LANCZOS)
     canvas.paste(logo, (48, 30), logo)
     d.text((106, 36), "QudadFlow Translator", font=font(23, True), fill="#f5f8ff")
-    d.text((1086, 41), "EDGE  /  0.7.1", font=font(14), fill="#a4b2ce")
+    d.text((1060, 41), f"EDGE + CHROME / {VERSION}", font=font(12), fill="#a4b2ce")
     d.line((48, 94, 1232, 94), fill="#2a3554", width=1)
     d.text((48, 110), f"{index:02d}  /  {spec['category']}", font=font(13, True), fill="#71e5d0")
     title_font = font(43, True)
@@ -115,13 +120,16 @@ def compose(index, spec):
 
 
 DEST.mkdir(parents=True, exist_ok=True)
+SOURCES.mkdir(parents=True, exist_ok=True)
+for slide in SLIDES:
+    shutil.copyfile(ROOT / "docs" / slide["source"], SOURCES / slide["source"])
 records = []
 for i, slide in enumerate(SLIDES, 1):
     destination = compose(i, slide)
     records.append({**slide, "file": destination.name, "dimensions": [1280, 800],
                     "sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
                     "source_sha256": hashlib.sha256((SOURCES / slide["source"]).read_bytes()).hexdigest()})
-(DEST / "media.json").write_text(json.dumps({"version": "0.7.1", "source": "Real extension UI with generated fixtures and synthetic API responses. Research controls are unchanged from 0.7.0.", "screenshots": records}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+(DEST / "media.json").write_text(json.dumps({"version": VERSION, "source": "Real 0.8.7 extension UI with generated fixtures, synthetic API responses and an example model catalog. Screenshot crops and hashes are recorded below; provider speed and accuracy are not measured.", "screenshots": records}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 # Review-only contact sheet, not a store screenshot.
 sheet = Image.new("RGB", (1280, 1200), "#dce3ef")
 for i, item in enumerate(records):

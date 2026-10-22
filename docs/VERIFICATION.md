@@ -1,4 +1,201 @@
-# QudadFlow Translator 0.7.1 verification
+# QudadFlow Translator 0.8.7 verification
+
+October 22, 2026 (Asia/Shanghai), Microsoft Edge 155.0.4283.62. **342 checks passed, zero failures: 331 behavior checks and 11 build/package checks**, with every suite below rerun for 0.8.7.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| Webpage/providers, colors and configurable shortcut | 125 | [report](validation-v0.8.7.json) |
+| Saved configurations and optional permissions | 14 | [report](validation-configuration-v0.8.7.json) |
+| Paper companion and select-all | 25 | [report](validation-companion-v0.8.7.json) |
+| Document layout and colors | 20 | [report](validation-layout-v0.8.7.json) |
+| Research, Skills and memory | 19 | [report](validation-research-v0.8.7.json) |
+| PDF/DOCX/TXT/Markdown reader | 34 | [report](validation-documents-v0.8.7.json) |
+| Publisher captions and original images | 13 | [report](validation-publisher-v0.8.7.json) |
+| Upstream model discovery | 23 | [report](validation-models-v0.8.7.json) |
+| Visual supplementation and storage | 25 | [report](validation-vision-v0.8.7.json) |
+| Copyable tables | 22 | [report](validation-table-export-v0.8.7.json) |
+| Reference coverage | 11 | [report](validation-coverage-v0.8.7.json) |
+| Deterministic build and archive integrity | 11 | [report](validation-build-v0.8.7.json) |
+
+Shortcut checks cover manual input/save, strict invalid-combination feedback, Shift+A defaults and migration, custom/disabled persistence, trusted keyboard events and input/editor exclusions. Esc, Tab, blur and cancel-button recording cancellation are covered. Color checks preserve API profiles, cache, active requests, document geometry and original/compare rendering. Figure selection includes pending and search-hidden items without downloading or calling AI.
+
+The broader checks cover viewport scheduling, dynamic/target-language content, explicit error/cancel handling, upstream model discovery, documents, numbered captions and high-resolution originals, visual supplementation, native/AI-transcribed table export, reference coverage, Skills, optional memory and narrow layouts.
+
+All browser suites use isolated Edge profiles, synthetic credentials, generated documents, saved public fixtures and localhost simulated APIs. No user API settings or live AI are accessed. Results verify behavior, not real-provider speed/accuracy or availability. Current Chrome integration is not verified. Desktop/narrow UI screenshots are saved alongside the reports. Build regression verifies deterministic runtime/source ZIPs, staged dependencies, exact entry bytes, rejection of damaged/private packages and matching hosted/installed privacy policies. Final runtime validation and exact ZIP byte audits are also required before upload.
+
+Keep the same unpacked installation directory, reload in `edge://extensions`, confirm 0.8.7, then refresh source pages. Existing research windows keep earlier captured material. See [release notes](RELEASE_NOTES_0.8.7.md) and [actual publication record](STORE_SUBMISSION_0.8.7.md).
+
+## Previous: QudadFlow Translator 0.8.6 trial verification
+
+Date: October 22, 2026 (Asia/Shanghai). Microsoft Edge 155.0.4283.62. **245 checks passed, zero failures.** This is a local trial; no 0.8.6 GitHub, Edge or Chrome update has been submitted.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| Webpage/providers, immersive colors and shortcut | 120 | [functional results](validation-v0.8.6.json) |
+| Saved configurations and optional permissions | 14 | [configuration results](validation-configuration-v0.8.6.json) |
+| Document layout and immersive colors | 20 | [layout results](validation-layout-v0.8.6.json) |
+| Paper companion and select-all controls | 25 | [companion results](validation-companion-v0.8.6.json) |
+| Research, Skills, memory and document selection | 19 | [research results](validation-research-v0.8.6.json) |
+| PDF, DOCX, TXT and Markdown reader | 34 | [document results](validation-documents-v0.8.6.json) |
+| Publisher captions, filtering and originals | 13 | [publisher results](validation-publisher-v0.8.6.json) |
+
+All-selection includes search-hidden items and pending originals, works with no search matches, synchronizes detail cards and batch analysis, and clears globally without downloads or API calls. Batch loading and analysis retain their existing locks and request limits. Native text tables remain included in paper material without image selection; paper Q&A still accepts at most four selected originals.
+
+Color checks cover picker/HEX/reset, invalid input, immediate updates in open shadow roots and same-origin frames, active-translation continuation and cache reuse. Document checks compare PDF canvas pixels/overlay geometry and preserve Word original/compare colors, TXT/Markdown layout and overflow fallbacks without additional API calls. Shortcut checks use real isolated-browser keyboard events for default/custom/disabled combinations and exclude inputs, contenteditable and ARIA/shadow editors. Tests also cover synthetic event rejection, configuration persistence, origin registration and permission refresh/revocation. Permission decisions are simulated inside isolated tests, not changed in the user's browser. Settings and figure-picker layouts were visually inspected at desktop and narrow widths.
+
+All browser suites use isolated Edge profiles, synthetic credentials, generated documents, saved public fixtures and local simulated APIs. No user API settings or live AI are accessed. Results verify behavior, not real-model speed/accuracy or provider availability. Current Chrome integration is not verified. Model, visual supplementation, reference-coverage, table-export and earlier full-build suites remain historical baselines rather than newly run checks. Current packaging independently validates 253 runtime files/24 first-party scripts, staged dependencies, and exact ZIP entry names and bytes.
+
+Reload the existing unpacked installation in `edge://extensions`, confirm **0.8.6**, refresh the source page and create a fresh research capture. Existing windows keep their earlier material. Copying installation files does not confirm browser activation. See [0.8.6 trial notes](RELEASE_NOTES_0.8.6.md).
+
+## Previous: QudadFlow Translator 0.8.5 trial verification
+
+Date: October 22, 2026 (Asia/Shanghai). Microsoft Edge 155.0.4283.62. **264 checks passed, zero failures.** This is a local trial; no 0.8.5 GitHub, Edge or Chrome update has been submitted.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| Webpage/providers and immersive translation | 110 | [functional results](validation-v0.8.5.json) |
+| Model discovery and draft connection tests | 23 | [model results](validation-models-v0.8.5.json) |
+| Saved configuration and optional permissions | 14 | [configuration results](validation-configuration-v0.8.5.json) |
+| Paper companion and batch original loading | 24 | [companion results](validation-companion-v0.8.5.json) |
+| Publisher captions, filtering and originals | 15 | [publisher results](validation-publisher-v0.8.5.json) |
+| Visual supplementation, rendering and storage | 25 | [vision results](validation-vision-v0.8.5.json) |
+| Research, Skills, memory and document selection | 19 | [research results](validation-research-v0.8.5.json) |
+| PDF, DOCX, TXT and Markdown reader | 34 | [document results](validation-documents-v0.8.5.json) |
+
+The actual isolated Edge worker completes a synthetic draft connection test after waiting 47 seconds for response headers, beyond the former 45-second default. Model listing waits beyond the former 15-second deadline. Simulated header/body/SSE stalls remain pending until completion or cancellation; HTTP 400/401/429/504 stop before an unfinished error body. Temperature rejection reports HTTP 400 without retry. Draft cancellation is isolated by settings-tab/request ownership; closing the owner aborts its HTTP call. Saved configurations omit legacy timeout values.
+
+Viewport tests hold running API calls while scrolling and verify the next work comes from the new viewport. Long paragraphs yield between chunks, and an idle worker handles newly expanded visible content while another request remains pending. Large-page, frame/shadow, language-skip, streaming, mutation, selection, cache and source-restoration regressions pass.
+
+Publisher checks exclude ordinary article photos and unlabeled canvases while retaining numbered/captioned figures and image tables. The saved Dovepress paper retains two figures, three image tables, zero false native layout tables and its 2,029 × 712 original. Companion checks load all pending originals without selection, combine source permissions, preserve selection and retry failed items. The optional saved Ovid scenario was not rerun in this suite; its earlier result remains a baseline. Overview/table layouts were visually inspected at desktop and narrow widths.
+
+Configuration checks exercise the explicit all-website grant, browser denial, retained local settings and revocation of both broad and earlier individual origins. These permission decisions are mocked inside the isolated test UI; they do not grant access in the user's browser. Model/test ownership and tab-close cancellation run against the real isolated extension worker.
+
+All browser suites use isolated Edge profiles, synthetic credentials, generated documents, saved public fixtures and local simulated APIs. No user API settings or live AI are accessed. Results verify behavior, not real-model speed/accuracy or provider availability. Current Chrome integration is not verified. The 0.8.4 reference-coverage/table-export and earlier full-build suites remain historical baselines. Current packaging independently validates 252 runtime files/23 first-party scripts, staged dependencies, and exact ZIP entry names and bytes; source-only reports/screenshots and saved publisher fixtures are excluded from the runtime.
+
+Reload the existing unpacked installation in `edge://extensions`, confirm **0.8.5**, refresh the source page and create a fresh research capture. Existing windows keep their earlier material. Copying installation files does not confirm browser activation. See [0.8.5 trial notes](RELEASE_NOTES_0.8.5.md).
+
+## Previous: QudadFlow Translator 0.8.4 trial verification
+
+Date: October 22, 2026 (Asia/Shanghai). Microsoft Edge 155.0.4283.62. **218 focused checks passed, zero failures.** This is a local trial; no 0.8.4 GitHub, Edge or Chrome update has been submitted.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| Webpage/providers and immersive translation | 101 | [functional results](validation-v0.8.4.json) |
+| Numbered publisher captions and original images | 14 | [publisher results](validation-publisher-v0.8.4.json) |
+| Paper companion and shared figure selection | 26 | [companion results](validation-companion-v0.8.4.json) |
+| Visual supplementation, rendering and storage | 25 | [vision results](validation-vision-v0.8.4.json) |
+| Research, Skills, memory and document selection | 19 | [research results](validation-research-v0.8.4.json) |
+| Conservative reference coverage | 11 | [coverage results](validation-coverage-v0.8.4.json) |
+| Copyable tables across web and documents | 22 | [table export results](validation-table-export-v0.8.4.json) |
+
+Immersive checks cover more than 80 paragraphs/12,000 nodes, short and nested text, open shadow roots, same-origin frames, body content outside article containers, local target-language skipping, mixed CJK, streaming, dynamic insertion/editing/expansion/lazy visibility, scroll supplementation, stale results, opt-outs and cleanup. Direct flex/grid text preserves its neighboring flow item, and restoration retains original Text nodes and links. Existing provider, selection, queue, cache, cancellation and configuration checks pass.
+
+Publisher checks use generic fixtures for numbered English/Chinese/supplementary captions, exact references and anchors, multipanel images, small icons and layout-table exclusion. Linked originals retain high-resolution pixels in the actual simulated AI payload. Signature/decoding tests cover missing/generic MIME, HTML, corrupt images, excessive size, permission denial and stored-source restrictions. The saved public Dovepress fixture yields two figures, three image tables and no native layout tables; its 2,029 × 712 original loads without a Content-Type header. The saved Ovid paper still yields four unique figures and four native table cards. Publisher HTML/JPEG fixtures stay outside repository and packages.
+
+Table checks exercise immediate local Markdown/TSV copy, captions/notes, repeated merged headers, rowSpan=0, 350 data rows, leading-zero and signed/scientific numeric strings, escaped pipes/backslashes, literal Markdown/HTML-like source text, multiline cells, formula literalization, padded TSV and UTF-8 BOM downloads. They check clipboard-denial manual copying, explicit batch/single-image requests and prompt/image payloads, unverified notices, no-table responses, retries and aborts. Word native tables, whole-document TXT/Markdown indexing and replacement, PDF page transcription and inert fenced code are tested. Table cards and controls were visually inspected at 390, 620 and 1440 pixels without page overflow.
+
+All browser tests use isolated Edge profiles, generated documents, synthetic credentials and local simulated APIs. They do not read real user settings or call live AI. These results establish behavior, not real-provider availability, speed or vision/transcription quality. Chrome integration was not newly verified. Earlier wider build tests remain prior baselines and were not all rerun. Each current package independently validates 252 runtime files/23 first-party scripts, staged dependencies and exact ZIP entries/bytes.
+
+After updating local installation files, reload the same unpacked extension in `edge://extensions`, confirm **0.8.4**, refresh the source page and create a new research capture. Existing windows keep their earlier material. File copying does not establish activation in the user's browser. See [0.8.4 trial notes](RELEASE_NOTES_0.8.4.md).
+
+## Previous: QudadFlow Translator 0.8.3 trial verification
+
+Date: October 21, 2026 (Asia/Shanghai). Microsoft Edge 155.0.4283.62. **70 focused checks passed, zero failures.** This is a local Edge trial. No 0.8.3 GitHub, Edge or Chrome store update has been submitted. Earlier suites below remain prior baselines and were not all rerun for this change.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| Paper companion and figure selection | 26 | [companion results](validation-companion-v0.8.3.json) |
+| Visual supplementation, rendering and storage | 25 | [vision results](validation-vision-v0.8.3.json) |
+| Research, Skills, memory and document selection | 19 | [research results](validation-research-v0.8.3.json) |
+
+Selection checks cover metadata-only pending tiles, search and hidden selections, gallery/detail synchronization, grouped Q&A, permission denial, a single batch permission request in the click chain, partial download failure and retry, source/configuration invalidation, and removal/reloading. Selections of more than four images are allowed for sequential batch analysis; pending or oversized Q&A selections are rejected before sending while retaining existing answers and history. Tests verify that only selected images are analyzed, one image per request, and stopping prevents subsequent requests. Selection and question staging do not call AI.
+
+Native text tables automatically remain in paper material and support expanding/collapsing all previews. PDF selections survive page navigation and retain the extraction-page source. Replacing an imported document clears its selection and search. Existing long-text, generic capture, supplementary-image, rendering, Skill and memory checks pass. The saved public Ovid fixture still yields four unique figures, four independent table cards and 42,432 extracted characters; its HTML stays outside the repository and packages.
+
+The figure overview was visually inspected at 390, 620 and 1440 pixels, with no horizontal overflow in the tested layouts. Screenshots use generated figures and simulated answers. All browser checks use isolated Edge profiles, synthetic credentials and local simulated APIs. No real user settings, private provider keys or live AI were used. These checks establish workflow behavior, not real-provider speed or vision accuracy. Chrome integration was not newly verified.
+
+Packaging validates 251 runtime files and 22 first-party scripts, checks staged dependencies and audits runtime/source ZIP contents byte-for-byte. Keep the existing unpacked installation directory, reload in `edge://extensions`, confirm **0.8.3**, refresh the paper and open a new research window. Copying files does not establish activation in the user's browser. See [0.8.3 trial notes](RELEASE_NOTES_0.8.3.md).
+
+## Previous: QudadFlow Translator 0.8.2 trial verification
+
+Date: October 21, 2026 (Asia/Shanghai). Microsoft Edge 155.0.4283.62. **74 focused checks passed, zero failures.** This is a local Edge trial; no 0.8.2 GitHub or store update has been submitted. The wider 0.8.1 results below remain the prior baseline and were not all rerun for this change.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| Conservative reference coverage | 11 | [coverage results](validation-coverage-v0.8.2.json) |
+| Paper companion/generic capture | 20 | [companion results](validation-companion-v0.8.2.json) |
+| Visual supplementation/rendering/storage | 25 | [vision results](validation-vision-v0.8.2.json) |
+| Research/Skills/memory | 18 | [research results](validation-research-v0.8.2.json) |
+
+Coverage checks distinguish numbered references from leading caption identities, fallback labels, image tables, partial captures and supplemental references. Zero tables does not imply failure or call AI. The companion tests retain long-paper material and later-paper extraction; the saved public Ovid fixture yields four unique figures and four independent table cards. The fixture HTML remains outside the repository and packages.
+
+Visual tests exercise the single popup action, same-window supplementation, retained edits/questions/answers, local-only previews, image deduplication, restored previews, explicit AI reading with transcription instructions and image-assisted paper Q&A. Source checks reject another active tab, switching away and back during capture, scrolling, changed URLs/documents, closed tabs, lost access and expired captures. Webpages and other extension views cannot invoke source-focus or supplementary-capture messages. Raw URL parameters and the internal binding are absent from returned captures. Existing import, renderer and document-replacement checks pass.
+
+The 620- and 1440-pixel research layouts were visually inspected without horizontal overflow. Screenshots show generated material and simulated responses. Browser checks use isolated Edge profiles, synthetic credentials and local simulated APIs. No real user settings, private provider keys or live AI were used. The tests establish workflow behavior, not real-provider speed or vision accuracy; Chrome integration is not newly verified.
+
+The final packaging step validates 250 runtime files and 21 first-party scripts, checks staged resources and dependencies, and audits runtime/source ZIP contents byte-for-byte. Keep the existing unpacked installation directory, reload in `edge://extensions`, confirm **0.8.2**, refresh the paper and open a new research window. Automated checks do not establish activation in the user's browser. See [0.8.2 trial notes](RELEASE_NOTES_0.8.2.md).
+
+## Previous: QudadFlow Translator 0.8.1 trial verification
+
+Date: October 21, 2026 (Asia/Shanghai). Microsoft Edge 155.0.4283.62. **240 checks passed, zero failures:** 229 across eight Edge suites and 11 local build checks. This is a local trial; 0.8.1 has not been published to GitHub or either store.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| Webpage/providers | 87 | [functional results](validation-v0.8.1.json) |
+| Documents | 34 | [document results](validation-documents-v0.8.1.json) |
+| Saved configurations | 13 | [configuration results](validation-configuration-v0.8.1.json) |
+| Models/settings | 22 | [model results](validation-models-v0.8.1.json) |
+| Layout/figures | 17 | [layout results](validation-layout-v0.8.1.json) |
+| Research/Skills/memory | 18 | [research results](validation-research-v0.8.1.json) |
+| Paper companion/generic capture | 20 | [companion results](validation-companion-v0.8.1.json) |
+| Visual fallback/rendering/storage | 18 | [vision results](validation-vision-v0.8.1.json) |
+| Reproducible build and damaged packages | 11 | [build results](validation-build-v0.8.1.json) |
+
+All browser suites use isolated Edge profiles, synthetic keys and localhost simulated APIs; no private user settings or live AI account was accessed. Tests cover the production document reader and permission behavior, translation, models, research memory, figure/code analysis, errors and cancellation. They establish neither real-provider latency/availability nor translation or vision accuracy. Chrome integration is not newly verified.
+
+Generic capture checks include sibling HTML/ARIA tables, captions/notes, row/column spans, duplicate panels, one-column safe rendering, lazy/semantic sibling figures and navigation to later papers. A saved public Ovid article yields four unique figures, four independent table cards and 42,432 extracted characters, with its external supplement marked unread. The fixture remains outside the repository and packages; table bodies are represented only by character counts in the report. The long-paper check preserves the final marker beyond 200,000 characters, and the document suite preserves a 2.1-million-character text. No fixed body-text cutoff is reintroduced.
+
+Visual checks cover explicit viewport capture, local image import/paste, deduplication, invalid files, source replacement, vision transcription instructions and PDF region selection. New checks verify that 200 rapid updates are combined into two actual DOM renders, stopped streams flush, cancelled updates cannot repopulate cleared output, figure/code streams combine fragments, and one viewport screenshot retains all 100 ordinary candidates. Loading remote-image metadata does not decode stored image Blobs. Table cards at 620/1440 pixels and image-import controls at 620 pixels were visually inspected; displayed responses are simulated.
+
+Build checks execute the real PowerShell packaging script on disposable source snapshots. They verify identical runtime/source ZIPs after only file modification times change, automatic audit/SHA256 output, inclusion of new modules, and rejection of missing transitive imports, syntax errors, remote executable imports, missing PDF codecs, private paths, omitted/altered/extra archive files and divergent privacy copies. An initial Windows ZIP timestamp ordering issue was fixed and the complete build suite rerun successfully. The final packaging command checks 249 runtime files and syntax for 20 first-party scripts, validates staging, and audits exact ZIP contents. Reproducibility was checked on this environment; it is not a cross-version compression guarantee.
+
+Activation of the user's existing browser installation remains separate: preserve its unpacked directory and local data, reload the extension in `edge://extensions`, confirm 0.8.1, refresh the webpage and capture the paper again. Automated tests did not control or reload that installation. Existing capture windows keep their original material.
+
+Known limits: heuristic extraction, protected/embedded content, bounded figure resources and table dimensions, manual supplement retrieval, no built-in scan-body OCR, no layout-preserving translated PDF/DOCX export, and no execution of generated Python/R. Full body material has no fixed character cutoff; upstream context/request limits and browser resources still apply. See [0.8.1 trial notes](RELEASE_NOTES_0.8.1.md).
+
+## Previous: QudadFlow Translator 0.8.0 trial verification
+
+Date: October 21, 2026 (Asia/Shanghai). Microsoft Edge 155.0.4283.62. This is a local trial candidate; no 0.8.0 store or GitHub release was submitted.
+
+After the independent table panel and visual-fallback update, **67 checks passed, zero failures**: companion 20 ([report](validation-companion-v0.8.0-table-fix.json)), vision 12 ([report](validation-vision-v0.8.0.json)), research 18 ([report](validation-research-v0.8.0-table-fix.json)), layout/figures 17 ([report](validation-layout-v0.8.0-table-fix.json)). Tests cover sibling HTML/ARIA tables, rowspan/colspan, captions/notes, one-column safe rendering, separate table cards at 620/1440 pixels, semantic sibling figures, CSS-only tables through explicit viewport capture, stale-page rejection, PNG/JPEG/WebP import, clipboard images versus ordinary text paste, deduplication, invalid/oversized files, replacement during import, vision transcription instructions, cancellation and PDF vector-region cropping. Screenshots of narrow import controls and wide table cards were visually checked. Live vision accuracy was not tested. The public Ovid fixture yields four independent table cards; the report retains table metadata and character counts, without reproducing its table body.
+
+The following **210 checks** describe the initial 0.8.0 baseline, before this patch; unchanged suites were not rerun for the patch.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| Paper companion/generic capture | 19 | [companion results](validation-companion-v0.8.0.json) |
+| Models/settings | 22 | [model results](validation-models-v0.8.0.json) |
+| Webpage/providers | 87 | [functional results](validation-v0.8.0.json) |
+| Documents | 34 | [document results](validation-documents-v0.8.0.json) |
+| Saved configurations | 13 | [configuration results](validation-configuration-v0.8.0.json) |
+| Layout/figures | 17 | [layout results](validation-layout-v0.8.0.json) |
+| Research/Skills/memory | 18 | [research results](validation-research-v0.8.0.json) |
+
+All suites use isolated Edge profiles, synthetic keys and local simulated APIs. They do not access private user settings or live AI credentials. Provider quality, latency, cost, model context capacity and vision accuracy are not established by these checks.
+
+New companion checks verify independent popup/maximize behavior, safe Markdown tables/code, narrow and wide layouts, two original images in both Chat Completions and Responses, selected-image limits, follow-ups/reset/export, partial-answer handling, actual SSE/HTTP/EOF failures and cancellation. A response-header delay of 36 seconds succeeds despite a saved 10-second basic translation timeout. Settings fold/persist/navigation behavior is covered. Screenshots at 620 and 1440 pixels and the folded settings screenshot were visually inspected; displayed answers are simulated.
+
+Generic capture fixtures cover article/main/itemprop/plain-body structures, substantive material versus a teaser, inline citations, lazy images, and distinct panels with a shared caption. A same-tab navigation test verifies a later paper gets fresh text and figures while the earlier companion retains its source. A paper over 200,000 characters keeps its final marker both after capture and in the analysis HTTP payload. The document suite also checks a 2.1-million-character text beyond 300 reading sections without losing the ending.
+
+The optional real-paper test reads a saved public Ovid article, DOI `10.1097/MD.0000000000044376`. It identifies four unique high-resolution figure sources, four HTML tables and the paper's full sections, with its external supplement explicitly unread. It makes no AI call. The copyrighted HTML fixture is outside the repository and is not distributed. Reproduce generic companion checks with `node tools/research-companion-check.cjs results.json`; pass a saved copy of that public HTML as the second argument for the Ovid assertion.
+
+The model harness originally hardcoded 0.7.1 in its output names and report metadata while testing the 0.8.0 manifest. The harness now derives the version from the manifest. The report metadata and newly generated screenshot names have been corrected, with provenance noted in the report; historical tracked reports were not changed.
+
+Actual user-profile update was not completed: the Windows computer-control tool stopped because it could not reliably determine the browser URL. No user API configuration was changed. An isolated Edge installation and all automated checks succeeded; this does not mean the user's existing browser installation was reloaded. Chrome integration is not newly verified.
+
+Known limits remain: heuristic extraction, protected frames/images, bounded figure resources and table dimensions, no automatic supplement reading or scan-body OCR, no layout-preserving translated PDF/DOCX export, and no execution of generated Python/R. Full body material has no fixed character cutoff, but upstream context/request limits and browser resources still apply.
+
+## Previous: QudadFlow Translator 0.7.1 verification
 
 Date: October 21, 2026 (Asia/Shanghai). Microsoft Edge 155.0.4283.62. **191 checks passed, zero failures.**
 

@@ -1,0 +1,155 @@
+{
+  "version": "0.8.2",
+  "scope": "Isolated Edge; generated fixtures and optional saved public Ovid HTML; synthetic API, no user settings or real AI calls. Delayed-header test waits 36 seconds. Screenshots show simulated answers.",
+  "passed": 20,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Capture chooses substantive article, preserves inline prose, citations and tables, and inventories lazy figures without duplicates",
+      "passed": true
+    },
+    {
+      "name": "Research opens as an independent popup; source tables and unread attachments are visible",
+      "passed": true
+    },
+    {
+      "name": "Bulk image load remains local to image download and rejects a fifth selected figure",
+      "passed": true
+    },
+    {
+      "name": "Combined Chat Completions request contains two original images, matching captions and full paper material",
+      "passed": true
+    },
+    {
+      "name": "Results render headings, comparison tables and code safely; narrow and wide layouts do not overflow",
+      "passed": true
+    },
+    {
+      "name": "Follow-up carries completed local history; export retains questions and selected figure labels",
+      "passed": true
+    },
+    {
+      "name": "Responses protocol sends each selected original as an input_image and renders the result",
+      "passed": true
+    },
+    {
+      "name": "Analysis waits beyond 30 seconds before response headers despite the 10-second translation timeout",
+      "passed": true
+    },
+    {
+      "name": "Provider stream errors preserve partial answers and exclude them from follow-up context",
+      "passed": true
+    },
+    {
+      "name": "Premature EOF and HTTP model errors surface actionable messages instead of successful completion",
+      "passed": true
+    },
+    {
+      "name": "Stopping an analysis aborts its HTTP request and leaves partial output exportable",
+      "passed": true
+    },
+    {
+      "name": "Bounded history and image validation reject excessive or malformed data before network calls",
+      "passed": true
+    },
+    {
+      "name": "New papers with main/itemprop/plain-body markup preserve lazy figures and distinct panels sharing one caption",
+      "passed": true
+    },
+    {
+      "name": "Tables outside the article, wrapped ARIA cells, captions, notes and duplicate panels produce independent readable cards",
+      "passed": true
+    },
+    {
+      "name": "Long paper capture and analysis preserve the final paragraph beyond former 60k and 140k limits",
+      "passed": true
+    },
+    {
+      "name": "Navigating to a later paper creates fresh source material and figures without mixing the existing companion",
+      "passed": true
+    },
+    {
+      "name": "Analysis options collapse by default; settings sections fold, persist, and open from navigation",
+      "passed": true
+    },
+    {
+      "name": "Ovid extraction measurements",
+      "passed": true,
+      "characters": 42432,
+      "figures": [
+        {
+          "id": "F1",
+          "caption": "Figure 1.A single-arm meta-analysis was performed on the 6 datasets included.",
+          "source": "http://127.0.0.1:61069/image-api/imgsrv/article/i/thumb/wkmrid/JOURNAL%252Fmedi%252F04.03%252F00005792-202509120-00021%252Ffigure1%252Fv%252F2026-09-23T123119Z%252Fr%252Fimage-jpeg/width/1200.webp"
+        },
+        {
+          "id": "F2",
+          "caption": "Figure 2.A two-arm meta-analysis was conducted on the 6 datasets included.",
+          "source": "http://127.0.0.1:61069/image-api/imgsrv/article/i/thumb/wkmrid/JOURNAL%252Fmedi%252F04.03%252F00005792-202509120-00021%252Ffigure2%252Fv%252F2026-09-23T123119Z%252Fr%252Fimage-jpeg/width/1200.webp"
+        },
+        {
+          "id": "F3",
+          "caption": "Figure 3.Prevalence of LPR following AT in pediatric patients diagnosed with AH complicated by LPR.",
+          "source": "http://127.0.0.1:61069/image-api/imgsrv/article/i/thumb/wkmrid/JOURNAL%252Fmedi%252F04.03%252F00005792-202509120-00021%252Ffigure3%252Fv%252F2026-09-23T123119Z%252Fr%252Fimage-jpeg/width/1200.webp"
+        },
+        {
+          "id": "F4",
+          "caption": "Figure 4.Comparison of LPR prevalence in AH pediatric patients undergoing secondary AT versus those undergoing primary AT.",
+          "source": "http://127.0.0.1:61069/image-api/imgsrv/article/i/thumb/wkmrid/JOURNAL%252Fmedi%252F04.03%252F00005792-202509120-00021%252Ffigure4%252Fv%252F2026-09-23T123119Z%252Fr%252Fimage-jpeg/width/1200.webp"
+        }
+      ],
+      "tables": [
+        {
+          "id": "T1",
+          "caption": "Table 1 PECO framework.",
+          "rows": 4,
+          "columns": 5,
+          "truncated": false,
+          "markdownCharacters": 825,
+          "notesCharacters": 111
+        },
+        {
+          "id": "T2",
+          "caption": "Table 2 Raw data from META-analysis.",
+          "rows": 19,
+          "columns": 11,
+          "truncated": false,
+          "markdownCharacters": 1965,
+          "notesCharacters": 300
+        },
+        {
+          "id": "T3",
+          "caption": "Table 3 NOS quality evaluation tool.",
+          "rows": 15,
+          "columns": 6,
+          "truncated": false,
+          "markdownCharacters": 750,
+          "notesCharacters": 29
+        },
+        {
+          "id": "T4",
+          "caption": "Table 4 AXIX quality evaluation tool.",
+          "rows": 4,
+          "columns": 23,
+          "truncated": false,
+          "markdownCharacters": 615,
+          "notesCharacters": 82
+        }
+      ],
+      "attachments": [
+        {
+          "label": "MD_2025_08_25_YIN_MD-D-25-06744_SDC1.pdf (497.98 KB)",
+          "url": "https://links.lww.com/MD/P909"
+        }
+      ]
+    },
+    {
+      "name": "Real Ovid paper fixture yields four unique figures, four tables, full sections and an explicitly unread supplement",
+      "passed": true
+    },
+    {
+      "name": "No uncaught Edge page errors",
+      "passed": true
+    }
+  ]
+}

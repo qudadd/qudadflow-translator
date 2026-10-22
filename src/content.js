@@ -6,7 +6,6 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
   (() => {
     const MAX_PAGE_CHARS = 12000;
     const CHUNK_CHARS = 1800;
-    const MAX_IMMERSIVE_BLOCKS = 80;
     const IMMERSIVE_BATCH_CHARS = 1800;
     const IMMERSIVE_BATCH_BLOCKS = 8;
     const MAX_CONCURRENT_REQUESTS = 2;
@@ -15,8 +14,11 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
     const EXCLUDED_SELECTOR = "#edge-web-translator-host,#edge-wt-selection-host,[data-edge-wt-ignore],[data-edge-wt-immersive-translation],script,style,noscript,template,textarea,input,select,button,svg,canvas,[contenteditable]:not([contenteditable='false']),[translate='no'],.notranslate";
     let host;
     let shadow;
-    let immersiveStyle;
+    const immersiveStyles = new Map();
+    let immersiveColor = '', immersiveColorRevision = 0;
+    const immersiveWrappers = new Set();
     let immersiveRecords = [];
+    let immersiveSession;
     let immersiveRunId = 0;
     let panelRunId = 0;
     let requestSequence = 0;
@@ -44,7 +46,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
     }
 
     function cancelRequests(scope = "panel") {
-      if (scope === "panel") { stopProgress(); discardPendingImmersive(); }
+      if (scope === "panel") { stopImmersiveWatch(); stopProgress(); discardPendingImmersive(); }
       const requests = Array.from(pendingRequests.values()).filter((request) => request.scope === scope);
       requests.forEach((request) => { request.cancelled = true; });
       requests.forEach((request) => request.cancel());
@@ -435,102 +437,177 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       return pieces.join("").replace(/[\t ]*\n[\t ]*/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
     }
 
-    function collectImmersiveBlocks() {
+    function composedParent(element) {
+      return element.parentElement || element.getRootNode()?.host || null;
+    }
+
+    function excludedFromImmersive(element) {
+      for (let current = element; current; current = composedParent(current)) {
+        if (current.matches(EXCLUDED_SELECTOR)) return true;
+      }
+      return false;
+    }
+
+    function originalStillMatches(record) {
+      if (!record.nodes.every((node, index) => node.isConnected && node.textContent === record.originals[index])) return false;
+      for (const node of record.nodes) {
+        for (let element = node.parentElement || node.getRootNode()?.host; element; element = composedParent(element)) {
+          if (element.matches(EXCLUDED_SELECTOR) || !isCssVisible(element)) return false;
+        }
+      }
+      let doc = record.element.ownerDocument;
+      while (doc !== document) {
+        try {
+          const frame = doc.defaultView?.frameElement;
+          if (!frame?.isConnected || frame.contentDocument !== doc || excludedFromImmersive(frame) || !isCssVisible(frame)) return false;
+          doc = frame.ownerDocument;
+        } catch { return false; }
+      }
+      return true;
+    }
+
+    function unwrapImmersive(record) {
+      const wrapper = record.flowWrapper;
+      if (wrapper?.parentNode) { while (wrapper.firstChild) wrapper.before(wrapper.firstChild); wrapper.remove(); }
+      immersiveWrappers.delete(wrapper);
+      record.flowWrapper = undefined;
+    }
+
+    async function collectImmersiveBlocks(session) {
       const records = [];
       const body = document.body || document.documentElement;
       const styles = new WeakMap();
       const visible = new WeakMap();
       const owners = new WeakMap();
-      const usable = new WeakMap();
+      const validity = new WeakMap();
+      session.roots = new Set([document]);
+      const pushChildren = (node) => { for (let index = node.childNodes.length - 1; index >= 0; index -= 1) stack.push(node.childNodes[index]); };
       const styleOf = (element) => {
-        if (!styles.has(element)) styles.set(element, getComputedStyle(element));
+        if (!styles.has(element)) styles.set(element, element.ownerDocument.defaultView.getComputedStyle(element));
         return styles.get(element);
       };
       const visibleElement = (element) => {
         if (!element) return true;
         if (!visible.has(element)) {
           const style = styleOf(element);
-          visible.set(element, style.display !== "none" && style.visibility !== "hidden" && style.visibility !== "collapse" && Number(style.opacity) !== 0 && style.contentVisibility !== "hidden" && visibleElement(element.parentElement));
+          visible.set(element, style.display !== "none" && style.visibility !== "hidden" && style.visibility !== "collapse" && Number(style.opacity) !== 0 && style.contentVisibility !== "hidden" && visibleElement(composedParent(element)));
         }
         return visible.get(element);
       };
-      const root = Array.from(document.querySelectorAll("main,article,[role='main']"))
-        .find((element) => !element.closest(EXCLUDED_SELECTOR) && visibleElement(element) && element.innerText.trim().length >= 200) || body;
-      if (root.closest(EXCLUDED_SELECTOR) || !visibleElement(root)) return [];
+      if (!body || excludedFromImmersive(body) || !visibleElement(body)) return [];
       const ownerOf = (element) => {
         if (!element) return null;
         if (owners.has(element)) return owners.get(element);
         const display = styleOf(element).display;
-        // Keep translations inside text containers, never as extra flex/grid columns.
-        const owner = /flex|grid/.test(display) ? null
-          : display !== "contents" && (element.matches(IMMERSIVE_BLOCK_SELECTOR) || element === root || ["block", "inline-block", "list-item"].includes(display)) ? element
+        const parent = element.parentElement;
+        const layoutItem = parent && /flex|grid/.test(styleOf(parent).display);
+        const owner = display !== "contents" && (element.matches(IMMERSIVE_BLOCK_SELECTOR) || element === body || layoutItem || element.parentNode?.host || /flex|grid/.test(display) || ["block", "inline-block", "list-item"].includes(display)) ? element
             : ownerOf(element.parentElement);
         owners.set(element, owner);
         return owner;
       };
       let current;
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
-        acceptNode(node) {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            if (!visibleElement(node)) return NodeFilter.FILTER_REJECT;
-            if (node.matches(EXCLUDED_SELECTOR)) {
-              if (!["inline", "inline-block", "contents"].includes(styleOf(node).display)) current = undefined;
-              return NodeFilter.FILTER_REJECT;
-            }
-          }
-          return NodeFilter.FILTER_ACCEPT;
-        }
-      });
-      let node;
+      const stack = [body];
       let scanned = 0;
-      while ((node = walker.nextNode()) && scanned++ < 12000) {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          if (node.tagName === "BR" && current) current.source += "\n";
-          else if (!["inline", "inline-block", "contents"].includes(styleOf(node).display)) current = undefined;
+      while (stack.length) {
+        if (++scanned % 1200 === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          if (!session.isCurrent()) return [];
+        }
+        const node = stack.pop();
+        if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+          current = undefined;
+          session.roots.add(node);
+          pushChildren(node);
           continue;
         }
-        const element = ownerOf(node.parentElement);
-        if (!element) { current = undefined; continue; }
-        if (!usable.has(element)) {
-          const rect = element.getBoundingClientRect();
-          usable.set(element, element.dataset.edgeWtImmersive !== "1" && rect.width > 0 && rect.height > 0);
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          if (!visibleElement(node) || node.matches(EXCLUDED_SELECTOR)) {
+            if (!["inline", "inline-block", "contents"].includes(styleOf(node).display)) current = undefined;
+            continue;
+          }
+          if (node.tagName === "BR" && current) current.source += "\n";
+          else if (!["inline", "inline-block", "contents"].includes(styleOf(node).display) || /flex|grid/.test(styleOf(node.parentElement || node).display)) current = undefined;
+          pushChildren(node);
+          if (node.shadowRoot) stack.push(node.shadowRoot);
+          if (node.tagName === "IFRAME") {
+            // Only same-origin frames already readable by the top page. No extra site access.
+            try {
+              const frameDocument = node.contentDocument;
+              if (frameDocument?.body) { session.roots.add(frameDocument); stack.push(frameDocument.body); }
+            } catch { /* Protected / cross-origin frames remain with their original text. */ }
+          }
+          continue;
         }
-        if (!usable.get(element)) continue;
+        if (node.nodeType !== Node.TEXT_NODE) continue;
+        const previous = session.seen.get(node);
+        if (previous && !validity.has(previous.record)) validity.set(previous.record, originalStillMatches(previous.record));
+        if (previous && previous.original === node.textContent && validity.get(previous.record)) { current = undefined; continue; }
+        const element = ownerOf(node.parentElement) || node.parentNode?.host;
+        if (!element) { current = undefined; continue; }
         if (!node.textContent.trim() && (!current || current.element !== element)) continue;
-        if (!current || current.element !== element) {
-          if (records.length >= 600) break;
-          current = { element, source: "", lastNode: node };
+        const directLayout = node.parentElement === element && /flex|grid/.test(styleOf(element).display);
+        if (!current || current.element !== element || directLayout && current.lastNode.nextSibling !== node) {
+          current = { element, source: "", nodes: [], originals: [], lastNode: node, directLayout };
           records.push(current);
         }
-        current.source += styleOf(node.parentElement).whiteSpace.startsWith("pre") ? node.textContent : node.textContent.replace(/\s+/g, " ");
+        const style = styleOf(node.parentElement || element);
+        current.source += style.whiteSpace.startsWith("pre") ? node.textContent : node.textContent.replace(/\s+/g, " ");
+        current.nodes.push(node);
+        current.originals.push(node.textContent);
         current.lastNode = node;
       }
       const eligible = records.filter((record) => {
         record.source = record.source.replace(/[^\S\n]+/g, " ").replace(/ *\n */g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+        if (!/[\p{L}]/u.test(record.source.replace(/https?:\/\/\S+|\b\S+@\S+\.\S+/g, ""))) return false;
+        const range = record.lastNode.ownerDocument.createRange();
+        if (!record.nodes.some((node) => { range.selectNodeContents(node); return Array.from(range.getClientRects()).some((rect) => rect.width > 0 && rect.height > 0); })) return false;
         record.distance = viewportDistance(record);
-        return record.source.length >= 3 && /[\p{L}\p{N}]/u.test(record.source);
+        return true;
       });
       eligible.forEach((record, index) => { record.order = index; });
-      const selected = eligible.sort((a, b) => a.distance - b.distance).slice(0, MAX_IMMERSIVE_BLOCKS).sort((a, b) => a.order - b.order);
-      selected.limited = eligible.length > MAX_IMMERSIVE_BLOCKS || records.length >= 600 || scanned >= 12000;
-      return selected;
+      return eligible;
     }
 
     function viewportDistance(record) {
-      const rect = record.element.getBoundingClientRect();
-      return rect.bottom < 0 ? -rect.bottom : Math.max(0, rect.top - innerHeight);
+      // Text geometry avoids treating every block in a tall owner as visible.
+      const range = record.element.ownerDocument.createRange();
+      range.setStart(record.nodes[0], 0);
+      range.setEnd(record.lastNode, record.lastNode.length);
+      const rect = range.getBoundingClientRect();
+      let top = rect.top, bottom = rect.bottom, left = rect.left, right = rect.right;
+      let view = record.element.ownerDocument.defaultView, distance = 0;
+      const outside = () => Math.max(0, -bottom, top - view.innerHeight, -right, left - view.innerWidth);
+      while (view && view !== window) {
+        distance = Math.max(distance, outside());
+        const frame = view.frameElement;
+        if (!frame) break;
+        const offset = frame.getBoundingClientRect();
+        top += offset.top + frame.clientTop; bottom += offset.top + frame.clientTop;
+        left += offset.left + frame.clientLeft; right += offset.left + frame.clientLeft;
+        view = frame.ownerDocument.defaultView;
+      }
+      return Math.max(distance, outside());
     }
 
-    function ensureImmersiveStyle() {
-      if (immersiveStyle) return;
-      immersiveStyle = document.createElement("style");
-      immersiveStyle.dataset.edgeWtIgnore = "1";
-      immersiveStyle.textContent = `
-        [data-edge-wt-immersive-translation="1"] { all:initial !important; display:block !important; position:static !important; float:none !important; box-sizing:border-box !important; width:auto !important; min-width:0 !important; max-width:100% !important; margin:.4em 0 0 !important; padding:0 !important; color:#315bc7 !important; font:inherit !important; line-height:1.6 !important; text-align:inherit !important; text-indent:0 !important; text-transform:none !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; }
-        @media (prefers-color-scheme:dark) { [data-edge-wt-immersive-translation="1"] { color:#9abaff !important; } }
+    function immersiveStyleText() {
+      return `
+        [data-edge-wt-immersive-translation="1"] { all:initial !important; display:block !important; position:static !important; float:none !important; box-sizing:border-box !important; width:auto !important; min-width:0 !important; max-width:100% !important; margin:.4em 0 0 !important; padding:0 !important; color:${immersiveColor || '#315bc7'} !important; font:inherit !important; line-height:1.6 !important; text-align:inherit !important; text-indent:0 !important; text-transform:none !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; }
+        @media (prefers-color-scheme:dark) { [data-edge-wt-immersive-translation="1"] { color:${immersiveColor || '#9abaff'} !important; } }
         [data-edge-wt-pending="1"] { opacity:.7 !important; }
       `;
-      (document.head || document.documentElement).appendChild(immersiveStyle);
+    }
+    function setImmersiveColor(value) {
+      immersiveColor = typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value.toLowerCase() : '';
+      for (const style of immersiveStyles.values()) style.textContent = immersiveStyleText();
+    }
+    function ensureImmersiveStyle(root = document) {
+      if (immersiveStyles.get(root)?.isConnected) return;
+      const style = (root.ownerDocument || root).createElement("style");
+      style.dataset.edgeWtIgnore = "1";
+      style.textContent = immersiveStyleText();
+      (root.head || root.documentElement || root).appendChild(style);
+      immersiveStyles.set(root, style);
     }
 
     function restoreImmersive() {
@@ -538,35 +615,38 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       cancelRequests();
       immersiveRunId += 1;
       panelRunId += 1;
-      const nodes = document.querySelectorAll('[data-edge-wt-immersive-translation="1"]');
+      const nodes = immersiveRecords.map((record) => record.translationElement).filter((node) => node?.isConnected);
       const count = nodes.length;
       nodes.forEach((node) => node.remove());
-      document.querySelectorAll('[data-edge-wt-immersive="1"]').forEach((element) => delete element.dataset.edgeWtImmersive);
+      immersiveRecords.forEach((record) => delete record.element.dataset.edgeWtImmersive);
+      for (const record of immersiveRecords) unwrapImmersive(record);
+      immersiveWrappers.clear();
       immersiveRecords = [];
-      if (immersiveStyle) {
-        immersiveStyle.remove();
-        immersiveStyle = undefined;
-      }
+      for (const style of immersiveStyles.values()) style.remove();
+      immersiveStyles.clear();
       return count;
     }
 
-    function createImmersiveBatches(records) {
-      const batches = [];
-      let current = [];
+    function nextImmersiveBatch(session) {
+      const pending = [];
+      for (const record of session.pending) {
+        if (!originalStillMatches(record)) { session.pending.delete(record); continue; }
+        record.distance = viewportDistance(record);
+        pending.push(record);
+      }
+      pending.sort((a, b) => a.distance - b.distance || (a.lastDispatch || 0) - (b.lastDispatch || 0) || a.order - b.order);
+      const batch = [];
       let length = 0;
-      records.forEach((record, index) => {
-        record.marker = `__EDGE_WT_${index}__`;
+      for (const record of pending) {
+        if (batch.length && (record.forceSingle || record.parts || (record.distance === 0) !== (batch[0].distance === 0))) break;
         const pieceLength = record.source.length + record.marker.length + 3;
-        if (current.length && (length + pieceLength > IMMERSIVE_BATCH_CHARS || current.length >= IMMERSIVE_BATCH_BLOCKS)) {
-          batches.push(current);
-          current = [];
-          length = 0;
-        }
-        current.push(record);
+        if (batch.length && (length + pieceLength > IMMERSIVE_BATCH_CHARS || batch.length >= IMMERSIVE_BATCH_BLOCKS)) break;
+        batch.push(record); session.pending.delete(record);
+        record.lastDispatch = ++session.dispatchSequence;
         length += pieceLength;
-      });
-      if (current.length) batches.push(current);
-      return batches;
+        if (record.forceSingle || record.parts || record.source.length > CHUNK_CHARS) break;
+      }
+      return batch;
     }
 
     function parseImmersiveBatch(text, records) {
@@ -611,18 +691,41 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         if (record.translationElement?.dataset.edgeWtPending !== "1") continue;
         record.translationElement.remove();
         record.translationElement = undefined;
+        unwrapImmersive(record);
         if (!record.element.querySelector('[data-edge-wt-immersive-translation="1"]')) delete record.element.dataset.edgeWtImmersive;
       }
     }
 
     function insertImmersiveTranslation(record, translation, pending = false) {
-      const element = record.element;
-      if (!element?.isConnected || !record.lastNode?.isConnected) return false;
-      const node = record.translationElement?.isConnected ? record.translationElement : document.createElement("span");
+      let element = record.element;
+      if (!element?.isConnected || !originalStillMatches(record)) return false;
+      if (record.directLayout) {
+        // Replace the anonymous flex/grid text item with a single flow item, so
+        // its translation cannot become an extra column. Original Text nodes survive.
+        if (!record.flowWrapper?.isConnected) {
+          const wrapper = element.ownerDocument.createElement("span");
+          wrapper.dataset.edgeWtFlowWrapper = "1";
+          wrapper.style.cssText = "display:block;min-width:0;max-width:100%;text-align:inherit;font:inherit;color:inherit";
+          if (getComputedStyle(element).display.includes("flex")) {
+            const range = element.ownerDocument.createRange();
+            range.setStartBefore(record.nodes[0]); range.setEndAfter(record.lastNode);
+            wrapper.style.flexBasis = `${range.getBoundingClientRect().width}px`;
+          }
+          record.nodes[0].before(wrapper);
+          record.nodes.forEach((original) => wrapper.appendChild(original));
+          record.flowWrapper = wrapper;
+          immersiveWrappers.add(wrapper);
+        }
+        element = record.flowWrapper;
+      }
+      ensureImmersiveStyle(record.lastNode.getRootNode());
+      const node = record.translationElement?.isConnected ? record.translationElement : element.ownerDocument.createElement("span");
       node.dataset.edgeWtImmersiveTranslation = "1";
       if (pending) node.dataset.edgeWtPending = "1";
       else delete node.dataset.edgeWtPending;
       node.setAttribute("lang", record.targetLanguage || "");
+      node.setAttribute("translate", "no");
+      node.setAttribute("dir", "auto");
       node.textContent = translation;
       element.dataset.edgeWtImmersive = "1";
       // Stop before the next original child. Direct text before/after nested blocks is paired separately.
@@ -647,39 +750,227 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       return true;
     }
 
-    async function translateImmersive(targetLanguage) {
-      restoreImmersive();
-      const runId = ++immersiveRunId;
-      panelRunId += 1;
-      const records = collectImmersiveBlocks();
-      if (!records.length) {
-        showPanel({ title: "沉浸式翻译", status: "没有找到可翻译的正文段落。" });
-        return { ok: false, error: "没有找到可翻译的正文段落。" };
+    function targetScriptDecision(text, targetLanguage) {
+      const target = targetLanguage.toLowerCase();
+      const language = target.split("-")[0];
+      const cleaned = text.replace(/https?:\/\/\S+|\b\S+@\S+\.\S+/g, "");
+      const letters = cleaned.match(/\p{L}/gu) || [];
+      if (!letters.length) return true;
+      const han = (cleaned.match(/\p{Script=Han}/gu) || []).length;
+      const kana = (cleaned.match(/[\p{Script=Hiragana}\p{Script=Katakana}]/gu) || []).length;
+      const hangul = (cleaned.match(/\p{Script=Hangul}/gu) || []).length;
+      // A complete foreign clause must still be translated, even inside a Chinese paragraph.
+      const latinClause = /(?:\p{Script=Latin}+[\s,;:'’"()\-]+){5}\p{Script=Latin}+/u.test(cleaned);
+      if (language === "zh") {
+        if (!han || kana || hangul || latinClause || han / letters.length < .5) return false;
+        const traditional = /[這個們為來時學習體書語說話國對與會後發現關開門問長東車馬無點讓還過種樣從處實應將數據讀頁圖論譯簡萬專業]/u;
+        const simplified = /[这个们为来时学习体书语说话国对与会后发现关开门问长东车马无点让还过种样从处实应将数据读页图论译简万专业]/u;
+        if (/\b(?:tw|hk|mo|hant)\b/.test(target)) return simplified.test(cleaned) ? false : true;
+        if (/\b(?:cn|sg|hans)\b/.test(target)) return traditional.test(cleaned) ? false : true;
+        return true;
       }
-      immersiveRecords = records;
-      records.forEach((record) => { record.targetLanguage = targetLanguage; });
-      ensureImmersiveStyle();
-      const batches = createImmersiveBatches(records);
-      batches.sort((a, b) => Math.min(...a.map((record) => record.distance)) - Math.min(...b.map((record) => record.distance)));
-      const limitNotice = records.limited ? `本次优先处理视区附近的 ${records.length} 个段落。` : `已找到 ${records.length} 个正文段落。`;
-      showPanel({ title: "沉浸式翻译", source: limitNotice, status: `正在翻译第 1/${batches.length} 批…`, showRestore: true, compact: true });
-      let translatedCount = 0;
-      let fallbackBlocks = 0;
-      const isCurrent = () => runId === immersiveRunId;
-      startProgress(`正在翻译，已完成 0/${records.length} 个段落…`);
+      if (language === "ja") return kana && !hangul && (han + kana) / letters.length >= .75 && !latinClause ? true : han || kana ? null : false;
+      if (language === "ko") return hangul && hangul / letters.length >= .75 && !latinClause ? true : false;
+      if (["en", "fr", "de", "es", "pt", "it", "nl"].includes(language) && (han || kana || hangul || letters.filter((letter) => !/\p{Script=Latin}/u.test(letter)).length > letters.length * .1)) return false;
+      return null;
+    }
+
+    async function alreadyTargetLanguage(record, session) {
+      const script = targetScriptDecision(record.source, session.targetLanguage);
+      if (script !== null) return script;
+      if (!chrome.i18n?.detectLanguage) return false;
+      const text = record.source;
+      const sample = text.length <= 6000 ? text : text.slice(0, 2000) + "\n" + text.slice(Math.floor(text.length / 2), Math.floor(text.length / 2) + 2000) + "\n" + text.slice(-2000);
+      if (!session.languages.has(sample)) {
+        const detected = new Promise((resolve) => {
+          let finished = false;
+          const finish = (result) => { if (!finished) { finished = true; clearTimeout(timer); resolve(result); } };
+          const timer = setTimeout(() => finish(null), 500);
+          try { chrome.i18n.detectLanguage(sample, (result) => { const error = chrome.runtime.lastError; finish(error ? null : result); }); }
+          catch { finish(null); }
+        });
+        session.languages.set(sample, detected);
+        session.languageChars += sample.length;
+        while (session.languages.size > 128 || session.languageChars > 128000) {
+          const oldest = session.languages.keys().next().value;
+          session.languageChars -= oldest.length;
+          session.languages.delete(oldest);
+        }
+      }
+      const detected = await session.languages.get(sample);
+      const languages = detected?.languages || [];
+      const best = languages.slice().sort((a, b) => b.percentage - a.percentage)[0];
+      return Boolean(best && best.language.toLowerCase().split("-")[0] === session.targetLanguage.toLowerCase().split("-")[0] && best.percentage >= 90 && (detected.isReliable || best.percentage >= 99 && (text.match(/\p{L}/gu) || []).length >= 4));
+    }
+
+    function stopImmersiveWatch() {
+      const session = immersiveSession;
+      if (!session) return;
+      clearTimeout(session.timer);
+      for (const wake of session.waiters) wake();
+      session.waiters.clear();
+      for (const observer of session.observers.values()) observer.disconnect();
+      for (const view of session.views) {
+        view.removeEventListener("scroll", session.onScroll, true);
+        view.removeEventListener("resize", session.onScroll);
+        view.removeEventListener("pagehide", session.onPageHide);
+        view.removeEventListener("load", session.onLoad, true);
+      }
+      immersiveSession = undefined;
+    }
+
+    function scheduleImmersiveScan(session) {
+      if (!session.isCurrent()) return;
+      if (location.href.split("#")[0] !== session.url) {
+        beginPanelRun();
+        if (shadow) setStatus("页面已切换，已停止沉浸式翻译。请在新页面重新开启。");
+        return;
+      }
+      session.dirty = true;
+      if (session.timer) return;
+      session.timer = setTimeout(async () => {
+        session.timer = undefined;
+        if (!session.isCurrent()) return;
+        if (session.busy) { for (const wake of session.waiters) wake(); session.waiters.clear(); return; }
+        await processImmersive(session);
+      }, 250);
+    }
+
+    function watchImmersiveRoots(session) {
+      const internal = (node) => {
+        for (let element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement; element; element = composedParent(element)) {
+          if (element.matches("#edge-web-translator-host,#edge-wt-selection-host,[data-edge-wt-ignore],[data-edge-wt-immersive-translation],script,style,noscript,template")) return true;
+        }
+        return false;
+      };
+      for (const root of session.roots) {
+        if (!session.observers.has(root)) {
+          const observer = new MutationObserver((mutations) => {
+            if (mutations.some((mutation) => (mutation.type === "attributes" && mutation.attributeName === "data-edge-wt-ignore" || !internal(mutation.target)) && (mutation.type !== "childList" || [...mutation.addedNodes, ...mutation.removedNodes].some((node) => !internal(node))))) scheduleImmersiveScan(session);
+          });
+          observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["class", "style", "hidden", "open", "lang", "translate", "contenteditable", "data-edge-wt-ignore"] });
+          session.observers.set(root, observer);
+        }
+        const view = (root.ownerDocument || root).defaultView;
+        if (view && !session.views.has(view)) {
+          view.addEventListener("scroll", session.onScroll, true);
+          view.addEventListener("resize", session.onScroll);
+          view.addEventListener("pagehide", session.onPageHide);
+          view.addEventListener("load", session.onLoad, true);
+          session.views.add(view);
+        }
+      }
+      for (const [root, observer] of session.observers) if (!session.roots.has(root)) {
+        observer.disconnect(); session.observers.delete(root);
+        immersiveStyles.get(root)?.remove(); immersiveStyles.delete(root);
+      }
+      const currentViews = new Set(Array.from(session.roots, (root) => (root.ownerDocument || root).defaultView));
+      for (const view of session.views) if (!currentViews.has(view)) {
+        view.removeEventListener("scroll", session.onScroll, true); view.removeEventListener("resize", session.onScroll);
+        view.removeEventListener("pagehide", session.onPageHide); view.removeEventListener("load", session.onLoad, true); session.views.delete(view);
+      }
+    }
+
+    function pruneImmersive(session) {
+      immersiveRecords = immersiveRecords.filter((record) => {
+        if (originalStillMatches(record)) return true;
+        record.translationElement?.remove();
+        if (record.completed) session.translatedCount -= 1;
+        if (record.skipped) session.skippedCount -= 1;
+        record.nodes.forEach((node) => { if (session.seen.get(node)?.record === record) session.seen.delete(node); });
+        unwrapImmersive(record);
+        if (!record.element.querySelector('[data-edge-wt-immersive-translation="1"]')) delete record.element.dataset.edgeWtImmersive;
+        return false;
+      });
+    }
+
+    async function refreshImmersiveRecords(session) {
+      if (session.scanPromise) return session.scanPromise;
+      session.scanPromise = (async () => {
+        session.dirty = false;
+        const isCurrent = session.isCurrent;
+        pruneImmersive(session);
+        const records = await collectImmersiveBlocks(session);
+        if (!isCurrent()) throw Object.assign(new Error("翻译已取消。"), { code: "CANCELLED" });
+        watchImmersiveRoots(session);
+        let next = 0;
+        await Promise.all(Array.from({ length: Math.min(8, records.length) }, async () => {
+          while (next < records.length && isCurrent()) {
+            const record = records[next++];
+            record.skipped = await alreadyTargetLanguage(record, session);
+          }
+        }));
+        if (!isCurrent()) throw Object.assign(new Error("翻译已取消。"), { code: "CANCELLED" });
+        for (const record of records) {
+          record.targetLanguage = session.targetLanguage;
+          record.order = session.recordSequence++;
+          record.marker = `__EDGE_WT_${record.order}__`;
+          record.nodes.forEach((node, index) => session.seen.set(node, { original: record.originals[index], record }));
+          if (record.skipped) session.skippedCount += 1;
+          else session.pending.add(record);
+          immersiveRecords.push(record);
+        }
+      })();
+      try { await session.scanPromise; }
+      finally { session.scanPromise = undefined; }
+    }
+
+    async function processImmersive(session) {
+      session.busy = true;
+      const isCurrent = session.isCurrent;
       try {
-        await mapConcurrent(batches, async (batch) => {
+        await refreshImmersiveRecords(session);
+        return await translateImmersiveRecords(session);
+      } catch (error) {
+        if (session.runId === immersiveRunId && error.code !== "CANCELLED") {
+          cancelRequests();
+          showPanel({ title: "沉浸式翻译", source: `已显示 ${session.translatedCount} 个译文段落。`, status: `翻译失败：${error.message}`, showRestore: true, compact: true });
+        }
+        return { ok: false, code: error.code || "TRANSLATION_FAILED", error: error.message };
+      } finally {
+        session.busy = false;
+        if (isCurrent()) {
+          stopProgress();
+          if (session.dirty) scheduleImmersiveScan(session);
+        }
+      }
+    }
+
+    async function translateImmersiveRecords(session) {
+      const targetLanguage = session.targetLanguage;
+      const isCurrent = session.isCurrent;
+      if (session.pending.size) {
+        showPanel({ title: "沉浸式翻译", source: `待翻译 ${session.pending.size} 段，随滚动优先翻译当前视区。已跳过 ${session.skippedCount} 个目标语言段落。`, status: "正在翻译…", showRestore: true, compact: true });
+        let failure;
+        const status = () => {
+          progressText = `正在翻译，已显示 ${session.translatedCount} 个段落，待发送 ${session.pending.size} 段…`;
+          setStatus(progressText);
+        };
+        const complete = (record, translation) => {
+          if (!isCurrent()) return;
+          if (insertImmersiveTranslation(record, translation) && !record.completed) { record.completed = true; session.translatedCount += 1; }
+        };
+        startProgress(`正在翻译，已显示 ${session.translatedCount} 个段落…`);
+        const translateBatch = async (batch) => {
           let translations;
           if (batch.length === 1) {
-            const parts = splitText(batch[0].source, CHUNK_CHARS);
-            const translated = [];
-            for (const part of parts) {
-              if (!isCurrent()) return;
-              translated.push(await requestTranslation(part, targetLanguage, "immersive web translation; return only the translation", (partial) => {
-                if (isCurrent()) insertImmersiveTranslation(batch[0], [...translated, partial].join("\n\n"), true);
-              }));
+            const record = batch[0];
+            record.parts ||= splitText(record.source, CHUNK_CHARS);
+            record.translatedParts ||= [];
+            const part = record.parts[record.translatedParts.length];
+            const translated = await requestTranslation(part, targetLanguage, "immersive web translation; return only the translation", (partial) => {
+              if (isCurrent()) insertImmersiveTranslation(record, [...record.translatedParts, partial].join("\n\n"), true);
+            });
+            if (!isCurrent()) return;
+            record.translatedParts.push(translated);
+            if (record.translatedParts.length < record.parts.length) {
+              insertImmersiveTranslation(record, record.translatedParts.join("\n\n"), true);
+              // Yield after each chunk. A long paragraph cannot monopolize a worker.
+              if (originalStillMatches(record)) session.pending.add(record);
+              return;
             }
-            translations = [translated.join("\n\n")];
+            translations = [record.translatedParts.join("\n\n")];
+            delete record.parts; delete record.translatedParts;
           } else {
             const payload = batch.map((record) => `${record.marker}\n${record.source}`).join("\n\n");
             const response = await requestTranslation(payload, targetLanguage, "immersive web translation; preserve every __EDGE_WT_N__ marker exactly and return only the marked translations", (partial) => {
@@ -689,35 +980,67 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
             translations = parseImmersiveBatch(response, batch);
             if (!translations) {
               discardPendingImmersive(batch);
-              fallbackBlocks += batch.length;
-              if (fallbackBlocks > MAX_MARKER_FALLBACK_BLOCKS) throw Object.assign(new Error("模型多次未保留段落标记，已停止额外重试。请更换模型或使用网页译文面板。"), { code: "MARKER_MISMATCH" });
-              translations = [];
+              session.fallbackBlocks += batch.length;
+              if (session.fallbackBlocks > MAX_MARKER_FALLBACK_BLOCKS) throw Object.assign(new Error("模型多次未保留段落标记，已停止额外重试。请更换模型或使用网页译文面板。"), { code: "MARKER_MISMATCH" });
               for (const record of batch) {
-                if (!isCurrent()) return;
-                const translation = await requestTranslation(record.source, targetLanguage, "immersive web translation; return only the translation", (partial) => {
-                  if (isCurrent()) insertImmersiveTranslation(record, partial, true);
-                });
-                translations.push(translation);
-                if (isCurrent()) {
-                  if (insertImmersiveTranslation(record, translation)) translatedCount += 1;
-                  setStatus(`正在翻译，已完成 ${translatedCount}/${records.length} 个段落…`);
-                }
+                record.forceSingle = true;
+                if (originalStillMatches(record)) session.pending.add(record);
               }
               return;
             }
           }
           if (!isCurrent()) return;
-          translations.forEach((translation, index) => { if (insertImmersiveTranslation(batch[index], translation)) translatedCount += 1; });
-          setStatus(`正在翻译，已完成 ${translatedCount}/${records.length} 个段落…`);
-        }, isCurrent);
-      } catch (error) {
-        if (isCurrent()) showPanel({ title: "沉浸式翻译", source: `已翻译 ${translatedCount}/${records.length} 个段落。`, status: `翻译失败：${error.message}`, showRestore: true, compact: true });
-        return { ok: false, code: error.code, error: error.message };
-      } finally {
-        if (isCurrent()) stopProgress();
+          translations.forEach((translation, index) => complete(batch[index], translation));
+        };
+        await Promise.all(Array.from({length:MAX_CONCURRENT_REQUESTS}, async () => {
+          while (!failure && isCurrent()) {
+            try {
+              if (session.dirty || session.scanPromise) await refreshImmersiveRecords(session);
+              if (failure || !isCurrent()) return;
+              // Form batches only when a slot is free, using the current text positions.
+              // Scrolling never aborts a request already sent to the API.
+              const batch = nextImmersiveBatch(session);
+              if (!batch.length) {
+                if (!session.inFlight) return;
+                await new Promise(resolve => session.waiters.add(resolve));
+                continue;
+              }
+              session.inFlight += 1;
+              try { await translateBatch(batch); }
+              finally {
+                session.inFlight -= 1;
+                for (const wake of session.waiters) wake(); session.waiters.clear();
+              }
+              if (isCurrent()) status();
+            } catch (error) {
+              if (!failure) { failure = error; if (isCurrent()) cancelRequests(); }
+            }
+          }
+        }));
+        if (failure) throw failure;
       }
-      showPanel({ title: "沉浸式翻译", source: `已在原网页位置显示 ${translatedCount} 个译文段落。`, status: records.limited ? `本次最多 ${MAX_IMMERSIVE_BLOCKS} 段。滚动到其他位置后可再次翻译。` : "译文紧随原段落显示。关闭浮窗可继续阅读。", showRestore: true, compact: true });
-      return { ok: true, translatedCount };
+      if (!isCurrent()) throw Object.assign(new Error("翻译已取消。"), { code: "CANCELLED" });
+      showPanel({ title: "沉浸式翻译", source: `已显示 ${session.translatedCount} 个译文段落，已跳过 ${session.skippedCount} 个目标语言段落。`, status: "滚动或展开内容后自动补译。关闭浮窗停止补译；恢复原文可移除译文。", showRestore: true, compact: true });
+      return { ok: true, translatedCount: session.translatedCount, skippedCount: session.skippedCount };
+    }
+
+    async function translateImmersive(targetLanguage) {
+      restoreImmersive();
+      const runId = ++immersiveRunId;
+      panelRunId += 1;
+      showPanel({ title: "沉浸式翻译", status: "正在读取网页并在本地识别目标语言…", showRestore: true, compact: true });
+      const colorRevision = immersiveColorRevision;
+      const preferences = await chrome.storage.local.get({ targetLanguage: "zh-CN", immersiveTranslationColor: '' });
+      targetLanguage ||= preferences.targetLanguage || "zh-CN";
+      if (colorRevision === immersiveColorRevision) setImmersiveColor(preferences.immersiveTranslationColor);
+      if (runId !== immersiveRunId) return { ok: false, code: "CANCELLED", error: "翻译已取消。" };
+      const session = { runId, targetLanguage, url: location.href.split("#")[0], roots: new Set([document]), observers: new Map(), views: new Set(), seen: new WeakMap(), languages: new Map(), pending:new Set(), waiters:new Set(), inFlight:0, recordSequence:0, dispatchSequence:0, languageChars: 0, translatedCount: 0, skippedCount: 0, fallbackBlocks: 0 };
+      session.isCurrent = () => runId === immersiveRunId && immersiveSession === session;
+      session.onScroll = () => scheduleImmersiveScan(session);
+      session.onLoad = (event) => { if (event.target?.tagName === "IFRAME") scheduleImmersiveScan(session); };
+      session.onPageHide = (event) => { if (event.target === document && session.isCurrent()) { cancelRequests(); immersiveRunId += 1; } else scheduleImmersiveScan(session); };
+      immersiveSession = session;
+      return processImmersive(session);
     }
 
     async function translateSelection(targetLanguage, providedText = "") {
@@ -780,9 +1103,11 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
     }
 
     chrome.storage?.onChanged?.addListener((changes,area)=>{
-      const fields=['apiStyle','endpoint','apiKey','model','providerRegion','sourceLanguage','targetLanguage','temperature','requestTimeoutSeconds','streamOpenAi','customHeaders','requestTemplate','responsePath'];
-      if(area!=='local'||!fields.some(key=>key in changes))return;
-      const running=pendingRequests.size>0;
+      if(area!=='local')return;
+      if('immersiveTranslationColor' in changes){immersiveColorRevision+=1;setImmersiveColor(changes.immersiveTranslationColor.newValue);}
+      const fields=['apiStyle','endpoint','apiKey','model','providerRegion','sourceLanguage','targetLanguage','temperature','streamOpenAi','customHeaders','requestTemplate','responsePath'];
+      if(!fields.some(key=>key in changes))return;
+      const running=pendingRequests.size>0||Boolean(immersiveSession);
       if(!running)return;
       if(selectionBusy)hideSelectionBubble(true);
       cancelRequests();immersiveRunId+=1;panelRunId+=1;

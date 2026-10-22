@@ -61,7 +61,7 @@ const server=http.createServer(async(req,res)=>{
       assert.equal(format.decodeText(Buffer.from('中文🙂')),'中文🙂');assert.equal(format.decodeText(Buffer.concat([Buffer.from([255,254]),Buffer.from('中文🙂','utf16le')])),'中文🙂');
       const text='文'.repeat(1499)+'🙂'+'字'.repeat(20),parts=format.splitParagraph(text);assert.equal(parts.join(''),text);assert.ok(parts.every(p=>p.length<=1500));assert.throws(()=>format.decodeText(Buffer.from([0,1,0])));
     });
-    await check('Text: reading page and character limits',()=>{assert.ok(format.textPages(Array.from({length:31},()=> 'Hello world')).length===2);assert.throws(()=>format.textPages(['x'.repeat(1000001)]),/100 万/);});
+    await check('Text: reading pagination retains long documents without a character or generated-page cutoff',()=>{assert.equal(format.textPages(Array.from({length:31},()=> 'Hello world')).length,2);const pages=format.textPages(['x'.repeat(2100000)+' FINAL_DOCUMENT_MARKER']),text=pages.flatMap(p=>p.blocks).map(b=>b.text).join('');assert.ok(pages.length>300);assert.ok(text.length>2100000);assert.match(text,/FINAL_DOCUMENT_MARKER$/);});
     await check('Batch markers: missing/duplicate rejected; split stream marker hidden',()=>{
       const batch=format.translationBatches([{text:'one'},{text:'two'}])[0];assert.deepEqual(format.markedTranslations('__QF_DOC_0__\n一\n__QF_DOC_1__\n二',batch),['一','二']);assert.equal(format.markedTranslations('__QF_DOC_0__\n一',batch),null);assert.equal(format.markedTranslations('__QF_DOC_0__\n__QF_DOC_0__\n一\n__QF_DOC_1__\n二',batch),null);assert.deepEqual(format.markedTranslations('__QF_DOC_0__\n一\n__QF_DO',batch,true),['一']);
     });

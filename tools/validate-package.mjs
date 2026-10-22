@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {spawnSync} from 'node:child_process';
+import {runtimeFiles,checkLocalReferences} from './package-files.mjs';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const root = process.argv[2]?path.resolve(process.argv[2]):path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
 const failures = [];
 
@@ -11,6 +13,7 @@ function assert(condition, message) {
 }
 
 assert(manifest.manifest_version === 3, "manifest_version 必须为 3");
+assert(typeof manifest.version==='string'&&/^\d+(?:\.\d+){0,3}$/.test(manifest.version)&&manifest.version.split('.').every(part=>Number(part)<=65535&&(part==='0'||!part.startsWith('0')))&&manifest.version.split('.').some(part=>Number(part)>0), '扩展版本号无效');
 assert(manifest.background?.service_worker, "缺少 background.service_worker");
 assert(fs.existsSync(path.join(root, manifest.background.service_worker)), "service worker 文件不存在");
 assert(Array.isArray(manifest.optional_host_permissions), "必须显式声明可选 API 域名权限");
@@ -69,12 +72,23 @@ for (const file of ['reader.js','src/document-format.mjs','src/docx-worker.js','
   assert(fs.existsSync(path.join(root,file)), `缺少文档运行资源：${file}`);
 }
 for(const file of ['src/profile-store.js','src/my-memory.js','src/model-catalog.js'])assert(fs.existsSync(path.join(root,file)),`缺少配置/基础翻译资源：${file}`);
-for(const file of ['research.html','research.js','research.css','src/research-store.js','src/research-capture.js','src/research-service.js','src/research-ui.mjs','src/research-settings.mjs'])assert(fs.existsSync(path.join(root,file)),`缺少研究工作流资源：${file}`);
+for(const file of ['research.html','research.js','research.css','src/research-store.js','src/research-capture.js','src/research-service.js','src/research-ui.mjs','src/research-render.mjs','src/research-settings.mjs'])assert(fs.existsSync(path.join(root,file)),`缺少研究工作流资源：${file}`);
 assert(!manifest.host_permissions?.length, '生产包不得预先请求全部网站权限');
+let scripts=0,files=[];
+try {
+  files=runtimeFiles(root);
+  checkLocalReferences(files,name=>fs.readFileSync(path.join(root,name),'utf8'));
+  for(const name of files.filter(name=>!name.startsWith('vendor/')&&/\.(?:js|mjs)$/.test(name))){
+    const result=spawnSync(process.execPath,['--check','--input-type=module'],{input:fs.readFileSync(path.join(root,name),'utf8'),encoding:'utf8',timeout:10000,windowsHide:true});
+    assert(result.status===0,`${name} 语法检查失败：${result.error?.message||result.stderr}`);scripts++;
+  }
+  const hosted=path.join(root,'docs/privacy.html');
+  if(fs.existsSync(hosted))assert(fs.readFileSync(path.join(root,'privacy.html')).equals(fs.readFileSync(hosted)), '安装包与托管英文隐私政策不一致');
+}catch(error){failures.push(error.message);}
 
 if (failures.length) {
   console.error(failures.map((item) => `✗ ${item}`).join("\n"));
   process.exit(1);
 }
 
-console.log("✓ Manifest、图标、本地资源和远程脚本检查通过");
+console.log(`✓ Manifest、图标、${files.length} 个运行文件、${scripts} 个脚本语法与本地依赖检查通过`);

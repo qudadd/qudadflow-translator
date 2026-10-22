@@ -3,7 +3,7 @@ globalThis.QFResearch = (() => {
   const BUILTINS = [
     {id:'paper',name:'论文精读 · 问题、方法与证据',instructions:'Identify the research question, contribution, study design, data, methods, main results, limitations and reproducibility gaps. Cite the supplied section/figure labels or brief quotes for claims. Separate author claims from your assessment. State which parts of the paper are missing.'},
     {id:'methods',name:'方法审查 · 统计与可复现性',instructions:'Audit design, controls, sample size, statistical methods, uncertainty, multiple testing, validation, confounders, data/code availability and reproducibility. Distinguish missing information from demonstrated flaws. Give a prioritized checklist tied to supplied evidence.'},
-    {id:'figure',name:'图表解读 · 标签、数值与结论',instructions:'Transcribe and translate visible labels, titles, legends, axis labels and units. Explain chart type, comparisons, trends, uncertainty and limitations. Distinguish observations from interpretation and causality. Mark unreadable labels and estimated numerical values.'}
+    {id:'figure',name:'图表解读 · 标签、数值与结论',instructions:'Identify visible figures and tables. Transcribe and translate visible labels, titles, legends, axis labels and units. For tables, output a Markdown table preserving rows, columns, multi-level headers, numeric values and footnotes. Mark unreadable cells; never invent missing values. Explain chart type, comparisons, trends, uncertainty and limitations. Distinguish observations from interpretation and causality. Mark unreadable labels and estimated numerical values.'}
   ];
   const DEFAULT = {enabled:false,notebookId:'default',retentionDays:90,contextChars:6000};
   let opened, queue = Promise.resolve();
@@ -129,17 +129,38 @@ globalThis.QFResearch = (() => {
     const existing=(await read('captures')).sort((a,b)=>b.createdAt-a.createdAt);
     const id=crypto.randomUUID(),now=Date.now();
     // Blob storage avoids persistent base64 expansion; captures expire on the next research access.
-    const figures=[];let bytes=0;
-    for(const figure of capture.figures.slice(0,20)){
-      const item={...figure};if(item.data){const payload=item.data.split(',')[1],raw=Uint8Array.from(atob(payload),c=>c.charCodeAt(0));bytes+=raw.length;if(bytes>16*1024*1024)break;item.blob=new Blob([raw],{type:'image/jpeg'});delete item.data;}figures.push(item);
+    const viewport=capture.figures.find(f=>f.kind==='viewport'),candidates=capture.figures.filter(f=>f.kind!=='viewport');
+    const retained=[...(viewport?[viewport]:[]),...candidates.slice(0,100)],skipped=capture.figures.length-retained.length;
+    const figures=[];let bytes=0,omitted=0;
+    for(const figure of retained){
+      const item={...figure};if(item.data){const payload=item.data.split(',')[1],raw=Uint8Array.from(atob(payload),c=>c.charCodeAt(0));if(bytes+raw.length<=16*1024*1024){bytes+=raw.length;item.blob=new Blob([raw],{type:'image/jpeg'});}else omitted++;delete item.data;}figures.push(item);
     }
-    const value={...capture,id,figures,createdAt:now,expiresAt:now+3600000};
+    const value={...capture,id,figures,captureNotice:(capture.captureNotice||'')+(omitted?` ${omitted} 张图片仅保留来源与图注，可按需载入。`:'')+(skipped?` 另有 ${skipped} 个图表候选未保留，请分批提取。`:''),createdAt:now,expiresAt:now+3600000};
     await write([...existing.slice(3).map(c=>({store:'captures',id:c.id,remove:true})),{store:'captures',value}]);return id;
   }
-  async function captureGet(id) {
+  async function captureRead(id) {
     const capture=await read('captures',id);if(!capture||capture.expiresAt<Date.now())throw new Error('网页材料已过期，请返回论文网页重新提取。');
-    for(const item of capture.figures)if(item.blob){const bytes=new Uint8Array(await item.blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));item.data='data:image/jpeg;base64,'+btoa(binary);delete item.blob;}
     return capture;
   }
-  return {source,action:message=>queued(()=>action(message)),context:message=>queued(()=>context(message)),remember:(...args)=>queued(()=>remember(...args)),skill:async id=>BUILTINS.find(s=>s.id===id)||await read('skills',id),capturePut:c=>queued(()=>capturePut(c)),captureGet,captureDelete:id=>queued(()=>write([{store:'captures',id,remove:true}]))};
+  async function captureFigure(id,index) {
+    const figure=(await captureRead(id)).figures[index];
+    // Loading one remote source must not decode every stored image to base64.
+    return figure?{id:figure.id,src:figure.src,caption:figure.caption}:undefined;
+  }
+  async function captureGet(id) {
+    const capture=await captureRead(id);
+    for(const item of [...capture.figures,...capture.supplements||[]])if(item.blob){const bytes=new Uint8Array(await item.blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));item.data='data:image/jpeg;base64,'+btoa(binary);delete item.blob;}
+    capture.canSupplement=Boolean(capture.binding?.documentId);delete capture.binding;
+    return capture;
+  }
+  async function captureAppendView(id,figure) {
+    const capture=await captureRead(id),supplements=capture.supplements||[];
+    if(supplements.some(f=>f.key===figure.key))return {figure,duplicate:true,count:supplements.length};
+    const bytes=Uint8Array.from(atob(figure.data.split(',')[1]),c=>c.charCodeAt(0));
+    if(supplements.length>=12||[...capture.figures,...supplements].reduce((n,f)=>n+(f.blob?.size||0),bytes.length)>16*1024*1024)throw new Error('这份材料已达到截图存储上限（12 张补图或合计 16 MB），可导出结果后重新提取，或在当前窗口导入局部截图。');
+    const stored={...figure,blob:new Blob([bytes],{type:'image/jpeg'})};delete stored.data;
+    await write([{store:'captures',value:{...capture,supplements:[...supplements,stored]}}]);
+    return {figure,duplicate:false,count:supplements.length+1};
+  }
+  return {source,action:message=>queued(()=>action(message)),context:message=>queued(()=>context(message)),remember:(...args)=>queued(()=>remember(...args)),skill:async id=>BUILTINS.find(s=>s.id===id)||await read('skills',id),capturePut:c=>queued(()=>capturePut(c)),captureGet,captureFigure,captureBinding:async id=>(await captureRead(id)).binding,captureAppendView:(...args)=>queued(()=>captureAppendView(...args)),captureDelete:id=>queued(()=>write([{store:'captures',id,remove:true}]))};
 })();

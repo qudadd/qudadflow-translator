@@ -1,7 +1,8 @@
-import {MAX_FILE_BYTES, MAX_TEXT_CHARS, MAX_PAGES, textPages, decodeText, parseDocxXml, pdfBlocks, translationBatches, markedTranslations} from './src/document-format.mjs';
+import {MAX_FILE_BYTES, MAX_PAGES, textPages, decodeText, parseDocxXml, pdfBlocks, translationBatches, markedTranslations} from './src/document-format.mjs';
 import {PdfLayoutView,fitText,blockDetail} from './src/layout-view.mjs';
 import {renderWord,WordLayoutView} from './src/word-layout.mjs';
 import {FigureWorkflow} from './src/figure-workflow.mjs';
+import {markdownTables} from './src/table-export.mjs';
 
 const $ = id => document.getElementById(id);
 let documentState, pdfLibrary, loadingTask, downloadController, renderTask, textLayer;
@@ -9,6 +10,13 @@ let loadGeneration = 0, renderGeneration = 0, jobGeneration = 0, jobRunning = fa
 let currentPage = 1, views = new Map(), syncing = false, resizeTimer, alignmentFrame;
 let layoutView,backgroundTask,figures;
 const layoutMode=()=>$('layoutMode').value;
+let immersiveColorRevision = 0;
+function setImmersiveColor(value) {
+  const color = typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value.toLowerCase() : '';
+  document.documentElement.toggleAttribute('data-qf-immersive-color', Boolean(color));
+  if (color) document.documentElement.style.setProperty('--qf-immersive-color', color);
+  else document.documentElement.style.removeProperty('--qf-immersive-color');
+}
 const pending = new Map();
 const status = (text, error = false) => { $('status').textContent = text; $('status').classList.toggle('error', error); };
 function controls() {
@@ -116,7 +124,6 @@ async function pageData(number, state = documentState) {
     // Use logical page coordinates for reading order even when the displayed page is rotated.
     const blocks = pdfBlocks(content, pdfPage.getViewport({scale:1,rotation:0}), library.Util.transform);
     const chars = blocks.reduce((sum, block) => sum + block.text.length, 0);
-    if (state.totalChars + chars > MAX_TEXT_CHARS) throw new Error('提取的文字超过 100 万字符，请拆分文档后翻译。');
     state.totalChars += chars;
     const page = {blocks};state.cache.set(number,page);
     return page;
@@ -180,7 +187,7 @@ async function showPage(number, preserveScroll = false) {
       layoutView=new WordLayoutView({page,sourceContainer:$('sourceContent'),translationContainer:$('translationContent'),width});figures.setContext({element:layoutView.source,page:number,source:{title:state.name,url:state.sourceUrl,page:String(number)},text:page.blocks.map(b=>b.text).join('\n\n')});
     } else {
       const source = document.createElement('div');source.className='source-text';page.blocks.forEach((block,index)=>source.append(blockView(block,index)));$('sourceContent').append(source);
-      figures.setContext({element:page.template||source,page:number,source:{title:state.name,url:state.sourceUrl,page:String(number)},text:page.blocks.map(b=>b.text).join('\n\n')});$('layoutNotice').textContent=state.kind==='Word'?'Word 正文阅读模式；切换沉浸原位可保留表格、图片和页边距。':'文本按阅读段落显示；原位模式固定每段位置，长译文可点击展开。';
+      figures.setContext({element:page.template||source,tables:state.tables,page:number,source:{title:state.name,url:state.sourceUrl,page:String(number)},text:page.blocks.map(b=>b.text).join('\n\n')});$('layoutNotice').textContent=state.kind==='Word'?'Word 正文阅读模式；切换沉浸原位可保留表格、图片和页边距。':'文本按阅读段落显示；原位模式固定每段位置，长译文可点击展开。';
     }
     if (generation !== renderGeneration) return false;
     ['sourcePane','translationPane'].forEach((id,index)=>{$(id).scrollTop=preserveScroll?scroll[index]*Math.max(0,$(id).scrollHeight-$(id).clientHeight):0;});
@@ -274,15 +281,14 @@ async function openBytes(bytes,name,load) {
     if(pdf.numPages>MAX_PAGES){await task.destroy();if(loadingTask===task)loadingTask=undefined;throw new Error(`PDF 超过 ${MAX_PAGES} 页，请拆分后打开。`);}
     state={kind:'PDF',name,pdf,task,pageCount:pdf.numPages,cache:new Map(),inflight:new Map(),totalChars:0};
   } else {
-    let pages,kind,wordLayout;
+    let pages,kind,wordLayout,tables;
     if(bytes[0]===80&&bytes[1]===75) {kind='Word';const decoded=await unzipWord(bytes,load.signal);parseDocxXml(decoded.xml);wordLayout=await renderWord(decoded.files,load.signal);pages=wordLayout.pages;}
     else {
       if(!/\.(txt|md|markdown)$/i.test(name))throw new Error('此链接或文件不是 PDF、DOCX、TXT 或 Markdown。网页登录页不能作为文档打开，请下载文件后选择它。');
       kind=/\.(md|markdown)$/i.test(name)?'Markdown':'TXT';const text=decodeText(bytes);
-      if(text.length>MAX_TEXT_CHARS)throw new Error('文本超过 100 万字符，请拆分文件。');
-      pages=textPages(text.split(/\n\s*\n/));
+      pages=textPages(text.split(/\n\s*\n/));tables=markdownTables(text);
     }
-    state={kind,name,pageCount:pages.length,cache:new Map(pages.map((page,index)=>[index+1,page])),inflight:new Map(),wordLayout:Boolean(wordLayout)};
+    state={kind,name,pageCount:pages.length,cache:new Map(pages.map((page,index)=>[index+1,page])),inflight:new Map(),tables,wordLayout:Boolean(wordLayout)};
     if(wordLayout&&load.generation===loadGeneration){wordLayout.styles.id='wordStyles';document.body.append(wordLayout.styles);}
   }
   if(load.generation!==loadGeneration)return;
@@ -333,14 +339,13 @@ async function openUrl(event) {
 }
 async function researchSource(all=false){
   const state=documentState;if(!state)throw new Error('请先打开文档。');
-  const first=all?1:currentPage,last=all?state.pageCount:currentPage;let text='',end=first,truncated=false;
+  const first=all?1:currentPage,last=all?state.pageCount:currentPage;let text='',end=first;
   for(let number=first;number<=last;number++){
     const page=await pageData(number,state);if(state!==documentState)throw new Error('文档已替换，请重新分析。');
-    const value='[Page '+number+']\n'+page.blocks.map(block=>block.text).join('\n\n');
-    if(text.length+value.length>60000){text+=value.slice(0,60000-text.length);truncated=true;end=number;break;}
-    text+=value+'\n\n';end=number;
+    const value=(text?'\n\n':'')+'[Page '+number+']\n'+page.blocks.map(block=>block.text).join('\n\n');
+    text+=value;end=number;
   }
-  return {title:state.name,url:state.sourceUrl,page:first===end?String(first):first+'–'+end,text:text.slice(0,60000),truncated};
+  return {title:state.name,url:state.sourceUrl,page:first===end?String(first):first+'–'+end,text,truncated:false};
 }
 function exportText() {
   if(!documentState)return;
@@ -375,10 +380,12 @@ let previousWidth=0;new ResizeObserver(()=>{const width=$('sourcePane').clientWi
 for(const type of ['dragenter','dragover'])document.addEventListener(type,event=>{if(event.dataTransfer?.types.includes('Files')){event.preventDefault();document.body.classList.add('dragging');}});
 document.addEventListener('dragleave',event=>{if(!event.relatedTarget)document.body.classList.remove('dragging');});
 document.addEventListener('drop',event=>{if(event.dataTransfer?.files.length){event.preventDefault();document.body.classList.remove('dragging');openFile(event.dataTransfer.files[0]);}});
-chrome.storage.onChanged.addListener(async(changes,area)=>{if(area!=='local'||!Object.keys(changes).some(key=>['apiStyle','endpoint','apiKey','model','providerRegion','sourceLanguage','targetLanguage','temperature','requestTimeoutSeconds','streamOpenAi','customHeaders','requestTemplate','responsePath','savedProfiles'].includes(key)))return;await stopTranslation();figures.clearResults();for(const page of documentState?.cache.values()||[])for(const block of page.blocks)delete block.translation;const settings=await chrome.storage.local.get({targetLanguage:'zh-CN'});$('targetLanguage').value=settings.targetLanguage;updateTranslations();if(documentState)status('翻译配置已更改。请重新翻译文档。');});
+chrome.storage.onChanged.addListener(async(changes,area)=>{if(area!=='local')return;if('immersiveTranslationColor' in changes){immersiveColorRevision+=1;setImmersiveColor(changes.immersiveTranslationColor.newValue);}if(!Object.keys(changes).some(key=>['apiStyle','endpoint','apiKey','model','providerRegion','sourceLanguage','targetLanguage','temperature','streamOpenAi','customHeaders','requestTemplate','responsePath','savedProfiles'].includes(key)))return;await stopTranslation();figures.clearResults();for(const page of documentState?.cache.values()||[])for(const block of page.blocks)delete block.translation;const settings=await chrome.storage.local.get({targetLanguage:'zh-CN'});$('targetLanguage').value=settings.targetLanguage;updateTranslations();if(documentState)status('翻译配置已更改。请重新翻译文档。');});
 $('targetLanguage').addEventListener('change',()=>chrome.storage.local.set({targetLanguage:$('targetLanguage').value}));
 window.addEventListener('pagehide',()=>{clearInterval(heartbeat);cancelRequests();port?.disconnect();downloadController?.abort();loadingTask?.destroy();});
-const settings=await chrome.storage.local.get({targetLanguage:'zh-CN'});$('targetLanguage').value=settings.targetLanguage;
+const initialColorRevision=immersiveColorRevision;
+const settings=await chrome.storage.local.get({targetLanguage:'zh-CN',immersiveTranslationColor:''});$('targetLanguage').value=settings.targetLanguage;
+if(initialColorRevision===immersiveColorRevision)setImmersiveColor(settings.immersiveTranslationColor);
 function readDocumentLink() {
   const params=new URLSearchParams(location.hash.slice(1));
   if(params.get('url')){try{const url=new URL(params.get('url'));if(['https:','http:'].includes(url.protocol)){$('documentUrl').value=url.href;$('linkForm').hidden=false;status('当前文档链接已填入，点击“打开文档”继续。');}}catch{}}

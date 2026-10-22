@@ -1,5 +1,4 @@
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
-export const MAX_TEXT_CHARS = 1000000;
 export const MAX_PAGES = 300;
 
 export function splitParagraph(text, limit = 1500) {
@@ -18,19 +17,16 @@ export function splitParagraph(text, limit = 1500) {
 
 export function textPages(paragraphs) {
   const pages = [];
-  let blocks = [], chars = 0, total = 0;
+  let blocks = [], chars = 0;
   for (const paragraph of paragraphs) {
     const value = typeof paragraph === 'string' ? {text: paragraph} : paragraph;
     for (const text of splitParagraph(value.text)) {
-      total += text.length;
-      if (total > MAX_TEXT_CHARS) throw new Error('文档文字超过 100 万字符，请拆分文件后打开。');
       if (blocks.length && (chars + text.length > 6000 || blocks.length >= 30)) { pages.push({blocks}); blocks = []; chars = 0; }
       blocks.push({text, kind: value.kind || 'paragraph'}); chars += text.length;
     }
   }
   if (blocks.length) pages.push({blocks});
   if (!pages.length) throw new Error('没有找到可翻译的文字。');
-  if (pages.length > MAX_PAGES) throw new Error('文档过长，请拆分文件后打开。');
   return pages;
 }
 

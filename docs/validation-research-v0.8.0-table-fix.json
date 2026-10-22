@@ -1,0 +1,80 @@
+{
+  "version": "0.8.0",
+  "scope": "Generated papers, images and synthetic keys in isolated Edge. Test-only all-host grant enables screenshot capture. No user profile or live AI. Generated code is not executed.",
+  "passed": 18,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Memory defaults off; no credentials or API configuration in research state",
+      "passed": true
+    },
+    {
+      "name": "Explicit webpage capture extracts article, captions, raster and visible SVG without calling AI",
+      "passed": true
+    },
+    {
+      "name": "Offscreen image loads only after explicit action; image domain and MIME validation apply",
+      "passed": true
+    },
+    {
+      "name": "Custom Skills save, import, export and reject stale edits or invalid batch imports",
+      "passed": true
+    },
+    {
+      "name": "Paper analysis applies selected Skill, streams safe text and does not save when memory is off",
+      "passed": true
+    },
+    {
+      "name": "Opt-in remembers completed analyses; another page includes bounded notebook context",
+      "passed": true
+    },
+    {
+      "name": "Memory can be omitted per request; notebook boundaries do not leak prior paper context",
+      "passed": true
+    },
+    {
+      "name": "Recognized webpage figures generate downloadable Python and R drafts with original-data requirements",
+      "passed": true
+    },
+    {
+      "name": "Settings export JSON and Markdown retain sources, omit API credentials and all images",
+      "passed": true
+    },
+    {
+      "name": "Deleting a notebook while analysis is pending prevents late recreation of its records",
+      "passed": true
+    },
+    {
+      "name": "Stopping paper analysis aborts HTTP and does not store partial results",
+      "passed": true
+    },
+    {
+      "name": "PDF paper analysis spans pages and figure source remains page one after navigation",
+      "passed": true
+    },
+    {
+      "name": "DOCX, TXT and Markdown analysis use the same Skills and notebook workflow",
+      "passed": true
+    },
+    {
+      "name": "Storage enforces context budget, expiry and capacity; independent records survive worker/browser restart",
+      "passed": true
+    },
+    {
+      "name": "Research messages reject website callers; malformed input and missing code evidence send no AI request",
+      "passed": true
+    },
+    {
+      "name": "Successful analysis remains downloadable and shows an actionable memory-save failure",
+      "passed": true
+    },
+    {
+      "name": "Long article extraction preserves separators and every paragraph without a character cutoff",
+      "passed": true
+    },
+    {
+      "name": "No uncaught browser errors; all generated-code results remain inert text",
+      "passed": true
+    }
+  ]
+}

@@ -31,43 +31,13 @@
       <article><span class="number">02</span><h2>沉浸式双语阅读</h2><p>译文紧随原段落，接口返回时逐步显示，优先处理视区附近的内容。保留链接和原文节点，支持一键恢复。</p></article>
       <article><span class="number">03</span><h2>自选服务，直接连接</h2><p>API 设置和密钥保存在浏览器本地。授权所选 API 域名后，翻译请求直接发给该服务商，扩展无广告、遥测或开发者代理。</p></article>
     </section>
-    <section class="guide" id="setup" aria-labelledby="setup-title">
-      <p class="eyebrow">开始使用</p><h2 id="setup-title">几步完成配置。</h2>
-      <ol>
-        <li>从 GitHub Releases 下载运行包并解压。打开 <code>edge://extensions</code>（Chrome 使用 <code>chrome://extensions</code>），开启“开发人员模式”，点击“加载解压缩的扩展”，选择包含 <code>manifest.json</code> 的目录。也可下载仓库源码后选择其根目录。</li>
-        <li>打开扩展的“设置 / API 设置”，选择接口类型，填写服务商提供的端点、API Key 和必要的模型或区域。</li>
-        <li>保存设置并允许访问 API 域名，点击“测试连接”。服务商要求账号、额度或付费时，请先完成相应配置。</li>
-        <li>打开普通网页，点击“沉浸式翻译当前网页”，结束后点击“恢复原文”。勾选“在此网站启用划词翻译按钮”并授权后，即可就近点击划词翻译，开关会保留到下次访问。</li>
-      </ol>
-      <p>选中文本快捷键为 <code>Alt+Shift+T</code>，沉浸式翻译为 <code>Alt+Shift+I</code>。可在 <code>edge://extensions/shortcuts</code> 调整；macOS 默认使用 <code>Control+Shift</code> 组合。</p>
-      <h2>选择你的 API。</h2>
-      <div class="table-scroll"><table><caption>常见配置示例，实际参数以服务商文档为准</caption><thead><tr><th scope="col">接口类型</th><th scope="col">端点示例</th><th scope="col">补充配置</th></tr></thead><tbody>
-        <tr><td>Google Cloud Translation v2</td><td><code>https://translation.googleapis.com/language/translate/v2</code></td><td>启用 Cloud Translation API 并提供对应 Key</td></tr>
-        <tr><td>DeepL API</td><td><code>https://api-free.deepl.com/v2/translate</code></td><td>Pro 通常使用 <code>api.deepl.com</code>；填写 DeepL API Key</td></tr>
-        <tr><td>Microsoft Translator</td><td><code>https://api.cognitive.microsofttranslator.com/translate</code></td><td>Azure Translator Key，按资源要求填写区域</td></tr>
-        <tr><td>OpenAI 兼容接口</td><td><code>https://你的服务商域名/v1/chat/completions</code> 或 <code>/v1/responses</code></td><td>服务商 Key 与其支持的模型名称；Responses 需填写完整端点</td></tr>
-        <tr><td>自定义 JSON</td><td>服务商指定的 HTTPS 地址</td><td>请求模板、自定义请求头和响应字段路径</td></tr>
-      </tbody></table></div>
-      <p>自定义模板用 <code>{{text}}</code>、<code>{{model}}</code>、<code>{{sourceLanguage}}</code>、<code>{{targetLanguage}}</code> 作为完整的 JSON 值，扩展负责转义；响应路径示例为 <code>data.translation</code>。完整示例见 <a href="https://github.com/qudadd/qudadflow-translator/blob/main/README.zh-CN.md">中文 README ↗</a>。</p>
-      <p>当前版本支持段落内流式显示、视区优先和五分钟内的成功译文复用。划词请求优先获得下一个空闲请求位置；页面最多两个并发请求，关闭划词浮窗不会中断沉浸式翻译。API 测试绕过缓存并显示耗时与错误；默认超时 45 秒，可设为 10–180 秒。网关不支持流式时可关闭；Temperature 可留空。更新已有侧载版本后，请重新加载扩展并刷新网页。</p>
-      <h2>0.7.1：明确选择上游模型</h2><p>设置改为分区导航，支持读取 OpenAI 兼容上游模型、搜索 ID、筛选已报告的文本/图片能力及查看上下文等元数据。缺失信息标为未知，不凭名称猜测读图、速度或价格；点击“填入此模型”才改变草稿，不自动选第一项。模型列表仅在当前设置页内存，API 域名授权可以保留。</p><p>“测试连接”用固定短句测试当前未保存草稿并显示耗时，不保存、不启用，也不验证图片能力。测试后点击“保存设置”才应用。独立 Chrome 自动检查未能加载扩展，Chrome 验收和商店提交仍待完成；Edge 已完成下述检查。</p>
-      <h2>配置方案与免 Key 基础试用</h2>
-      <p>设置页可保存最多 20 个具名方案，包含接口、端点、Key、模型及语言偏好。选中后可编辑并保存，或另存为新方案；弹窗可快速切换。首次使用会先保留原有连接，所有配置和密钥仅存在此浏览器本地。</p>
-      <p>点击“启用 MyMemory 基础试用”并允许其 API 域名，可免 Key 体验短文翻译。默认英译简中，其他源语言需手动选择。匿名额度通常为每天 5000 字符，服务商可能长期保留提交文字，请使用非私密样本；不承诺完全不限量。长文建议使用自己的 API 或自托管兼容服务。<a href="https://mymemory.translated.net/terms-and-conditions">MyMemory 条款与隐私</a> · <a href="https://mymemory.translated.net/doc/usagelimits.php">额度说明</a></p>
-      <h2>文档原位翻译</h2>
-      <p><strong>传统机器翻译和 AI 均可提供基础沉浸式翻译。</strong>在浏览器查看 PDF 时，点击扩展图标 → <strong>PDF / 文档左右对照</strong>，打开预填链接并允许文档来源域名。也可选择或拖入本地 PDF、DOCX、TXT、Markdown。登录下载或 blob 文件无法加载时，先下载再选择。</p>
-      <p>默认“沉浸原位”在 PDF 原文本区域显示译文，保留页面比例、图片与图表位置。放不下或特殊排版的段落保留原文，点击 ↗ 看完整译文。可切换“原版左右对照”和重新排版的“段落对照”。Word 保留浏览器渲染的表格、嵌入图片、页边距；TXT/Markdown 固定阅读段落位置。支持当前页/全文翻译、流式显示、同步滚动、停止续译和双语 TXT 导出。</p>
-      <h2>0.7.0：网页论文、Skill 与图表复现</h2><p>扩展弹窗新增“论文分析 / 提取网页图表”。提取正文、图注与图片后，可编辑材料并用 Skill 分析研究方法和证据；PDF、Word、TXT、Markdown 共用这套流程。设置可编辑和导入/导出 Skill，作为纯文本分析模板使用。</p><p>跨页记忆默认关闭，开启后按笔记本隔离并限制容量，可在设置搜索、删除和导出。识别图表后可下载 Python/R 复现草稿及数据要求说明；扩展不自动执行代码，也不把图中估读值当作原始数据。<a href="https://github.com/qudadd/qudadflow-translator/blob/main/README.zh-CN.md">查看完整研究使用指南 →</a></p><h2>最下方的 AI 图文工作流</h2>
-      <p>在 API 设置保存支持图片输入的 OpenAI 兼容配置后，展开底部“AI 图文工作流”，提取 PDF/Word 图片。PDF 矢量图表可框选或提取整页。预览后点击“翻译图文并解释”，才把所选图片发送给单独选择的 AI 配置。正文可以继续使用传统接口。图片可下载、移除，分析可停止；AI 的文字识别和数值解释需核对原图。</p>
-      <p>文件最大 25 MB、300 页/阅读分段、100 万字符；图文工作流最多暂存 20 张/24 MB。Word 的复杂排版与字体可能与 Microsoft Word 有差异，严格保真请另存 PDF；旧 DOC 先转 DOCX。扫描 PDF 的正文原位替换需先 OCR，AI 阅读整页图片不会自动替换扫描文字。Markdown 按纯文本显示。不导出版式保真的译后 PDF/DOCX。最低要求 Chromium 内核 Edge 125。</p>
-      <p>文件与图片提取在本地完成。正文翻译发送提取文字；点击底部 AI 分析才发送所选图片。原 PDF/DOCX 文件及密码不上传给翻译 API。商店更新状态以提交记录为准。</p>
-      <h2>使用范围与数据处理</h2>
-      <p>浏览器内部页面、内置 PDF 阅读器、Edge 商店等受保护页面无法注入网页翻译界面；PDF 通过独立文档阅读器使用。网页面板单次最多提取 12,000 个字符并提示截断；沉浸式模式在有界扫描的正文中优先处理视区附近的 80 个块，长段落自动拆分。滚动后再次翻译会替换上一轮译文。双语内容会增加段落高度；固定高度、虚拟滚动和内嵌内容等复杂页面仍可能需要专门适配。</p>
-      <p>翻译仅在你主动操作后开始。待翻译文本和鉴权信息直接发送至你配置的 API；服务商按自己的隐私、保留和收费规则处理。请使用可信的 HTTPS 端点。沉浸式译文插入网页后，网页脚本可能读到这些译文。详情见 <a href="privacy.zh-CN.html">中文隐私政策</a>。</p>
-      <p>0.7.1 已在 Edge 通过 191 项检查：22 项模型/设置检查、87 项网页/接口回归、34 项文档检查、13 项配置方案/基础试用接口检查、17 项原位显示/图表检查和 18 项研究工作流检查，使用生成文档、本地模拟 API 与独立 Edge 配置。真实 Google、DeepL、Microsoft 等账号的有效性、额度、网络可达性、速度和翻译质量仍需使用自己的 Key 验证。</p>
-    </section>
+    <section class="guide" id="setup"><p class="eyebrow">版本 0.8.7</p><h2>自己的颜色，顺手的快捷键。</h2><p>在设置 → 翻译偏好中选择沉浸式译文颜色，提供浅色和深色预览。快捷键默认 <strong>Shift+A</strong>，可手动输入组合并保存，或点击录制；支持恢复与停用。只在已授权网页正文触发，输入框和编辑器保留正常输入。偏好独立于 API 方案，修改无需重新翻译。</p><h2>优先翻译正在阅读的内容。</h2><p>沉浸式翻译按当前视区安排队列，随滚动、展开和动态变化补充，可信识别为目标语言的文字自动跳过。按站点启用划词按钮后，选中再点击翻译，单纯划选不会请求接口。浏览器内部页和内置 PDF 视图使用扩展的独立入口。</p></section>
+<section class="guide"><h2>保留页面比例，原位或左右对照。</h2><p>打开 PDF、Word DOCX、TXT、Markdown 本地文件或已授权链接，可选沉浸原位、原版左右对照、段落对照。PDF 保持页面比例与图表位置；无法容纳的长译文提供完整译文入口。支持当前页/全文翻译、停止/继续和双语 TXT 导出。</p><p>文件最大 25 MB，PDF/渲染后的 Word 保留 300 页资源限制。提取正文和 TXT/Markdown 不设固定字数截断，仍受模型上下文、请求大小与浏览器内存限制。Word 呈现可能不同于 Microsoft Word；扫描正文替换需外部 OCR，暂不导出保持版式的译后 PDF/DOCX。</p></section>
+<section class="guide"><h2>结合图表提问，保留论文证据。</h2><p>网页使用可移动、缩放的独立论文问答窗，文档共享研究流程。依据编号、图注和结构识别图、图片表格、原生及 ARIA 表格；支持一键全选、搜索、批量载入可用高清原图，再结合正文提问。文字表格可本地复制 Markdown/TSV，图片表格需主动调用视觉 AI 转录并核对；漏提取时可导入/粘贴图表截图或补入原文视区。</p><p>提取、选择和载入本身不调用 AI。可选 AI 解读图表、生成 Python/R 复现草稿，扩展不执行代码。支持可编辑 Skill 提示模板、默认关闭且可导出的跨页面笔记本记忆。识别为启发式，不能保证所有网站；论文单次问答最多结合 4 张原图，捕获及图片载入保留资源上限。</p></section>
+<section class="guide"><h2>读取上游模型，再明确选择。</h2><p>支持 Google、DeepL、Microsoft、OpenAI 兼容和自定义 JSON 接口，最多保存 20 个本地 API 方案。设置分区可独立收缩。读取上游列表、搜索服务商声明的能力，由用户选择并测试草稿后保存；未知元数据明确标记。MyMemory 是有限免 Key 基础试用，匿名通常约 5,000 字符/天，可能保留提交文字，不是不限量服务。</p><p>翻译、模型读取、连接测试和 AI 分析不设扩展固定超时，遇真实 HTTP/网络/流错误或手动停止时结束；服务商限制仍适用，文档/图片下载保留资源保护。网站/API 按需授权，也可主动一次授权所有网站以减少提示。</p></section>
+<section class="guide"><h2>验证结果与使用范围。</h2><p>0.8.7 已通过 342 项检查，包含 11 套隔离 Edge 检查的 331 项行为验证及 11 项构建／打包检查，使用生成文档、已保存样例与虚构本地接口。真实模型速度、准确率及本轮 Chrome 集成尚未验证。文件本地解析，仅主动请求的文字或所选图片发送到配置的服务商，没有开发者翻译代理、广告或分析追踪。</p><p><a href="https://github.com/qudadd/qudadflow-translator/blob/main/docs/VERIFICATION.md">验证记录 ↗</a> · <a href="https://github.com/qudadd/qudadflow-translator/blob/main/docs/RELEASE_NOTES_0.8.7.md">更新说明 ↗</a> · <a href="https://github.com/qudadd/qudadflow-translator/blob/main/docs/STORE_SUBMISSION_0.8.7.md">三个平台发布状态 ↗</a></p></section>
     <section class="support" id="community"><div><p class="eyebrow">交流与支持</p><h2>一起交流，让阅读更顺畅。</h2><p>交流使用体验、反馈问题与功能建议。</p></div><div class="support-contacts"><p class="community-group">QQ 交流群 <strong>1048123205</strong></p><p>在 QQ 中搜索群号加入。</p><a href="mailto:lcf1249288484@outlook.com">lcf1249288484@outlook.com <span aria-hidden="true">↗</span></a></div></section>
-    <p class="disclosure">QudadFlow Translator 为独立扩展，与所列服务商无隶属关系。扩展本身不附带翻译服务订阅，第三方账号、费用和条款由对应服务商决定。2026 年 10 月 21 日在 Partner Center 确认：0.7.0 已正式上线（Live），0.7.1 已提交审核（In review），见<a href="https://github.com/qudadd/qudadflow-translator/blob/main/docs/STORE_SUBMISSION_0.7.1.md">提交记录 ↗</a>。<a href="https://github.com/qudadd/qudadflow-translator/releases/tag/v0.7.1">GitHub 0.7.1</a> 已发布。</p>
+    <p class="disclosure">QudadFlow Translator 为独立扩展，与所列服务商无隶属关系。第三方账号、费用与隐私规则由服务商决定。GitHub 发布与商店审核状态分别记录，见<a href="https://github.com/qudadd/qudadflow-translator/blob/main/docs/STORE_SUBMISSION_0.8.7.md">0.8.7 发布记录</a>。</p>
   </main>
   <footer class="wrap"><span>© 2026 QudadFlow Translator</span><a href="privacy.zh-CN.html">隐私政策</a><a href="./" lang="en">English</a><a href="https://github.com/qudadd/qudadflow-translator">源代码</a></footer>
 </body>

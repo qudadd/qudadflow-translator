@@ -1,0 +1,102 @@
+{
+  "generatedAt": "2026-10-21T18:27:04.327Z",
+  "extensionVersion": "0.8.7",
+  "browser": "155.0.4283.62",
+  "scope": "Isolated browser, synthetic credentials and localhost fixtures only. Live provider credentials, pricing and image support are not tested.",
+  "passed": 23,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Models: same-origin URL derivation preserves prefixes and query",
+      "passed": true
+    },
+    {
+      "name": "Models: accepted list formats, validation, deduplication and bounds",
+      "passed": true
+    },
+    {
+      "name": "Models: new installation has no guessed default model",
+      "passed": true
+    },
+    {
+      "name": "Models: explicit GET uses configured prefix, bearer and custom headers",
+      "passed": true
+    },
+    {
+      "name": "Models: no implicit selection, XSS-safe metadata, unknown capability stays unknown",
+      "passed": true
+    },
+    {
+      "name": "Models: applying a candidate changes editor only, then tests draft model without saving",
+      "passed": true
+    },
+    {
+      "name": "Models: editing invalidates connection verification; saving explicitly applies model",
+      "passed": true
+    },
+    {
+      "name": "Models: changing endpoint clears list and cancels in-flight HTTP",
+      "passed": true
+    },
+    {
+      "name": "Models: cancellation aborts HTTP and a late response cannot populate the list",
+      "passed": true
+    },
+    {
+      "name": "Models: 401 has a safe actionable error",
+      "passed": true
+    },
+    {
+      "name": "Models: 404 has a safe actionable error",
+      "passed": true
+    },
+    {
+      "name": "Models: 429 has a safe actionable error",
+      "passed": true
+    },
+    {
+      "name": "Models: html has a safe actionable error",
+      "passed": true
+    },
+    {
+      "name": "Models: redirect has a safe actionable error",
+      "passed": true
+    },
+    {
+      "name": "Models: oversized has a safe actionable error",
+      "passed": true
+    },
+    {
+      "name": "Models: empty and capped catalogs are explicit and never replace the current ID",
+      "passed": true
+    },
+    {
+      "name": "Models: slow catalog waits beyond former 15-second deadline and returns normally",
+      "passed": true
+    },
+    {
+      "name": "Draft tests: cancellation belongs to its settings tab; closing the owner aborts pending HTTP",
+      "passed": true
+    },
+    {
+      "name": "Models: unsupported providers and absent permission never reach network",
+      "passed": true
+    },
+    {
+      "name": "Models: popup cannot read catalogs, cancel requests or test draft credentials",
+      "passed": true
+    },
+    {
+      "name": "Models: test output hides reflected authentication values",
+      "passed": true
+    },
+    {
+      "name": "Models: root API URL derives valid model and translation routes",
+      "passed": true
+    },
+    {
+      "name": "Settings: QQ entry, model details and navigation render within desktop and narrow widths",
+      "passed": true
+    }
+  ]
+}

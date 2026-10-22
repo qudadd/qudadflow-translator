@@ -1,36 +1,48 @@
-# QudadFlow Translator: certification review
+# QudadFlow Translator: certification review (0.8.7)
 
-The extension has no QudadFlow account or login. Production translation calls a user-configured third-party API directly. Valid provider credentials are needed for live Google Cloud Translation, DeepL, Microsoft Translator, or OpenAI-compatible services. No shared production keys are supplied.
+The extension has no QudadFlow account or login. Live Google Cloud Translation, DeepL, Microsoft Translator and OpenAI-compatible services use the reviewer's own endpoint and credentials. No shared production keys are supplied. The UI is Simplified Chinese; the product name and English/Chinese store metadata are included.
 
-For the 0.7.0 update, Settings includes **启用 MyMemory 基础试用** (enable basic trial). Approve access to api.mymemory.translated.net and try a short English sentence. No key is needed; English → Simplified Chinese is preconfigured. The typical anonymous quota is 5,000 characters/day, with provider retention/usage terms. Source language must be selected manually. This is a public, limited trial, not an unlimited service. Full current review steps and document limitations are in [STORE_UPDATE_0.7.0.md](STORE_UPDATE_0.7.0.md) (current 0.7.0 metadata).
+For basic text testing, expand **快速试用 · 无需 API Key** in Settings and click **启用 MyMemory 基础试用**. Approve access to api.mymemory.translated.net and try a short, non-private English sentence. No key is needed; English → Simplified Chinese is preconfigured. The typical anonymous quota is 5,000 characters/day, with provider retention/usage terms. Other source languages need manual selection. This is a limited public service. AI research and vision need a compatible API profile and model.
 
-For functional review without a paid account, the source repository includes an optional local simulated API. It demonstrates the custom JSON path with the submitted extension's normal settings and optional host permission flow. It is not a translation engine and does not prove live-provider translation quality. It is not bundled in the runtime extension.
+## Local manual review without a paid API
 
-## Local manual review
+The optional source-only simulated API demonstrates the custom JSON path through normal settings and permissions. It is not a translation engine and does not establish live-provider quality.
 
-1. Obtain the source from https://github.com/qudadd/qudadflow-translator . With Node.js 18 or newer installed, run `node tools/review-api.cjs` from the repository root. It binds only to `127.0.0.1:8765`, logs no request content, and sends no external requests. Keep it running during review; stop with Ctrl+C.
-2. In the submitted extension's settings, choose **自定义 JSON 接口** (Custom JSON). Set the endpoint to `http://127.0.0.1:8765/translate`. Leave API Key empty and custom headers as `{}`. Set request template to `{"text": {{text}}}` and response path to `data.translation`.
-3. Click **保存设置** (Save) and allow access to the local API domain. Click **测试连接** (Test connection); a successful result confirms the request completed.
-4. Open `http://127.0.0.1:8765/`. Select **Hello world** and use the extension or context menu: the fixture returns **你好，世界**. **Good morning** becomes **早上好** and **Read more** becomes **了解更多**. Other text is echoed. Page and immersive translation preserve the extension's paragraph markers through this deterministic substitution.
-5. Test webpage translation, immersive bilingual insertion, copy, and restore from the extension popup. Stop the local API and retry a translation to inspect the failure message.
-6. For live-provider review, choose the appropriate provider and supply valid credentials from that provider. Save and approve that API domain before testing. Changing provider maintains separate configuration drafts.
+1. Obtain the source from https://github.com/qudadd/qudadflow-translator . With Node.js 18 or newer, run `node tools/review-api.cjs` from the repository root. It binds only to `127.0.0.1:8765`, logs no request content and sends no external requests. Stop with Ctrl+C.
+2. Choose **自定义 JSON 接口** (Custom JSON), endpoint `http://127.0.0.1:8765/translate`, empty API Key, custom headers `{}`, request template `{"text": {{text}}}` and response path `data.translation`.
+3. Save and allow the local API domain. **测试连接** tests a fixed sentence using the current draft; it does not save/activate changes, use page text or verify vision. Save explicitly before using a profile elsewhere.
+4. Open `http://127.0.0.1:8765/`. The fixture maps **Hello world** to **你好，世界**, **Good morning** to **早上好**, and **Read more** to **了解更多**. Other text is echoed; paragraph markers are preserved.
+5. Test immersive insertion, selection translation, copy and restore. Enable the nearby selection button per site; selection alone sends nothing. Stop the local API and inspect the next request's failure message.
 
-The current interface is Simplified Chinese. English and Simplified Chinese extension metadata and store listings are included. Page text is read only after a user action; API responses are rendered as text, never executed. The runtime contains no remotely hosted JavaScript. Browser internal/protected pages do not permit translation-script injection.
+## Reading and configuration
 
-## Document and configuration review
+1. Expand Settings → **翻译偏好**. Recolor existing immersive translations without a new request. Type/save or record the webpage shortcut. Default: **Shift+A**. Esc, Tab, blur and Cancel cancel recording. Reset/disable are available. The shortcut excludes editors/inputs and runs only in granted HTTP/HTTPS page bodies. Alt+Shift+I remains a browser-command fallback.
+2. Translate a long normal webpage and scroll/expand content. The live viewport is prioritized, dynamic text supplemented and confidently detected target-language text skipped. Translation/AI have no extension-imposed deadline; Stop or actual HTTP/network/stream errors end calls. Downloads retain resource safeguards.
+3. For live review, supply valid provider credentials. Read upstream models and explicitly choose one after inspecting reported metadata. Missing metadata remains unknown; some providers lack a model list. Model loading sends no page text. Test the draft, then save. Up to 20 profiles can be saved/switched. Optional host grants can persist independently of configuration drafts.
+4. Settings sections fold independently. Website/API permissions are optional and requested as needed. A separate explicit all-websites grant can reduce repeated prompts.
 
-1. Open **PDF / 文档左右对照** and choose a local text-based PDF, DOCX, TXT or Markdown. Opening sends no translation request. The default **沉浸原位** mode replaces text within the original page regions. Test **查看原文**, **原版左右对照** and **段落对照**. Oversized translations preserve the original and offer full text on click. Word uses browser rendering; fonts/complex layout can differ.
-2. With a traditional API or AI configured, translate the current page/all pages. Check ratios, picture/table positions, streaming, synchronization, stop/resume and bilingual TXT export. Scanned-page OCR replacement and layout-preserving document export are not included.
-3. Save a named OpenAI-compatible profile for a model/gateway that supports image input. Keep a traditional connection active for body translation. Expand **AI 图文工作流**, extract PDF/Word pictures or crop a PDF chart. No API call occurs during extraction. Choose the saved vision profile and explicitly click **翻译图文并解释**. Check streamed text, download/remove, cancellation, and unsupported-model errors. No shared vision API key is provided.
-4. Verify saved profile editing and popup switching. Keys stay in browser-local extension storage. Limits: 25 MB/document, 300 pages/reading sections, one million text characters; 20 extracted images/24 MB, 4 MB encoded per image, longest edge 1,600 pixels.
+## Documents
 
-169 isolated checks passed: 87 webpage/provider, 34 document, 13 configuration, 17 layout/figure, 18 research. Use node tools/layout-check.cjs for generated PDF/Word fixtures and simulated vision responses. Automated tests do not access private settings or call paid/live providers. The local manual review server above supports text simulation only. Version 0.5.0 is Live; see STORE_SUBMISSION_0.7.0.md for the update status. See [VERIFICATION.md](VERIFICATION.md) and [third-party notices](../THIRD_PARTY_NOTICES.md).
+1. Open **PDF / 文档左右对照** and choose PDF, DOCX, TXT or Markdown. Opening/local parsing send no translation request. Test **沉浸原位**, **查看原文**, **原版左右对照** and **段落对照**. PDF proportions and picture/table positions remain; translations that cannot fit retain a full-text fallback. Browser-rendered Word can differ from Microsoft Word.
+2. Translate current/all pages, stop/resume and export bilingual TXT. Scanned body replacement needs external OCR; layout-preserving translated PDF/DOCX export is excluded.
+3. With an image-capable AI profile, expand the image/paper workflow. Extract pictures or crop a PDF chart, then explicitly analyze selected material. Extraction/loading do not call AI. Inspect output, cancellation, download and unsupported-model errors.
+4. Limits: 25 MB/file; 300 PDF/rendered Word pages. Extracted body and TXT/Markdown have no fixed character cutoff; browser/model limits remain. Up to 40 loaded images/32 MB; originals up to 3,200 pixels; screenshot/import images up to 1,600 pixels and 4 MB encoded each. Paper Q&A includes at most four originals/12 MB per request. Native tables: 10,000 rows, 256 columns and 100,000 expanded cells.
 
-## Paper research review (0.7.0)
+## Paper Q&A, figures and tables
 
-1. On a regular article webpage, use the popup paper/figure action. Review extracted text, captions and candidates before analysis; loading a remote image is a separate source-permission action. Capture itself makes no AI request.
-2. Choose an AI profile and a Skill. Analyze the paper and export Markdown. In a PDF/DOCX/TXT/Markdown reader, expand the bottom paper controls and compare current-page/full-document scopes. Figure sources retain their extraction page.
-3. Duplicate or import a custom Skill in Settings, then select it for analysis. These are plain text prompts, not executable skills.
-4. Memory starts off. Enable it in a notebook, analyze another page and inspect related context. A different notebook must be isolated. Export JSON/Markdown, search and delete records. Disabling stops future memory use/saving but does not erase saved records.
-5. Analyze a figure, then generate separate Python and R drafts and download them with notes. Confirm the extension never runs code. Original data is needed for exact reproduction.
-6. Run node tools/research-check.cjs for generated paper/image fixtures and local simulated analysis. Tests access no user profile or live account.
+1. On a normal article webpage, use **论文阅读与问答**. Inspect the movable/resizable window, extracted body, captions and figure/table overview. Capture makes no AI request; each new paper needs explicit capture.
+2. Caption/number-aware extraction includes image and native/ARIA tables and excludes ordinary photos. Search and **全选图表** share selection, including search-hidden/pending candidates. Batch-load available originals; host prompts are grouped. Selection/loading do not call AI. Heuristic extraction can miss material.
+3. Copy/download native tables as Markdown/TSV locally. Explicitly request vision transcription for image tables, inspect its verification warning and compare with the original. Import/paste a screenshot or supplement the source viewport when needed. Limits: 100 extraction candidates, 12 manual supplements and a 16 MB capture budget.
+4. Choose a supplied AI profile, Skill and question. Analyze selected text/figures and export Markdown. Document reading shares this workflow. Source/page references remain visible. AI output/numbers/conclusions need independent checks.
+5. Edit/import Skills as plain text prompts. Optional notebook memory defaults off, is notebook-isolated, bounded and exportable as JSON/Markdown. Search/delete records; disabling stops future use/saving without erasing existing records. Basic translation does not use research memory.
+6. Generate/download Python/R reproduction drafts. Code is inert text and never executed. Exact reproduction needs original data and verification.
+
+## Verification and privacy
+
+**342 checks passed, zero failures: 331 behavior checks across eleven isolated Edge suites and 11 build/package checks.** Tests use synthetic credentials, generated documents, saved public fixtures and local simulated APIs. No private user profile or live AI is accessed. The manual server supports text simulation only; automated vision tests use simulated responses. Real-provider speed/accuracy and current Chrome integration are not established.
+
+Files parse locally; only requested text/selected images and enabled research context go to the configured provider. Keys/settings stay in browser-local extension storage. No developer proxy, ads, analytics or remote executable code. Parsers/WASM are bundled; API output is rendered as text. Protected browser pages cannot receive injected translation controls.
+
+See [verification](VERIFICATION.md), [release notes](RELEASE_NOTES_0.8.7.md), [submission record](STORE_SUBMISSION_0.8.7.md), [privacy](https://qudadd.github.io/qudadflow-translator/privacy.html) and [third-party notices](../THIRD_PARTY_NOTICES.md).
+
+Support: lcf1249288484@outlook.com · QQ community: 1048123205.

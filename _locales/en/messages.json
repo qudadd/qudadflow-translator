@@ -4,8 +4,12 @@
     "description": "The product name stays in English in every locale."
   },
   "extensionDescription": {
-    "message": "Read webpages and PDF/Word documents bilingually. Save your API profiles or try basic key-free translation."
+    "message": "Immersive web and document translation, paper Q&A and figure/table tools. Use your own API, colors and shortcuts."
   },
-  "translateSelection": { "message": "Translate the selected text" },
-  "translateImmersive": { "message": "Translate the current page in immersive mode" }
+  "translateSelection": {
+    "message": "Translate the selected text"
+  },
+  "translateImmersive": {
+    "message": "Translate the current page in immersive mode"
+  }
 }

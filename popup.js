@@ -163,8 +163,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.close();
   });
   $('openResearch').addEventListener('click',async()=>{
-    const button=$('openResearch');button.disabled=true;setStatus('正在本地提取论文与图表…');
-    try{const tab=activeTab||(await chrome.tabs.query({active:true,currentWindow:true}))[0];const result=await chrome.runtime.sendMessage({type:'RESEARCH_CAPTURE',tabId:tab?.id});if(!result?.ok)throw new Error(result?.error||'提取失败');window.close();}catch(error){setStatus(error.message,true);}finally{button.disabled=false;}
+    $('openResearch').disabled=true;setStatus('正在本地提取论文与图表…');
+    try{const tab=activeTab||(await chrome.tabs.query({active:true,currentWindow:true}))[0];const result=await chrome.runtime.sendMessage({type:'RESEARCH_CAPTURE',tabId:tab?.id});if(!result?.ok)throw new Error(result?.error||'提取失败');window.close();}catch(error){setStatus(error.message,true);}finally{$('openResearch').disabled=false;}
   });
   await loadSelection();
   await loadSelectionSite();

@@ -1,0 +1,108 @@
+{
+  "version": "0.8.6",
+  "scope": "Isolated Edge; generated fixtures and optional saved public Ovid HTML; synthetic API, no user settings or real AI calls. Delayed-header test waits 36 seconds. Screenshots show simulated answers.",
+  "passed": 25,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Capture chooses substantive article, preserves inline prose, citations and tables, and inventories lazy figures without duplicates",
+      "passed": true
+    },
+    {
+      "name": "Research opens as an independent popup; source tables and unread attachments are visible",
+      "passed": true
+    },
+    {
+      "name": "Overview inventories remote figures without loading originals or AI; filters and selection work without opening details",
+      "passed": true
+    },
+    {
+      "name": "Select all includes filtered-out and pending figures; cancel clears every selection without loading images or calling AI",
+      "passed": true
+    },
+    {
+      "name": "One click loads all originals without selection; one permission request, failed originals can be selected and retried",
+      "passed": true
+    },
+    {
+      "name": "Bulk selection, next groups and detail checkboxes stay synchronized; oversized Q&A sends no request",
+      "passed": true
+    },
+    {
+      "name": "Overview fits narrow and wide windows and remains collapsible",
+      "passed": true
+    },
+    {
+      "name": "Combined Chat Completions request contains two original images, matching captions and full paper material",
+      "passed": true
+    },
+    {
+      "name": "Results render headings, comparison tables and code safely; narrow and wide layouts do not overflow",
+      "passed": true
+    },
+    {
+      "name": "Follow-up carries completed local history; export retains questions and selected figure labels",
+      "passed": true
+    },
+    {
+      "name": "Invalid oversized selection preserves completed answer and conversation; filtered bulk analysis sends only selected figures in sequence",
+      "passed": true
+    },
+    {
+      "name": "Stopping a selected batch cancels the active image and does not start remaining images",
+      "passed": true
+    },
+    {
+      "name": "Responses protocol sends each selected original as an input_image and renders the result",
+      "passed": true
+    },
+    {
+      "name": "Analysis waits beyond 30 seconds before response headers despite the 10-second translation timeout",
+      "passed": true
+    },
+    {
+      "name": "Provider stream errors preserve partial answers and exclude them from follow-up context",
+      "passed": true
+    },
+    {
+      "name": "Premature EOF and HTTP model errors surface actionable messages instead of successful completion",
+      "passed": true
+    },
+    {
+      "name": "Stopping an analysis aborts its HTTP request and leaves partial output exportable",
+      "passed": true
+    },
+    {
+      "name": "Bounded history and image validation reject excessive or malformed data before network calls",
+      "passed": true
+    },
+    {
+      "name": "New papers with main/itemprop/plain-body markup preserve lazy figures and distinct panels sharing one caption",
+      "passed": true
+    },
+    {
+      "name": "Tables outside the article, wrapped ARIA cells, captions, notes and duplicate panels produce independent readable cards",
+      "passed": true
+    },
+    {
+      "name": "Long paper capture and analysis preserve the final paragraph beyond former 60k and 140k limits",
+      "passed": true
+    },
+    {
+      "name": "Navigating to a later paper creates fresh source material and figures without mixing the existing companion",
+      "passed": true
+    },
+    {
+      "name": "Analysis options collapse by default; settings sections fold, persist, and open from navigation",
+      "passed": true
+    },
+    {
+      "name": "Configuration changes discard in-flight image loads; retry and removal keep the overview selection consistent",
+      "passed": true
+    },
+    {
+      "name": "No uncaught Edge page errors",
+      "passed": true
+    }
+  ]
+}

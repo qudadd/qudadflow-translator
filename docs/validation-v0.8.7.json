@@ -1,0 +1,649 @@
+{
+  "generatedAt": "2026-10-21T18:28:03.566Z",
+  "extensionVersion": "0.8.7",
+  "browser": "155.0.4283.62",
+  "scope": "Local synthetic HTTP API integration; test-only localhost host permission; original manifest side-load checked separately; provider billing/accounts not tested",
+  "passed": 125,
+  "failed": 0,
+  "measurements": {
+    "memoryCache": {
+      "firstRequestMs": 213,
+      "repeatRequestMs": 0,
+      "httpRequestsForTwoTranslations": 1,
+      "fixtureDelayMs": 200
+    },
+    "longApiWaitMs": 47074,
+    "immersiveStreaming": {
+      "firstVisibleTextMs": 72,
+      "completedMs": 299,
+      "fixtureRemainderDelayMs": 220
+    }
+  },
+  "results": [
+    {
+      "name": "Shortcut parser accepts Shift-only, reordered/manual aliases, punctuation and standalone function keys",
+      "passed": true,
+      "milliseconds": 2
+    },
+    {
+      "name": "Shortcut migration replaces the legacy default, retains custom/disabled choices and allows explicit Ctrl+A",
+      "passed": true,
+      "milliseconds": 2
+    },
+    {
+      "name": "google-translate-v2: HTTP request and response",
+      "passed": true,
+      "milliseconds": 31
+    },
+    {
+      "name": "microsoft-translator: HTTP request and response",
+      "passed": true,
+      "milliseconds": 10
+    },
+    {
+      "name": "deepl: HTTP request and response",
+      "passed": true,
+      "milliseconds": 4
+    },
+    {
+      "name": "openai-compatible: HTTP request and response",
+      "passed": true,
+      "milliseconds": 11
+    },
+    {
+      "name": "custom-json: HTTP request and response",
+      "passed": true,
+      "milliseconds": 7
+    },
+    {
+      "name": "DeepL: Chinese source uses ZH while target uses variant",
+      "passed": true,
+      "milliseconds": 8
+    },
+    {
+      "name": "Custom template safely escapes quotes and line breaks",
+      "passed": true,
+      "milliseconds": 8
+    },
+    {
+      "name": "Missing key",
+      "passed": true,
+      "milliseconds": 2
+    },
+    {
+      "name": "Permission denied",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Empty input",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Oversized input",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "HTTP 401",
+      "passed": true,
+      "milliseconds": 10
+    },
+    {
+      "name": "Missing response path",
+      "passed": true,
+      "milliseconds": 10
+    },
+    {
+      "name": "Invalid header object",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "Invalid template",
+      "passed": true,
+      "milliseconds": 1
+    },
+    {
+      "name": "OpenAI: full endpoint trailing slash and query are preserved correctly",
+      "passed": true,
+      "milliseconds": 7
+    },
+    {
+      "name": "Responses: explicit endpoint, instructions, input and store:false",
+      "passed": true,
+      "milliseconds": 8
+    },
+    {
+      "name": "OpenAI: array content excludes reasoning and accepts text",
+      "passed": true,
+      "milliseconds": 8
+    },
+    {
+      "name": "Chat Completions: SSE deltas, split UTF-8 and reasoning exclusion",
+      "passed": true,
+      "milliseconds": 266
+    },
+    {
+      "name": "Responses: SSE deltas, split UTF-8 and reasoning exclusion",
+      "passed": true,
+      "milliseconds": 267
+    },
+    {
+      "name": "OpenAI: stream requested but ordinary JSON response remains compatible",
+      "passed": true,
+      "milliseconds": 7
+    },
+    {
+      "name": "OpenAI: a rejected temperature reports HTTP 400 immediately without retry",
+      "passed": true,
+      "milliseconds": 9
+    },
+    {
+      "name": "OpenAI: Repeated temperature rejection",
+      "passed": true,
+      "milliseconds": 5
+    },
+    {
+      "name": "OpenAI: Model rejection",
+      "passed": true,
+      "milliseconds": 19
+    },
+    {
+      "name": "OpenAI: Authentication rejection",
+      "passed": true,
+      "milliseconds": 4
+    },
+    {
+      "name": "OpenAI: HTML returned with HTTP 200",
+      "passed": true,
+      "milliseconds": 7
+    },
+    {
+      "name": "OpenAI: Provider stream error",
+      "passed": true,
+      "milliseconds": 274
+    },
+    {
+      "name": "OpenAI: Stream disconnected before completion",
+      "passed": true,
+      "milliseconds": 258
+    },
+    {
+      "name": "OpenAI: Truncated SSE model output",
+      "passed": true,
+      "milliseconds": 282
+    },
+    {
+      "name": "OpenAI: Truncated JSON model output",
+      "passed": true,
+      "milliseconds": 15
+    },
+    {
+      "name": "No API deadline: waits for /stall-headers and ignores legacy timeout",
+      "passed": true,
+      "milliseconds": 186
+    },
+    {
+      "name": "No API deadline: waits for /stall-body and ignores legacy timeout",
+      "passed": true,
+      "milliseconds": 181
+    },
+    {
+      "name": "No API deadline: waits for /stream-stall/v1/chat/completions and ignores legacy timeout",
+      "passed": true,
+      "milliseconds": 212
+    },
+    {
+      "name": "HTTP 400 stops before an unfinished error body",
+      "passed": true,
+      "milliseconds": 30
+    },
+    {
+      "name": "HTTP 401 stops before an unfinished error body",
+      "passed": true,
+      "milliseconds": 32
+    },
+    {
+      "name": "HTTP 429 stops before an unfinished error body",
+      "passed": true,
+      "milliseconds": 15
+    },
+    {
+      "name": "HTTP 504 stops before an unfinished error body",
+      "passed": true,
+      "milliseconds": 27
+    },
+    {
+      "name": "Cancellation is isolated by sender and aborts HTTP rather than waiting for timeout",
+      "passed": true,
+      "milliseconds": 110
+    },
+    {
+      "name": "Cache: repeated complete translation uses zero additional HTTP requests",
+      "passed": true,
+      "milliseconds": 216
+    },
+    {
+      "name": "Cache: context, target language, model and credentials never reuse incompatible results",
+      "passed": true,
+      "milliseconds": 58
+    },
+    {
+      "name": "Cache: connection test always contacts the provider and revoked permission is enforced",
+      "passed": true,
+      "milliseconds": 35
+    },
+    {
+      "name": "Cache: expired and failed or incomplete responses are not reused",
+      "passed": true,
+      "milliseconds": 591
+    },
+    {
+      "name": "Edge resolves localized manifest metadata and English product name",
+      "passed": true,
+      "milliseconds": 107
+    },
+    {
+      "name": "Provider switch resets endpoint and isolates credentials",
+      "passed": true,
+      "milliseconds": 75
+    },
+    {
+      "name": "Edge service worker: google-translate-v2",
+      "passed": true,
+      "milliseconds": 15
+    },
+    {
+      "name": "Edge service worker: microsoft-translator",
+      "passed": true,
+      "milliseconds": 9
+    },
+    {
+      "name": "Edge service worker: deepl",
+      "passed": true,
+      "milliseconds": 11
+    },
+    {
+      "name": "Edge service worker: openai-compatible",
+      "passed": true,
+      "milliseconds": 11
+    },
+    {
+      "name": "Edge service worker: custom-json",
+      "passed": true,
+      "milliseconds": 7
+    },
+    {
+      "name": "Context menus and command entries are registered",
+      "passed": true,
+      "milliseconds": 4
+    },
+    {
+      "name": "Options: reject arrays as custom headers",
+      "passed": true,
+      "milliseconds": 301
+    },
+    {
+      "name": "Options: draft connection test via actual extension worker",
+      "passed": true,
+      "milliseconds": 50
+    },
+    {
+      "name": "Options: testing blocks duplicate clicks and editing until it completes",
+      "passed": true,
+      "milliseconds": 253
+    },
+    {
+      "name": "Options: streaming and optional temperature persist; legacy timeout is absent",
+      "passed": true,
+      "milliseconds": 424
+    },
+    {
+      "name": "Options: manual Stop cancels a pending test and clears verification without saving",
+      "passed": true,
+      "milliseconds": 296
+    },
+    {
+      "name": "Edge MV3: draft test survives 47 seconds before response headers without an extension deadline",
+      "passed": true,
+      "milliseconds": 47261
+    },
+    {
+      "name": "Reading preferences: color saves without API configuration, survives reload and profile edits, and validates HEX",
+      "passed": true,
+      "milliseconds": 4023
+    },
+    {
+      "name": "Immersive color: live document, open shadow and frame recolor without requests; reset follows light/dark modes",
+      "passed": true,
+      "milliseconds": 6047
+    },
+    {
+      "name": "Immersive color: changing appearance preserves a pending API call and dynamic supplementation",
+      "passed": true,
+      "milliseconds": 649
+    },
+    {
+      "name": "Immersive color: corrupt stored CSS falls back safely on active and newly translated pages",
+      "passed": true,
+      "milliseconds": 270
+    },
+    {
+      "name": "Shortcut: default Shift+A loads translation on a new authorized webpage and Ctrl+A retains native selection",
+      "passed": true,
+      "milliseconds": 979
+    },
+    {
+      "name": "Shortcut: Shift+A types uppercase in inputs/editors/shadow DOM and synthetic events cannot trigger translation",
+      "passed": true,
+      "milliseconds": 1020
+    },
+    {
+      "name": "Shortcut: Shift-only recording, persistence, disabled mode and restoring Shift+A update existing pages",
+      "passed": true,
+      "milliseconds": 7868
+    },
+    {
+      "name": "Shortcut: manual entry normalizes aliases; invalid input reports error without changing saved preference",
+      "passed": true,
+      "milliseconds": 10449
+    },
+    {
+      "name": "Shortcut: Esc, Tab and focus loss cancel recording; ordinary typing edits the draft without saving",
+      "passed": true,
+      "milliseconds": 9965
+    },
+    {
+      "name": "Shortcut: legacy default resolves to Shift+A while an explicit saved Ctrl+A remains customizable",
+      "passed": true,
+      "milliseconds": 12703
+    },
+    {
+      "name": "Shortcut: ungranted websites keep native selection and receive no injected translator",
+      "passed": true,
+      "milliseconds": 843
+    },
+    {
+      "name": "Shortcut: permission refresh unregisters and disables existing page listeners, then restores them (simulated grant changes)",
+      "passed": true,
+      "milliseconds": 1300
+    },
+    {
+      "name": "Selection translation through content script and worker",
+      "passed": true,
+      "milliseconds": 316
+    },
+    {
+      "name": "Selection: streaming text appears in the page before the request finishes",
+      "passed": true,
+      "milliseconds": 482
+    },
+    {
+      "name": "Duplicate in-flight translation commands share a single request",
+      "passed": true,
+      "milliseconds": 361
+    },
+    {
+      "name": "Repeated injection keeps exactly one listener and panel",
+      "passed": true,
+      "milliseconds": 83
+    },
+    {
+      "name": "API output renders as text, without HTML execution",
+      "passed": true,
+      "milliseconds": 25
+    },
+    {
+      "name": "Clipboard failure reports failure",
+      "passed": true,
+      "milliseconds": 145
+    },
+    {
+      "name": "Immersive translation skips editors, invisible and opted out content",
+      "passed": true,
+      "milliseconds": 256
+    },
+    {
+      "name": "Nested excluded spans are omitted from both page modes",
+      "passed": true,
+      "milliseconds": 246
+    },
+    {
+      "name": "Restore preserves original markup and link behavior",
+      "passed": true,
+      "milliseconds": 378
+    },
+    {
+      "name": "Damaged batch markers trigger per-paragraph fallback",
+      "passed": true,
+      "milliseconds": 254
+    },
+    {
+      "name": "Immersive results are inserted batch by batch before the whole page finishes",
+      "passed": true,
+      "milliseconds": 585
+    },
+    {
+      "name": "Repeated marker loss is bounded and retains already inserted translations",
+      "passed": true,
+      "milliseconds": 489
+    },
+    {
+      "name": "Restore during translation prevents late reinsertion",
+      "passed": true,
+      "milliseconds": 296
+    },
+    {
+      "name": "Page translation excludes previously inserted translations",
+      "passed": true,
+      "milliseconds": 243
+    },
+    {
+      "name": "Closing panel cancels pending page result",
+      "passed": true,
+      "milliseconds": 315
+    },
+    {
+      "name": "Newest selection result wins over older request",
+      "passed": true,
+      "milliseconds": 260
+    },
+    {
+      "name": "Page translation splits long text into bounded requests",
+      "passed": true,
+      "milliseconds": 248
+    },
+    {
+      "name": "Page chunks use at most two simultaneous requests and keep original order",
+      "passed": true,
+      "milliseconds": 725
+    },
+    {
+      "name": "Long immersive paragraph is chunked and restored as one block",
+      "passed": true,
+      "milliseconds": 426
+    },
+    {
+      "name": "Page size limit is visible to the user",
+      "passed": true,
+      "milliseconds": 272
+    },
+    {
+      "name": "Immersive: nested direct text, spaces between spans and line breaks stay paired",
+      "passed": true,
+      "milliseconds": 254
+    },
+    {
+      "name": "Immersive: flex/grid cards, lists and tables retain horizontal geometry and original links",
+      "passed": true,
+      "milliseconds": 465
+    },
+    {
+      "name": "Immersive: actual partial paragraph appears before its streaming batch completes",
+      "passed": true,
+      "milliseconds": 539
+    },
+    {
+      "name": "Immersive: streaming failure removes incomplete lines and allows a clean retry",
+      "passed": true,
+      "milliseconds": 594
+    },
+    {
+      "name": "Immersive: current viewport is translated first and every long-page paragraph completes",
+      "passed": true,
+      "milliseconds": 457
+    },
+    {
+      "name": "Immersive: scrolling reprioritizes unsent work and newly expanded text without aborting running calls",
+      "passed": true,
+      "milliseconds": 658
+    },
+    {
+      "name": "Immersive: a long paragraph yields between chunks to a newly visible paragraph",
+      "passed": true,
+      "milliseconds": 468
+    },
+    {
+      "name": "Immersive: idle worker translates new visible content while the first request still waits",
+      "passed": true,
+      "milliseconds": 695
+    },
+    {
+      "name": "Immersive: repeated same-page action reuses complete batches without HTTP",
+      "passed": true,
+      "milliseconds": 284
+    },
+    {
+      "name": "Immersive: sibling articles, peripheral text and short labels all participate",
+      "passed": true,
+      "milliseconds": 290
+    },
+    {
+      "name": "Immersive: more than 600 paragraphs and 12000 text elements are not cut off",
+      "passed": true,
+      "milliseconds": 46834
+    },
+    {
+      "name": "Immersive: direct grid/flex text gets one flow item and restores the original Text nodes",
+      "passed": true,
+      "milliseconds": 372
+    },
+    {
+      "name": "Immersive: open Shadow DOM is translated with root styles and restores precisely",
+      "passed": true,
+      "milliseconds": 302
+    },
+    {
+      "name": "Immersive: readable same-origin frames participate and newly loaded frames supplement",
+      "passed": true,
+      "milliseconds": 634
+    },
+    {
+      "name": "Immersive: inserted, expanded and lazy content is supplemented without retranslating existing paragraphs",
+      "passed": true,
+      "milliseconds": 1511
+    },
+    {
+      "name": "Immersive: changed source replaces stale translations and new opt-outs remove them",
+      "passed": true,
+      "milliseconds": 833
+    },
+    {
+      "name": "Immersive: source mutations during a pending request never display stale output",
+      "passed": true,
+      "milliseconds": 719
+    },
+    {
+      "name": "Immersive: target Chinese is skipped locally while foreign clauses and traditional variants still translate",
+      "passed": true,
+      "milliseconds": 423
+    },
+    {
+      "name": "Immersive: an entirely target-language page sends no API traffic",
+      "passed": true,
+      "milliseconds": 354
+    },
+    {
+      "name": "Immersive: English target detection is local and does not rely on the page language attribute",
+      "passed": true,
+      "milliseconds": 323
+    },
+    {
+      "name": "Immersive: closing the panel stops automatic supplementation and restore removes every wrapper",
+      "passed": true,
+      "milliseconds": 976
+    },
+    {
+      "name": "Immersive: idle configuration changes stop the watcher and retain completed output",
+      "passed": true,
+      "milliseconds": 1044
+    },
+    {
+      "name": "Immersive: API failure replaces progress with an actionable error",
+      "passed": true,
+      "milliseconds": 263
+    },
+    {
+      "name": "Selection chip: no activation or network traffic until the site is enabled",
+      "passed": true,
+      "milliseconds": 555
+    },
+    {
+      "name": "Selection chip: one click streams locally, guards duplicate clicks and copies text safely",
+      "passed": true,
+      "milliseconds": 957
+    },
+    {
+      "name": "Selection chip: repeat text uses cache and errors expose a retry action",
+      "passed": true,
+      "milliseconds": 1009
+    },
+    {
+      "name": "Selection chip: Escape aborts HTTP and late results stay closed",
+      "passed": true,
+      "milliseconds": 443
+    },
+    {
+      "name": "Selection chip: editing and opt-out text, including mixed selections, are excluded",
+      "passed": true,
+      "milliseconds": 1053
+    },
+    {
+      "name": "Selection chip: result stays inside viewport edges after scrolling and resizing",
+      "passed": true,
+      "milliseconds": 726
+    },
+    {
+      "name": "Selection chip: reading a result preserves immersive work and two-request limit",
+      "passed": true,
+      "milliseconds": 1031
+    },
+    {
+      "name": "Selection chip: cancelling its request preserves immersive work and two-request limit",
+      "passed": true,
+      "milliseconds": 1066
+    },
+    {
+      "name": "Popup buttons translate and restore the selected tab",
+      "passed": true,
+      "milliseconds": 5129
+    },
+    {
+      "name": "Popup site opt-in persists across navigation and disabling updates already open pages",
+      "passed": true,
+      "milliseconds": 5581
+    },
+    {
+      "name": "Protected browser page rejects content injection",
+      "passed": true,
+      "milliseconds": 343
+    },
+    {
+      "name": "Reading preferences: color and shortcut controls fit desktop and narrow layouts",
+      "passed": true,
+      "milliseconds": 11437
+    }
+  ]
+}

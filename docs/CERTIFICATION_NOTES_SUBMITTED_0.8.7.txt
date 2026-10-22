@@ -1,0 +1,13 @@
+QudadFlow Translator 0.8.7 needs no extension account. Live APIs use the reviewer's own endpoint/key; no shared key is bundled. Settings > 快速试用 > 启用 MyMemory 基础试用 offers short English-to-Chinese text tests without a key, subject to quota. AI research/vision needs a compatible API profile and image-capable model.
+
+Review guide and source-only local simulated API (no paid account needed for text simulation):
+https://github.com/qudadd/qudadflow-translator/blob/main/docs/REVIEWER_GUIDE.md
+342 checks passed using synthetic keys, generated files and local APIs; live-provider quality/speed is not claimed.
+
+New: Settings > 翻译偏好 lets testers type/save or record the webpage shortcut (default Shift+A), cancel/reset/disable it and change immersive text colors. Inputs/editors are excluded. Existing translations recolor without another request. Web translation prioritizes the viewport, supplements dynamic text and skips confidently detected target-language text. Translation/AI have no fixed deadline; Stop or actual HTTP/network/stream errors end calls.
+
+Popup > 论文阅读与问答 opens a movable/resizable window. Capture figures, image/native tables and captions; search/select all, batch-load originals, copy native tables as Markdown/TSV. Explicit vision transcription of image tables needs verification. Capture/selection/loading make no AI call. Ask with selected figures; export analysis or inert Python/R drafts. Code never runs. Skills are editable text; optional exportable notebook memory defaults off.
+
+PDF/DOCX/TXT/Markdown use a separate reader with in-place/paired modes. Parsing is local; scanned-body OCR and layout-preserving export are excluded. Body has no fixed character cutoff; resource/model limits apply. Upstream models require explicit selection; missing capability metadata stays unknown. Test draft then save. No remote executable code, ads, telemetry or developer proxy.
+
+Support: lcf1249288484@outlook.com; QQ: 1048123205

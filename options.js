@@ -9,7 +9,6 @@ const DEFAULTS = {
   sourceLanguage: "auto",
   targetLanguage: "zh-CN",
   temperature: 0.2,
-  requestTimeoutSeconds: 45,
   streamOpenAi: true,
   customHeaders: "{}",
   requestTemplate: `{
@@ -54,10 +53,133 @@ const CONNECTION_FIELDS = ["endpoint", "apiKey", "model", "providerRegion", "cus
 const providerDrafts = new Map();
 let renderedStyle;
 let testing = false;
+let testRequestId = '', testCancelled = false;
 let savedProfiles = [], selectedProfileId = '', profileRevision = 0;
 let savedEditorState = '', draftTestState = '', draftTestResult = '';
 let modelList = [], modelConnection = '', modelRequestId = '';
 const MODEL_CONNECTION_FIELDS = ['apiStyle', 'endpoint', 'apiKey', 'customHeaders'];
+// Reading appearance is global, independent of connection profiles and API validation.
+let colorWrite = Promise.resolve(), colorEdit = 0, savedImmersiveColor = '';
+function normalizeImmersiveColor(value) {
+  return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value.toLowerCase() : '';
+}
+function showImmersiveColor(value) {
+  const color = normalizeImmersiveColor(value);
+  $('immersiveColorPicker').value = color || '#315bc7';
+  $('immersiveColorHex').value = color.toUpperCase();
+  $('immersiveColorPreviewLight').style.color = color || '#315bc7';
+  $('immersiveColorPreviewDark').style.color = color || '#9abaff';
+  $('immersiveColorHex').removeAttribute('aria-invalid');
+}
+function colorStatus(text, error = false) {
+  $('immersiveColorStatus').textContent = text;
+  $('immersiveColorStatus').classList.toggle('error', error);
+}
+async function saveImmersiveColor(value) {
+  const edit = ++colorEdit, color = normalizeImmersiveColor(value);
+  showImmersiveColor(color);
+  colorStatus('正在保存译文颜色…');
+  // Preserve the latest choice even when several native picker events arrive in succession.
+  colorWrite = colorWrite.catch(() => {}).then(() => chrome.storage.local.set({ immersiveTranslationColor: color }));
+  try {
+    await colorWrite;
+    savedImmersiveColor = color;
+    if (edit === colorEdit) colorStatus(color ? `已保存 ${color.toUpperCase()}，已应用到沉浸式译文。` : '已恢复默认颜色，随浅色、深色模式适配。');
+  } catch {
+    if (edit === colorEdit) {
+      showImmersiveColor(savedImmersiveColor);
+      colorStatus('颜色保存失败，请重试。', true);
+    }
+  }
+}
+$('immersiveColorPicker').addEventListener('input', event => saveImmersiveColor(event.target.value));
+function applyImmersiveHex() {
+  const value = $('immersiveColorHex').value.trim();
+  if (value && !normalizeImmersiveColor(value)) {
+    $('immersiveColorHex').setAttribute('aria-invalid', 'true');
+    colorStatus('请输入完整的 HEX 色值，例如 #315BC7。', true);
+    return;
+  }
+  saveImmersiveColor(value);
+}
+$('immersiveColorHex').addEventListener('change', applyImmersiveHex);
+$('immersiveColorHex').addEventListener('keydown', event => {
+  if (event.key === 'Enter') { event.preventDefault(); applyImmersiveHex(); }
+});
+$('resetImmersiveColor').addEventListener('click', () => saveImmersiveColor(''));
+let shortcutWrite = Promise.resolve(), shortcutEdit = 0, savedImmersiveShortcut = QFImmersiveShortcut.DEFAULT, recordingShortcut = false;
+function shortcutStatus(text, error = false) {
+  $('immersiveShortcutStatus').textContent = text;
+  $('immersiveShortcutStatus').classList.toggle('error', error);
+  if (error) $('immersiveShortcut').setAttribute('aria-invalid', 'true');
+  else $('immersiveShortcut').removeAttribute('aria-invalid');
+}
+function showImmersiveShortcut(value) {
+  $('immersiveShortcut').value = value;
+  $('immersiveShortcut').placeholder = value ? '例如 Shift+A 或 Ctrl+Shift+Y' : '已停用；输入组合键可重新启用';
+  $('disableImmersiveShortcut').disabled = !value;
+}
+function stopShortcutRecording() {
+  recordingShortcut = false;
+  $('immersiveShortcut').readOnly = false;
+  $('recordImmersiveShortcut').setAttribute('aria-pressed', 'false');
+  $('recordImmersiveShortcut').textContent = '录制快捷键';
+}
+async function saveImmersiveShortcut(value) {
+  const shortcut = QFImmersiveShortcut.parse(value);
+  if (shortcut === null) { shortcutStatus('组合键无效。请使用 Shift、Ctrl、Alt 或 Meta 加一个按键，例如 Shift+A；F1–F12 也可单独使用。', true); return; }
+  const edit = ++shortcutEdit;
+  stopShortcutRecording();
+  showImmersiveShortcut(shortcut);
+  shortcutStatus('正在保存快捷键…');
+  shortcutWrite = shortcutWrite.catch(() => {}).then(() => chrome.storage.local.set({ immersiveShortcut: shortcut, immersiveShortcutVersion: QFImmersiveShortcut.VERSION }));
+  try {
+    await shortcutWrite;
+    savedImmersiveShortcut = shortcut;
+    if (edit === shortcutEdit) shortcutStatus(shortcut ? `已保存 ${shortcut}，已应用到授权网页。` : '网页快捷键已停用，浏览器全选保持可用。');
+  } catch {
+    if (edit === shortcutEdit) { showImmersiveShortcut(savedImmersiveShortcut); shortcutStatus('快捷键保存失败，请重试。', true); }
+  }
+}
+function applyShortcutInput() {
+  const value = $('immersiveShortcut').value.trim();
+  if (!value) { shortcutStatus('请输入组合键；如需关闭，请点击“停用”。', true); return; }
+  saveImmersiveShortcut(value);
+}
+$('recordImmersiveShortcut').addEventListener('click', () => {
+  if (recordingShortcut) { stopShortcutRecording(); showImmersiveShortcut(savedImmersiveShortcut); shortcutStatus('已取消录制，保留原快捷键。'); return; }
+  recordingShortcut = true;
+  $('recordImmersiveShortcut').setAttribute('aria-pressed', 'true');
+  $('recordImmersiveShortcut').textContent = '取消录制';
+  $('immersiveShortcut').readOnly = true;
+  $('immersiveShortcut').focus();
+  shortcutStatus('正在录制：请按组合键，例如 Shift+A。Esc 或 Tab 取消。');
+});
+$('immersiveShortcut').addEventListener('input', () => shortcutStatus('尚未保存。按 Enter 或点击“保存快捷键”应用。'));
+$('immersiveShortcut').addEventListener('keydown', event => {
+  if (!recordingShortcut) {
+    if (event.key === 'Enter') { event.preventDefault(); applyShortcutInput(); }
+    else if (event.key === 'Escape') { showImmersiveShortcut(savedImmersiveShortcut); shortcutStatus('已还原当前快捷键。'); }
+    return;
+  }
+  if (event.key === 'Tab' || event.key === 'Escape') {
+    if (event.key === 'Escape') event.preventDefault();
+    stopShortcutRecording(); showImmersiveShortcut(savedImmersiveShortcut); shortcutStatus('已取消录制，保留原快捷键。'); return;
+  }
+  event.preventDefault(); event.stopPropagation();
+  if (event.repeat || event.isComposing || ['Control', 'Shift', 'Alt', 'Meta'].includes(event.key)) return;
+  const shortcut = QFImmersiveShortcut.fromEvent(event);
+  if (shortcut) saveImmersiveShortcut(shortcut);
+  else shortcutStatus('无法录制此按键。请加上 Shift、Ctrl、Alt 或 Meta，或使用 F1–F12。Esc 取消。', true);
+});
+$('immersiveShortcut').addEventListener('blur', event => {
+  // Let the recording button's click cancel the current recording once.
+  if (event.relatedTarget === $('recordImmersiveShortcut')) return;
+  if (recordingShortcut) { stopShortcutRecording(); showImmersiveShortcut(savedImmersiveShortcut); shortcutStatus('已取消录制，保留原快捷键。'); }
+});
+$('applyImmersiveShortcut').addEventListener('click', applyShortcutInput);
+$('resetImmersiveShortcut').addEventListener('click', () => saveImmersiveShortcut(QFImmersiveShortcut.DEFAULT));
+$('disableImmersiveShortcut').addEventListener('click', () => saveImmersiveShortcut(''));
 
 function editorState() {
   return JSON.stringify({ values: formValues(), name: $('profileName').value, profileId: selectedProfileId });
@@ -178,6 +300,41 @@ function permissionContains(origins) {
   return new Promise((resolve) => chrome.permissions.contains({ origins }, resolve));
 }
 
+const ALL_WEBSITES=['https://*/*','http://*/*'];
+let websitePermissionBusy=false;
+async function refreshWebsitePermission(){
+  const granted=await permissionContains(ALL_WEBSITES);
+  $('websitePermissionStatus').textContent=granted?'已持久授权所有 HTTP/HTTPS 网站，可减少重复确认。':'当前按站点授权，已授予的权限会由浏览器保留。';
+  $('grantAllWebsites').hidden=granted;
+  $('revokeAllWebsites').hidden=!granted;
+}
+$('grantAllWebsites').onclick=async()=>{
+  if(websitePermissionBusy)return;
+  websitePermissionBusy=true;
+  try{
+    // Keep the browser permission dialog attached to this explicit click.
+    const pending=permissionRequest(ALL_WEBSITES);
+    $('websitePermissionStatus').textContent='等待浏览器确认网站授权…';
+    const granted=await pending;await refreshWebsitePermission();
+    if(!granted)$('websitePermissionStatus').textContent='未授予全部网站权限，继续使用按站点授权。';
+    await askForEndpointPermission(false);
+  }catch{ $('websitePermissionStatus').textContent='网站授权未完成，可重试或继续按站点授权。'; }
+  finally{websitePermissionBusy=false;}
+};
+$('revokeAllWebsites').onclick=async()=>{
+  if(websitePermissionBusy)return;
+  websitePermissionBusy=true;
+  try{
+    const permissions=await chrome.permissions.getAll();
+    const origins=(permissions.origins||[]).filter(origin=>/^(?:https?|\*):\/\//.test(origin)||origin==='<all_urls>');
+    if(origins.length&&!await chrome.permissions.remove({origins}))throw new Error('网站授权未能清除，请在浏览器扩展详情中管理网站访问权限。');
+    await refreshWebsitePermission();await askForEndpointPermission(false);
+  }catch(error){$('websitePermissionStatus').textContent=error.message;}
+  finally{websitePermissionBusy=false;}
+};
+for(const event of [chrome.permissions.onAdded,chrome.permissions.onRemoved])event?.addListener(()=>{refreshWebsitePermission().catch(()=>{});});
+refreshWebsitePermission().catch(()=>{$('websitePermissionStatus').textContent='无法读取网站权限，请在浏览器扩展详情中检查。';});
+
 function endpointPattern() {
   try {
     const url = new URL($("endpoint").value.trim());
@@ -222,7 +379,6 @@ function formValues() {
     sourceLanguage: $("sourceLanguage").value,
     targetLanguage: $("targetLanguage").value,
     temperature: $("temperature").value === "" ? "" : Number($("temperature").value),
-    requestTimeoutSeconds: Number($("requestTimeoutSeconds").value),
     streamOpenAi: $("streamOpenAi").checked,
     customHeaders: $("customHeaders").value.trim() || "{}",
     requestTemplate: $("requestTemplate").value.trim(),
@@ -244,7 +400,6 @@ function validate(values) {
   if (!values.model && values.apiStyle === "openai-compatible") throw new Error("请填写模型名称。");
   if (!values.apiKey && !['custom-json','mymemory'].includes(values.apiStyle)) throw new Error("请填写 API Key。");
   if(values.apiStyle==='mymemory' && values.sourceLanguage==='auto')throw new Error('MyMemory 试用需手动选择源语言。');
-  if (!Number.isFinite(values.requestTimeoutSeconds) || values.requestTimeoutSeconds < 10 || values.requestTimeoutSeconds > 180) throw new Error("请求超时应为 10–180 秒。");
   let headers;
   try { headers = JSON.parse(values.customHeaders); } catch { throw new Error("自定义请求头必须是有效 JSON。"); }
   if (!headers || typeof headers !== "object" || Array.isArray(headers)) throw new Error("自定义请求头必须是 JSON 对象。");
@@ -327,6 +482,14 @@ async function load() {
   await loadProfiles();
   const values = await chrome.storage.local.get(DEFAULTS);
   showValues(values);
+  const appearance = await chrome.storage.local.get({ immersiveTranslationColor: '', immersiveShortcut: QFImmersiveShortcut.DEFAULT, immersiveShortcutVersion: 0 });
+  savedImmersiveColor = normalizeImmersiveColor(appearance.immersiveTranslationColor);
+  showImmersiveColor(savedImmersiveColor);
+  colorStatus(savedImmersiveColor ? `当前颜色 ${savedImmersiveColor.toUpperCase()}，选色后自动保存。` : '默认颜色随浅色、深色模式适配。');
+  const shortcut = QFImmersiveShortcut.resolve(appearance);
+  savedImmersiveShortcut = shortcut;
+  showImmersiveShortcut(shortcut);
+  shortcutStatus(appearance.immersiveShortcutVersion !== QFImmersiveShortcut.VERSION && appearance.immersiveShortcut === 'Ctrl+A' ? '旧版默认 Ctrl+A 已改为 Shift+A；如仍需 Ctrl+A，可重新录制或手动保存。' : shortcut ? `当前快捷键 ${shortcut}，可录制或手动输入后保存。` : '网页快捷键已停用。');
   await askForEndpointPermission(false);
   savedEditorState = editorState(); updateSaveState();
   document.body.dataset.ready='true';
@@ -391,11 +554,19 @@ $("testApi").addEventListener("click", async () => {
     unlock = lockEditor();
     const granted = await permissionPromise;
     if (!granted) return;
+    testRequestId = crypto.randomUUID();
+    testCancelled = false;
+    $('cancelTestApi').hidden = false;
+    $('cancelTestApi').disabled = false;
     const started = Date.now();
-    const render = () => setStatus(`正在测试 API…已等待 ${Math.floor((Date.now() - started) / 1000)} 秒（超时 ${values.requestTimeoutSeconds} 秒）。`);
+    const render = () => setStatus(testCancelled ? '正在停止测试…' : `正在测试 API…已等待 ${Math.floor((Date.now() - started) / 1000)} 秒，可手动停止。`);
     render();
     timer = setInterval(render, 1000);
-    const response = await chrome.runtime.sendMessage({ type: "TRANSLATE_TEST_DRAFT", values });
+    const response = await chrome.runtime.sendMessage({ type: "TRANSLATE_TEST_DRAFT", requestId: testRequestId, values });
+    if (testCancelled || response?.code === 'CANCELLED') {
+      draftTestState = ''; updateVerification();
+      setStatus('测试已停止。'); return;
+    }
     if (!response?.ok) throw new Error(`${response?.code ? `[${response.code}] ` : ""}${response?.error || "API 测试失败。"}`);
     const seconds = ((response.elapsedMs || Date.now() - started) / 1000).toFixed(1);
     draftTestState = JSON.stringify(values);
@@ -407,9 +578,19 @@ $("testApi").addEventListener("click", async () => {
     setStatus(error.message, true);
   } finally {
     clearInterval(timer);
+    testRequestId = '';
+    $('cancelTestApi').hidden = true;
     unlock?.();
   }
 });
+
+function stopTestRequest() {
+  if (!testRequestId) return;
+  testCancelled = true;
+  $('cancelTestApi').disabled = true;
+  chrome.runtime.sendMessage({type:'CANCEL_TEST_DRAFT',requestId:testRequestId}).catch(() => {});
+}
+$('cancelTestApi').addEventListener('click', stopTestRequest);
 
 $('fetchModels').addEventListener('click', async () => {
   if (testing || modelRequestId) return;
@@ -424,7 +605,7 @@ $('fetchModels').addEventListener('click', async () => {
   modelList = []; modelConnection = '';
   $('modelBrowser').hidden = true;
   $('modelCandidates').replaceChildren(); showModelDetail();
-  $('modelStatus').textContent = '正在读取上游模型…最多等待 15 秒，可随时取消。';
+  $('modelStatus').textContent = '正在读取上游模型…持续等待接口响应，可随时取消。';
   $('modelStatus').classList.remove('error'); syncModelControls();
   try {
     const granted = await permission;
@@ -469,9 +650,19 @@ for (const eventName of ['input', 'change']) $('settingsForm').addEventListener(
   if (MODEL_CONNECTION_FIELDS.includes(event.target.id)) resetModelList();
   updateSaveState(); updateVerification();
 });
-window.addEventListener('pagehide', stopModelRequest);
+window.addEventListener('pagehide', () => { stopModelRequest(); stopTestRequest(); });
 
 const navLinks = [...document.querySelectorAll('.settings-nav nav a')];
+const foldingSections=[...document.querySelectorAll('.settings-section')];
+let folded={};try{const saved=JSON.parse(localStorage.getItem('qudadflow-settings-folds')||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))folded=saved;}catch{}
+for(const section of foldingSections){
+  if(typeof folded[section.id]==='boolean')section.open=folded[section.id];
+  section.addEventListener('toggle',()=>{folded[section.id]=section.open;try{localStorage.setItem('qudadflow-settings-folds',JSON.stringify(folded));}catch{}});
+}
+function revealSection(hash){const section=document.getElementById(hash.slice(1));if(section?.matches('.settings-section'))section.open=true;}
+$('collapseSettings').onclick=()=>foldingSections.forEach(section=>section.open=false);
+$('expandSettings').onclick=()=>foldingSections.forEach(section=>section.open=true);
+window.addEventListener('hashchange',()=>revealSection(location.hash));revealSection(location.hash);
 const sectionObserver = new IntersectionObserver(entries => {
   const entry = entries.find(item => item.isIntersecting);
   if (!entry) return;
@@ -481,6 +672,7 @@ const sectionObserver = new IntersectionObserver(entries => {
   }
 }, { rootMargin: '-5% 0px -65% 0px' });
 for (const link of navLinks) {
+  link.addEventListener('click',()=>revealSection(link.hash));
   const section = document.querySelector(link.hash);
   if (section) sectionObserver.observe(section);
 }
