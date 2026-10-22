@@ -1,6 +1,6 @@
 # QudadFlow Translator 0.8.8 — Figures, full tables and version visibility
 
-Release prepared October 22, 2026. GitHub publication and the Edge store update are authorized. Chrome remains deferred. Actual submission/approval status is recorded in [STORE_SUBMISSION_0.8.8.md](STORE_SUBMISSION_0.8.8.md).
+October 22, 2026. Download the versioned installation and source packages from the [GitHub release](https://github.com/qudadd/qudadflow-translator/releases/tag/v0.8.8). Edge **0.8.8 is In review**, with 0.8.7 still Live. Chrome remains deferred. Actual submission/approval status is recorded in [STORE_SUBMISSION_0.8.8.md](STORE_SUBMISSION_0.8.8.md).
 
 ## Figures and linked tables
 
@@ -26,6 +26,6 @@ Tests use isolated Edge profiles, saved public DOM and simulated APIs. They do n
 4. 可继续测试其他论文，核对独立分图未被误合并。需要结合图像提问时，仍先批量载入原图并勾选。
 5. 在弹出面板、设置、文档阅读器或论文窗口底部确认实际运行版本。只复制文件不代表浏览器已启用新版。
 
-本次发布 GitHub 并提交 Edge 更新；Chrome 暂缓。GitHub 下载可用与商店审核通过分别记录。翻译和 AI 请求继续等待完成、实际调用错误或手动取消；20 秒超时仅用于表格 HTML 等资源下载。
+本次发布 GitHub 并已提交 Edge 更新，0.8.8 状态为审核中，商店公开版仍为 0.8.7；Chrome 暂缓。GitHub 下载可用与商店审核通过分别记录。翻译和 AI 请求继续等待完成、实际调用错误或手动取消；20 秒超时仅用于表格 HTML 等资源下载。
 
 Support: lcf1249288484@outlook.com · QQ community: 1048123205.
