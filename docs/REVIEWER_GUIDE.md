@@ -1,4 +1,4 @@
-# QudadFlow Translator: certification review (0.8.7)
+# QudadFlow Translator: certification review (0.8.8)
 
 The extension has no QudadFlow account or login. Live Google Cloud Translation, DeepL, Microsoft Translator and OpenAI-compatible services use the reviewer's own endpoint and credentials. No shared production keys are supplied. The UI is Simplified Chinese; the product name and English/Chinese store metadata are included.
 
@@ -28,6 +28,12 @@ The optional source-only simulated API demonstrates the custom JSON path through
 3. With an image-capable AI profile, expand the image/paper workflow. Extract pictures or crop a PDF chart, then explicitly analyze selected material. Extraction/loading do not call AI. Inspect output, cancellation, download and unsupported-model errors.
 4. Limits: 25 MB/file; 300 PDF/rendered Word pages. Extracted body and TXT/Markdown have no fixed character cutoff; browser/model limits remain. Up to 40 loaded images/32 MB; originals up to 3,200 pixels; screenshot/import images up to 1,600 pixels and 4 MB encoded each. Paper Q&A includes at most four originals/12 MB per request. Native tables: 10,000 rows, 256 columns and 100,000 expanded cells.
 
+## New in 0.8.8
+
+Capture a Springer article with numbered figures and full-table links. Repeated thumbnail/companion/original variants merge, while distinct panels remain separate. Eligible same-origin full-table pages automatically load through the bound original article with its site session cookies, without translation API keys or new host permissions. Local inert parsing retains table rows, captions and notes for copy/export and paper Q&A. Failed/challenge pages keep a source link and retry; navigation invalidates the binding. Table HTML downloads have a 20-second/5-MB resource bound; this is separate from AI calls. Saved complete article/table DOM yielded five figures and a 54-row, five-column table; live publisher availability was not established by these fixture tests.
+
+Confirm the running manifest version at the bottom of popup, Settings, reader and research window. After updating an unpacked extension, reload it and refresh the article before a fresh capture.
+
 ## Paper Q&A, figures and tables
 
 1. On a normal article webpage, use **论文阅读与问答**. Inspect the movable/resizable window, extracted body, captions and figure/table overview. Capture makes no AI request; each new paper needs explicit capture.
@@ -39,10 +45,10 @@ The optional source-only simulated API demonstrates the custom JSON path through
 
 ## Verification and privacy
 
-**342 checks passed, zero failures: 331 behavior checks across eleven isolated Edge suites and 11 build/package checks.** Tests use synthetic credentials, generated documents, saved public fixtures and local simulated APIs. No private user profile or live AI is accessed. The manual server supports text simulation only; automated vision tests use simulated responses. Real-provider speed/accuracy and current Chrome integration are not established.
+**147 targeted checks passed, zero failures: 136 behavior checks and 11 build/package checks.** The previous 0.8.7 full suite is historical and was not counted as newly rerun. Tests use synthetic credentials, generated documents, saved public fixtures and local simulated APIs. No private user profile or live AI is accessed. The manual server supports text simulation only; automated vision tests use simulated responses. Real-provider speed/accuracy and current Chrome integration are not established.
 
 Files parse locally; only requested text/selected images and enabled research context go to the configured provider. Keys/settings stay in browser-local extension storage. No developer proxy, ads, analytics or remote executable code. Parsers/WASM are bundled; API output is rendered as text. Protected browser pages cannot receive injected translation controls.
 
-See [verification](VERIFICATION.md), [release notes](RELEASE_NOTES_0.8.7.md), [submission record](STORE_SUBMISSION_0.8.7.md), [privacy](https://qudadd.github.io/qudadflow-translator/privacy.html) and [third-party notices](../THIRD_PARTY_NOTICES.md).
+See [verification](VERIFICATION.md), [release notes](RELEASE_NOTES_0.8.8.md), [submission record](STORE_SUBMISSION_0.8.8.md), [privacy](https://qudadd.github.io/qudadflow-translator/privacy.html) and [third-party notices](../THIRD_PARTY_NOTICES.md).
 
 Support: lcf1249288484@outlook.com · QQ community: 1048123205.

@@ -1,0 +1,60 @@
+{
+  "version": "0.8.8",
+  "scope": "Isolated Edge, generated fixtures and mock AI. Optional saved public paper/image are inspected locally, not bundled. No user profile or real-model accuracy test.",
+  "passed": 13,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Numbered captions classify image tables; thumbnail layout is excluded while native data and small icons remain correct",
+      "passed": true
+    },
+    {
+      "name": "Exact same-page references and blank named anchors identify otherwise uncaptioned images",
+      "passed": true
+    },
+    {
+      "name": "Adjacent and accessible captions retain supplementary/Chinese names; distinct panels sharing a caption survive",
+      "passed": true
+    },
+    {
+      "name": "Broad multi-figure containers and linked prose references do not mislabel unrelated images",
+      "passed": true
+    },
+    {
+      "name": "Paper-only inventory drops ordinary photos, banners and unlabeled canvases but keeps semantic charts and captions",
+      "passed": true
+    },
+    {
+      "name": "Loaded thumbnails persist as previews, never as analysis-ready originals; image tables can be selected in one click",
+      "passed": true
+    },
+    {
+      "name": "Batch loading fetches full-size linked originals with generic MIME, keeps selection/order and preserves 2500-pixel detail",
+      "passed": true
+    },
+    {
+      "name": "Missing MIME originals load too; explicit Q&A transmits selected full-resolution images, numbered captions and native table text",
+      "passed": true
+    },
+    {
+      "name": "Original resize limit differs from screenshot limit without upscaling",
+      "passed": true
+    },
+    {
+      "name": "Missing/misleading MIME never accepts HTML, corrupt images or oversized responses",
+      "passed": true
+    },
+    {
+      "name": "Original downloads use only stored source URLs and enforce source permissions before fetching",
+      "passed": true
+    },
+    {
+      "name": "Image-table overview and controls fit 390, 620 and 1440 pixel windows",
+      "passed": true
+    },
+    {
+      "name": "No uncaught browser errors and no automatic AI requests",
+      "passed": true
+    }
+  ]
+}

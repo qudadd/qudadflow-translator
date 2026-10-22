@@ -1,55 +1,39 @@
-# Edge Add-ons listing draft
+# Current Edge Add-ons listing
 
-## Basic information
+Product: **QudadFlow Translator 0.8.8** · Productivity · English and Chinese (China).
 
-- Name: QudadFlow Translator
-- Version: 0.4.2
-- Category: Productivity
-- Listing languages: English (en) and Simplified Chinese (zh-CN)
-- Support email: lcf1249288484@outlook.com
-- Privacy policy URL: https://qudadd.github.io/qudadflow-translator/privacy.html
-- Website and support URL: https://qudadd.github.io/qudadflow-translator/
-- Pricing: The extension does not provide a translation service. Users provide their own API credentials and are responsible for the provider's fees and terms.
+Immersive web and document translation, paper Q&A and figure/table tools. Use your own API, colors and shortcuts.
 
-## Short description
+QudadFlow Translator brings immersive webpage reading, selection translation, document reading and optional AI research tools into one extension. Use your own provider and API configuration. The extension interface is in Simplified Chinese; the product name stays in English.
 
-Translate webpages with your own Google, DeepL, Microsoft, or compatible API.
+NEW IN 0.8.8
+Springer thumbnail, companion and original-image duplicates are merged while distinct panels stay separate. Eligible same-origin full-table links are read using the original article’s site session, then added to local Markdown/TSV copy/export and paper Q&A without an AI call. Failed reads keep a source link and retry. The running extension version appears at the bottom of the popup, Settings and reading/research views.
 
-## Detailed description
+READ WEBPAGES COMFORTABLY
+• Show translations beside the original paragraphs while preserving ordinary links and page structure.
+• Prioritize the current viewport, supplement dynamically revealed text and skip text confidently detected as the target language.
+• Enable a nearby selection button per site, then select and click to translate. Selecting alone sends nothing.
+• Choose immersive text colors with light/dark previews. Start webpage immersion with Shift+A by default; type or record another combination, save it, reset or disable it. Inputs and editors keep normal typing.
 
-QudadFlow Translator is a Microsoft Edge extension for translating selected text or an entire webpage with a translation service that you configure. It supports Google Cloud Translation v2, DeepL API, Microsoft Translator, OpenAI-compatible Chat Completions, and custom JSON endpoints.
+BRING YOUR OWN TRANSLATION SERVICE
+Google Cloud Translation, DeepL, Microsoft Translator, OpenAI-compatible Chat Completions/Responses and custom JSON APIs are supported. Save up to 20 local API profiles and switch from the popup. Read a compatible upstream model list, search reported capabilities and explicitly choose a model. Missing metadata stays unknown. Test a draft before saving.
 
-Translate a selection from the popup, the context menu, or a keyboard shortcut. Translate a webpage in a local panel that keeps the original text available for comparison. Immersive translation inserts each translated paragraph below the original paragraph and can restore the page with one click. The panel also supports copying the translated text.
+Translation and AI calls have no extension-imposed deadline. They stop on an actual HTTP/network/stream error or manual Stop. Provider limits still apply; document/image downloads keep resource safeguards. MyMemory offers a limited key-free basic trial, typically 5,000 anonymous characters/day, not an unlimited service.
 
-The extension sends text only after you start a translation. API keys, endpoint settings, model settings, and language preferences stay in the browser's extension storage. Requests go directly from the extension to the endpoint you configure; QudadFlow Translator does not operate a proxy, advertising, analytics, telemetry, or remote script service. Translation quality, data retention, and charges depend on the provider you choose. Review the provider's terms and privacy policy before use.
+READ PDF, WORD, TXT AND MARKDOWN
+Open a local file or permitted document URL in the separate reader. Choose in-place immersive, original-layout comparison or paragraph comparison. PDF page proportions and chart positions remain; text that cannot fit keeps an accessible full-translation fallback. Translate the current page or all pages and export bilingual TXT. Word rendering can differ from Microsoft Word. Maximum file size is 25 MB; PDF/rendered Word retain a 300-page bound. Scanned body replacement needs external OCR. Layout-preserving translated PDF/DOCX export is not included.
 
-Bring your own API credentials. The current extension interface is in Simplified Chinese.
+ASK ABOUT PAPERS AND THEIR FIGURES
+Open a movable, resizable paper Q&A window from a webpage, or use the document reader's research workflow. Extracted body text has no fixed character cutoff; provider context and browser memory limits remain. Caption/number-aware extraction inventories figures, image tables and native/ARIA tables. Select all figures, search, batch-load available high-resolution originals and ask questions with selected evidence. Native tables copy locally as Markdown or TSV; image tables require an explicit vision-AI transcription and verification. Import/paste a screenshot or supplement the source viewport when extraction misses material. No automatic AI request is sent during capture, selection or loading.
 
-## Permission justifications
+Optional AI tools explain figures and create downloadable Python/R reproduction drafts; code is never executed. Use editable Skill prompt templates and optional cross-page notebook memory, off by default and exportable in Settings. Automatic extraction is heuristic and cannot guarantee every publisher or table.
 
-- `activeTab`: Reads the current tab only after the user starts a translation.
-- `scripting`: Injects the bundled local content script to read selected/page text and render the translation panel.
-- `storage`: Stores the user's endpoint, language settings, model, and API key in Edge extension storage.
-- `contextMenus`: Adds a user-invoked “Translate selected text” context-menu command.
-- Optional host permissions: Sends requests only to the HTTP(S) endpoint that the user configures and approves; it is not used to collect browsing history.
+YOUR DATA AND PERMISSIONS
+Files and downloaded table HTML are parsed locally. Linked tables use source-site session cookies; translation API credentials are never sent to the publisher. Only requested text or chosen images go directly to the configured provider. There is no developer translation proxy, advertising or analytics. Keys and settings stay in browser-local storage. Site/API access is optional; a separate explicit all-websites grant can reduce repeated prompts. Browser-internal pages and built-in PDF viewers use the separate extension entry points. AI output, numbers and code need independent checks.
 
-## Data disclosure draft
+Support: lcf1249288484@outlook.com
+QQ community: 1048123205
+Privacy: https://qudadd.github.io/qudadflow-translator/privacy.html
+Source and guides: https://github.com/qudadd/qudadflow-translator
 
-- Data processed: Text selected by the user or text extracted after the user starts webpage translation; the API key configured by the user.
-- Recipient: The third-party endpoint selected by the user.
-- Purpose: Return the translation requested by the user.
-- Sale, advertising, and analytics: No sale of data, advertising, behavioral analytics, or telemetry.
-- Remote code: No remotely hosted scripts. API responses are processed as text data and are never executed as code.
-
-## Assets and testing screenshots
-
-Upload the generated `branding/qudadflow-store-logo-300.png` as the store logo. Prepare screenshots without real API keys, personal information, or private page content:
-
-1. Popup with language selection and translation actions.
-2. Settings page showing a provider configuration with redacted credentials.
-3. Translation panel showing original and translated text with the copy action.
-4. Immersive translation with translated paragraphs below the originals.
-
-## Version 0.4.2 release notes
-
-Added English and Simplified Chinese manifest metadata, a Chinese setup guide, and a Chinese privacy policy. The product name remains QudadFlow Translator in both locales. The extension interface remains Simplified Chinese.
+[Presentation](STORE_PRESENTATION_0.8.8.md) · [Publication state](STORE_SUBMISSION_0.8.8.md)

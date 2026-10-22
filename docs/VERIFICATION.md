@@ -1,4 +1,27 @@
-# QudadFlow Translator 0.8.7 verification
+# QudadFlow Translator 0.8.8 release verification
+
+October 22, 2026 (Asia/Shanghai), isolated Microsoft Edge. **147 targeted checks passed, zero failures: 136 behavior checks and 11 build/package checks.** GitHub and Edge publication are authorized; actual states are tracked in [the release record](STORE_SUBMISSION_0.8.8.md). Chrome remains deferred.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| Linked tables, Springer duplicate variants and running-version footers | 21 | [report](validation-linked-tables-v0.8.8.json) |
+| Generic publisher captions and originals | 13 | [report](validation-publisher-v0.8.8.json) |
+| Paper companion and selection | 25 | [report](validation-companion-v0.8.8.json) |
+| Copyable tables | 22 | [report](validation-table-export-v0.8.8.json) |
+| Reference coverage | 11 | [report](validation-coverage-v0.8.8.json) |
+| Visual supplementation and storage | 25 | [report](validation-vision-v0.8.8.json) |
+| Research, Skills and memory | 19 | [report](validation-research-v0.8.8.json) |
+| Deterministic build and archive integrity | 11 | [report](validation-build-v0.8.8.json) |
+
+The complete saved public Springer article DOM (including its reading-companion duplicates) produces five figures and one same-origin full-table link. Its complete saved Table 1 DOM preserves 54 rows including the header, five columns, captions, notes and exact first/last study values. These publisher fixtures remain outside source and runtime packages. Distinct same-number panels and identity-bearing queries survive; small download controls are excluded.
+
+Source-bound download integration uses localhost simulations in an isolated Edge profile. Checks cover session cookies without API credentials, inert parsing, stored-link/index restrictions, source navigation during downloads, rejected redirects/MIME/oversized responses, retries that preserve edited material, queued deduplication, complete exports and paper Q&A material. Capture/automatic table reading makes no AI call. All four interface footers read the running manifest; narrow layouts remain usable. The current publisher suite uses generic fixtures; the optional earlier Dovepress saved fixture was not rerun here.
+
+No user browser profile, real translation API or live AI is used. Live Springer download availability, real-provider quality/speed and current Chrome integration are unverified. The 0.8.7 full-suite results below are historical, not newly rerun counts. Final packaging separately validates runtime references, script syntax and exact archive entries. Responsive screenshots in the current local outputs use clearly synthetic paper data and mock images, not real publisher/AI output.
+
+Reload the existing unpacked installation in `edge://extensions`, confirm **0.8.8**, refresh the article and make a fresh research capture. Copying files does not confirm browser activation. See [0.8.8 release notes and upgrade checks](RELEASE_NOTES_0.8.8.md).
+
+## Previous: QudadFlow Translator 0.8.7 verification
 
 October 22, 2026 (Asia/Shanghai), Microsoft Edge 155.0.4283.62. **342 checks passed, zero failures: 331 behavior checks and 11 build/package checks**, with every suite below rerun for 0.8.7.
 

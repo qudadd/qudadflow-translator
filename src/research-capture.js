@@ -100,13 +100,30 @@
   }
   walk(root);
   for(const record of tables)appendTable(record);
-  const figures=[],seen=new Set();let figuresTruncated=false,pixels=0;
+  const figures=[],seen=new Map();let figuresTruncated=false,pixels=0;
   function safeUrl(value){try{const url=new URL(value,location.href);if(value&&/^https?:$/.test(url.protocol)&&!url.username&&!url.password)return url.href;}catch{}return '';}
   function imageUrl(img){
     const link=img.closest('a[href]')?.getAttribute('href');if(link&&/\.(?:png|jpe?g|webp|gif)(?:[?#]|$)|\/image-api\//i.test(link))return safeUrl(link);
-    const sets=[img.getAttribute('data-srcset'),img.getAttribute('srcset'),...Array.from(img.closest('picture')?.querySelectorAll('source')||[],s=>s.getAttribute('srcset'))].filter(Boolean).flatMap(s=>s.split(',').map(part=>{const [url,size]=part.trim().split(/\s+/);return {url,score:parseFloat(size)||1};})).sort((a,b)=>b.score-a.score);
+    const sets=[img.getAttribute('data-srcset'),img.getAttribute('srcset'),...Array.from(img.closest('picture')?.querySelectorAll('source')||[]).flatMap(s=>[s.getAttribute('srcset'),s.getAttribute('data-srcset')])].filter(Boolean).flatMap(s=>s.split(',').map(part=>{const [url,size]=part.trim().split(/\s+/);return {url,score:parseFloat(size)||1};})).sort((a,b)=>b.score-a.score);
     const originals=['data-original','data-full-src','data-large-src','data-zoom-image','data-original-src'].flatMap(name=>[img.getAttribute(name),img.closest('a')?.getAttribute(name)]);
     return [...originals,...sets.map(s=>s.url),img.getAttribute('data-src'),img.getAttribute('data-lazy-src'),img.currentSrc,img.getAttribute('src')].map(safeUrl).find(Boolean)||'';
+  }
+  function imageIdentity(src){
+    if(!src)return '';
+    const url=new URL(src);url.hash='';
+    // Springer repeats the same MediaObject in the reading companion, with
+    // different size and format parameters. Retain identity-bearing queries
+    // on other hosts (e.g. ?panel=A versus ?panel=B).
+    if(/(^|\.)springernature\.com$/i.test(url.hostname)&&url.pathname.includes('/springer-static/image/')){
+      url.pathname=url.pathname.replace(/^\/[^/]+(?=\/springer-static\/image\/)/,'/full');
+      for(const key of ['as','width','height','quality'])url.searchParams.delete(key);
+    }
+    return url.href.replace(/\/width\/\d+(?=\.)/i,'/width/full').replace(/\.(?:png|webp|jpe?g)(?=[?#]|$)/i,'.image');
+  }
+  function describedCaption(element,caption){
+    const descriptions=(element.getAttribute('aria-describedby')||'').split(/\s+/).filter(Boolean).map(id=>document.getElementById(id)).filter(node=>node&&visible(node)&&!node.closest(excluded)).map(node=>clean(plain(node)));
+    for(const description of descriptions)if(description&&!caption.includes(description)&&(!named(description)||named(description)?.key===named(caption)?.key))caption+=' · '+description;
+    return caption;
   }
   const figureWrapper='figure,[role="figure"],.fig,.fig-section,[class*="figure"],[class*="Figure"],[class*="table"],[class*="Table"],[id^="fig"],[id^="Fig"]';
   const figureCaption='figcaption,.caption,.figcaption,[class*="caption"],[class*="Caption"],[class*="table-header"]';
@@ -170,7 +187,13 @@
   for(const element of document.querySelectorAll('img,svg,canvas')){
     if(element.closest(excluded)||!visible(element)||element.parentElement?.closest('svg'))continue;
     const outside=!root.contains(element);if(outside&&element.closest('aside,[role="complementary"],header,footer,[role="banner"]'))continue;
-    const rect=element.getBoundingClientRect(),context=figureContext(element),wrapper=context.wrapper;
+    const rect=element.getBoundingClientRect();
+    // Controls embedded inside a caption/figure are not additional charts.
+    // Keep substantial SVG plots and lazy image placeholders.
+    if(element.closest('button,[role="button"]')||element.matches('svg')&&(element.getAttribute('aria-hidden')==='true'||element.getAttribute('role')==='presentation'))continue;
+    const small=rect.width>0&&rect.height>0&&rect.width<48&&rect.height<48;
+    if(small&&!named(element.getAttribute('alt')||element.getAttribute('aria-label')||''))continue;
+    const context=figureContext(element),wrapper=context.wrapper;
     const containingTable=element.closest(tableSelector);
     if(containingTable&&tableValues.has(containingTable)&&(rect.width<80||rect.height<45)&&!named(element.getAttribute('alt')||element.getAttribute('aria-label')))continue;
     const labelled=/^(?:(?:supplementary\s+)?(?:fig(?:ure)?\.?|table|chart|graph|scheme)\b|[图表])/i.test(element.getAttribute('alt')||element.getAttribute('aria-label')||'');
@@ -180,11 +203,11 @@
     if(!paperFigure)continue;
     const lazyFigure=element.tagName==='IMG'&&(element.hasAttribute('data-src')||element.hasAttribute('data-original')||element.hasAttribute('data-lazy-src'))&&labelled;
     if(!wrapper&&!lazyFigure&&(rect.width<80||rect.height<45))continue;
-    const realCaption=context.caption;
+    const realCaption=describedCaption(element,context.caption);
     const caption=realCaption||`图 ${figures.length+1}`;
-    const src=element.tagName==='IMG'?imageUrl(element):'',canonical=src.replace(/\/width\/\d+(?=\.)/i,'/width/full').replace(/\.(?:png|webp|jpe?g)(?=[?#]|$)/i,'.image');
-    if(canonical&&seen.has(canonical))continue;
-    if(figures.length>=100){figuresTruncated=true;break;}if(canonical)seen.add(canonical);
+    const src=element.tagName==='IMG'?imageUrl(element):'',canonical=imageIdentity(src),previous=seen.get(canonical);
+    if(previous){if(realCaption.length>previous.caption.length){previous.caption=realCaption.slice(0,2000);previous.captionSource=context.captionSource;}continue;}
+    if(figures.length>=100){figuresTruncated=true;break;}
     const previewOnly=element.tagName==='IMG'&&Boolean(src)&&safeUrl(element.currentSrc||element.getAttribute('src'))!==src;
     let data='';
     if(pixels<16*1024*1024&&(element.tagName==='IMG'&&element.complete&&element.naturalWidth||element.tagName==='CANVAS'))try{
@@ -194,8 +217,23 @@
       if(data.length>4*1024*1024||pixels+data.length>16*1024*1024)data='';pixels+=data.length;
     }catch{}
     figures.push({data,src,previewOnly,paperFigure,contentType:named(realCaption)?.kind||'figure',caption:caption.slice(0,2000),captionSource:realCaption?context.captionSource:'generated',captionInferred:!realCaption,id:context.id||`F${figures.length+1}`,kind:element.tagName.toLowerCase(),rect:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},visible:rect.width>=80&&rect.height>=45&&rect.x>=0&&rect.y>=0&&rect.right<=innerWidth&&rect.bottom<=innerHeight&&(element.tagName!=='IMG'||element.complete&&element.naturalWidth>0)});
+    if(canonical)seen.set(canonical,figures.at(-1));
+  }
+  const linkedTables=[],tableLinks=new Map(),readableTables=new Set(tables.map(table=>named(table.caption)?.key).filter(Boolean));
+  for(const link of document.querySelectorAll('a[href]')){
+    if(link.closest(excluded)||!visible(link))continue;
+    const href=safeUrl(link.getAttribute('href'));if(!href)continue;
+    const url=new URL(href);if(url.origin!==location.origin||url.pathname===location.pathname&&url.search===location.search)continue;
+    // Only an explicit, numbered table panel or table link is eligible. Prose,
+    // citations and supplement downloads must not become automatic requests.
+    const label=clean(link.textContent),context=figureContext(link),name=named(context.caption)||named(label);
+    if(name?.kind!=='table'||readableTables.has(name.key)||!/full\s*(?:size\s*)?table|view\s+table|open\s+table|完整表|查看表|\/tables?\/\d+/i.test(label+' '+(link.getAttribute('aria-label')||'')+' '+url.pathname)||/\.(?:pdf|docx?|xlsx?|zip)(?:$|[?#])/i.test(url.pathname))continue;
+    const caption=named(context.caption)?.kind==='table'?context.caption:label;
+    url.hash='';const previous=tableLinks.get(url.href);if(previous){if(caption.length>previous.caption.length)previous.caption=caption;continue;}
+    if(linkedTables.length>=30)break;
+    const record={url:url.href,caption:caption.slice(0,2000),identity:name.key,status:'pending'};tableLinks.set(url.href,record);linkedTables.push(record);
   }
   const attachments=[],links=new Set();
   for(const link of root.querySelectorAll('a[href]')){const label=clean(link.textContent),url=safeUrl(link.getAttribute('href'));if(url&&!links.has(url)&&/supplement|supplemental|supporting (?:information|data)|附录|补充|\.pdf\b/i.test(label+' '+url)){links.add(url);attachments.push({label:label.slice(0,180)||'External attachment',url});if(attachments.length>=30)break;}}
-  return {title:clean(root.querySelector('h1')?.textContent||document.title).slice(0,300),documentTitle:document.title,url:location.origin+location.pathname,text,selection:getSelection()?.toString().trim()||'',truncated,figures,figuresTruncated,tables,attachments,view:{width:innerWidth,height:innerHeight,x:scrollX,y:scrollY},href:location.href};
+  return {title:clean(root.querySelector('h1')?.textContent||document.title).slice(0,300),documentTitle:document.title,url:location.origin+location.pathname,text,selection:getSelection()?.toString().trim()||'',truncated,figures,figuresTruncated,tables,linkedTables,attachments,view:{width:innerWidth,height:innerHeight,x:scrollX,y:scrollY},href:location.href};
 })();

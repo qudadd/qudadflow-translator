@@ -687,10 +687,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if(message?.type?.startsWith('RESEARCH_')) {
     const own=page=>sender.id===chrome.runtime.id&&sender.url?.split(/[?#]/)[0]===chrome.runtime.getURL(page);
-    const sourceAction=['RESEARCH_FOCUS_SOURCE','RESEARCH_SUPPLEMENT_VIEW'].includes(message.type);
+    const sourceAction=['RESEARCH_FOCUS_SOURCE','RESEARCH_SUPPLEMENT_VIEW','RESEARCH_TABLE_FETCH','RESEARCH_TABLE_SAVE'].includes(message.type);
     const allowed=sourceAction?own('research.html'):own('options.html')||(['RESEARCH_STATE','RESEARCH_PREFS','RESEARCH_GET_CAPTURE','RESEARCH_IMAGE_FETCH','RESEARCH_DROP_CAPTURE'].includes(message.type)&&(own('reader.html')||own('research.html')))||message.type==='RESEARCH_CAPTURE'&&own('popup.html');
     if(!allowed){sendResponse({ok:false,error:'此操作仅限扩展研究界面。'});return false;}
-    const action=message.type==='RESEARCH_FOCUS_SOURCE'?()=>focusResearchSource(message.id):message.type==='RESEARCH_SUPPLEMENT_VIEW'?()=>supplementResearchView(message.id):message.type==='RESEARCH_CAPTURE'?()=>captureResearch(message.tabId):message.type==='RESEARCH_GET_CAPTURE'?()=>QFResearch.captureGet(message.id):message.type==='RESEARCH_IMAGE_FETCH'?()=>fetchResearchImage(message):message.type==='RESEARCH_DROP_CAPTURE'?()=>QFResearch.captureDelete(message.id):()=>QFResearch.action(message);
+    const action=message.type==='RESEARCH_TABLE_FETCH'?()=>fetchResearchTable(message):message.type==='RESEARCH_TABLE_SAVE'?()=>QFResearch.captureSaveTable(message.captureId,Number(message.index),message.table):message.type==='RESEARCH_FOCUS_SOURCE'?()=>focusResearchSource(message.id):message.type==='RESEARCH_SUPPLEMENT_VIEW'?()=>supplementResearchView(message.id):message.type==='RESEARCH_CAPTURE'?()=>captureResearch(message.tabId):message.type==='RESEARCH_GET_CAPTURE'?()=>QFResearch.captureGet(message.id):message.type==='RESEARCH_IMAGE_FETCH'?()=>fetchResearchImage(message):message.type==='RESEARCH_DROP_CAPTURE'?()=>QFResearch.captureDelete(message.id):()=>QFResearch.action(message);
     Promise.resolve().then(action).then(data=>sendResponse({ok:true,...data})).catch(error=>sendResponse({ok:false,error:error.message}));return true;
   }
   if(message?.type==='FIGURE_PROFILES') {

@@ -27,7 +27,7 @@ export function researchIdentity(caption) {
 
 export function assessResearchCapture(capture) {
   const tables=Array.isArray(capture.tables)?capture.tables:[],figures=Array.isArray(capture.figures)?capture.figures:[];
-  const readable=new Set(),images=new Set();
+  const readable=new Set(),images=new Set(),linked=new Map((capture.linkedTables||[]).map(link=>[link.identity||researchIdentity(link.caption)?.key,link]));
   // Only a caption's leading label identifies the item; a caption may also cite other figures.
   const identity=caption=>researchIdentity(caption)?.key;
   for(const table of tables){const key=identity(table.caption);if(key)readable.add(key);}
@@ -35,6 +35,7 @@ export function assessResearchCapture(capture) {
   const issues=[];
   for(const [key,reference] of researchReferences(capture.text)) {
     if(readable.has(key))continue;
+    if(linked.has(key)){issues.push({...reference,reason:'linked',text:`${reference.label} 已找到完整表格链接，${linked.get(key).error?'读取未完成，可打开原表后重试。':'正在补全或等待读取；未读到的行列尚未参与分析。'}`});continue;}
     if(images.has(key)){if(reference.kind==='table')issues.push({...reference,reason:'image',text:`${reference.label} 已找到图片形式；尚未转写为可读表格，可载入原图或补图后用 AI 识别。`});continue;}
     issues.push({...reference,reason:reference.supplement?'supplement':'unmatched',text:`${reference.label} ${reference.supplement?'可能属于外部补充材料，本次未读取。':'在材料中被提及，未匹配到对应的图表；请在原文核对是否折叠、未加载或属于引用。'}`});
   }

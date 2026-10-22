@@ -2,6 +2,7 @@ import {FigureWorkflow} from './src/figure-workflow.mjs';
 import {researchMessage} from './src/research-ui.mjs';
 import {renderResearch} from './src/research-render.mjs';
 import {assessResearchCapture,researchIdentity} from './src/research-coverage.mjs';
+import {parseLinkedTable} from './src/research-linked-tables.mjs';
 const $=id=>document.getElementById(id),pending=new Map();let port,sequence=0,captureId='',canSupplement=false,source={title:'粘贴的论文材料',url:'',page:'web'};
 function connect(){
   if(port)return port;const connection=chrome.runtime.connect({name:'qudadflow-document'});port=connection;
@@ -50,15 +51,17 @@ async function load(){
   // generic webpage/viewport images. Explicit user supplements stay separate.
   const paperFigure=figure=>figure.kind!=='viewport'&&(figure.paperFigure===true||!figure.captionInferred&&(researchIdentity(figure.caption)||figure.captionSource==='caption'||/^(?:chart|graph|scheme)\b/i.test(figure.caption||'')));
   const paperFigures=capture.figures.filter(paperFigure);
-  const tables=Array.isArray(capture.tables)?capture.tables:[],imageTableKeys=capture.figures.flatMap((figure,index)=>!figure.captionInferred&&figure.kind!=='viewport'&&researchIdentity(figure.caption)?.kind==='table'?[`web-${index}`]:[]);
+  const tables=Array.isArray(capture.tables)?capture.tables:[],linkedTables=capture.linkedTables||[],imageTableKeys=capture.figures.flatMap((figure,index)=>!figure.captionInferred&&figure.kind!=='viewport'&&researchIdentity(figure.caption)?.kind==='table'?[`web-${index}`]:[]);
   showCoverage({...capture,figures:paperFigures});
   $('paperTitle').textContent=capture.title||'论文网页';$('paperMaterial').value=capture.text;
   if(capture.url){$('paperSource').href=capture.url;$('paperSource').hidden=false;}
-  $('captureStatus').textContent=`已提取 ${capture.text.length.toLocaleString()} 字 · ${paperFigures.length} 幅图表候选${imageTableKeys.length?`（含 ${imageTableKeys.length} 张图片表格）`:''} · ${tables.length} 张文字表格。${capture.truncated?'部分网页结构未能展开，请核对材料完整性。':''}${capture.figuresTruncated?'图片候选超过 100 个，已截取前 100 个。':''}${capture.captureNotice||''} 默认只展示论文图表；可批量载入原图，勾选后参与问答。`;
+  const updateCaptureStatus=()=>{$('captureStatus').textContent=`已提取 ${$('paperMaterial').value.length.toLocaleString()} 字 · ${paperFigures.length} 幅图表候选${imageTableKeys.length?`（含 ${imageTableKeys.length} 张图片表格）`:''} · ${tables.length} 张文字表格。${capture.truncated?'部分网页结构未能展开，请核对材料完整性。':''}${capture.figuresTruncated?'图片候选超过 100 个，已截取前 100 个。':''}${capture.captureNotice||''} 默认只展示论文图表；可批量载入原图，勾选后参与问答。`;};
+  updateCaptureStatus();
   $('materialCount').textContent=capture.text.length+' 字';$('editMaterial').click();if(innerWidth<1150)$('sourcePanel').open=false;
-  const tablePanel=$('tablePanel'),tableList=$('paperTables');tableList.replaceChildren();tablePanel.hidden=false;$('tableCount').textContent=`${tables.length} 张文字表格${imageTableKeys.length?` · ${imageTableKeys.length} 张图片表格`:''}`;
+  function renderTables(){
+  const tablePanel=$('tablePanel'),tableList=$('paperTables');tableList.replaceChildren();tablePanel.querySelector('.paper-table-tools')?.remove();tablePanel.hidden=false;$('tableCount').textContent=`${tables.length} 张文字表格${imageTableKeys.length?` · ${imageTableKeys.length} 张图片表格`:''}`;
   $('tableHint').textContent=(tables.length?'这些文字表格已随正文参与论文问答，无需逐张打开或勾选。可展开全部核对内容。':'本地未提取到文字表格。')+(imageTableKeys.length?'已找到的图片表格保留了编号和图注，可一键选中并载入高清原图，再用 AI 转写和分析；数值需对照原图核验。':tables.length?'':'若原文确有表格，可在上方补图或导入局部截图，核对后用 AI 补读。');
-  const tableTools=document.createElement('div');tableTools.className='figure-picker-tools';tableTools.hidden=!tables.length&&!imageTableKeys.length;
+  const tableTools=document.createElement('div');tableTools.className='figure-picker-tools paper-table-tools';tableTools.hidden=!tables.length&&!imageTableKeys.length;
   if(tables.length)for(const [text,open]of [['展开全部表格',true],['收起全部表格',false]]){const button=document.createElement('button');button.textContent=text;button.onclick=()=>{for(const table of tableList.querySelectorAll('details'))table.open=open;};tableTools.append(button);}
   if(imageTableKeys.length){const button=document.createElement('button');button.id='selectImageTables';button.textContent='选中图片表格';button.title='替换当前选择，不会下载图片或调用 AI';button.onclick=()=>{workflow.picker.$('figureSearch').value='';workflow.picker.selected=new Set(imageTableKeys.filter(key=>workflow.picker.selectable(workflow.picker.records.get(key)||{})));workflow.picker.changed();$('figureWorkflow').open=true;workflow.picker.container.open=true;workflow.picker.$('loadSelectedFigures').scrollIntoView({behavior:'smooth',block:'center'});workflow.picker.$('loadSelectedFigures').focus({preventScroll:true});};tableTools.append(button);}
   tableList.before(tableTools);
@@ -68,9 +71,44 @@ async function load(){
     const body=document.createElement('div');body.className='paper-table-preview research-markdown';
     if(table.markdown)renderResearch(body,table.markdown,{tableGrid:table.grid,tableCaption:label,tableNotes:table.notes,truncated:table.truncated});else body.textContent='旧版提取记录未保存表格预览，请返回论文网页重新提取。';
     if(table.notes){const notes=document.createElement('p');notes.className='table-notes';notes.textContent=table.notes;body.append(notes);}
+    if(table.sourceUrl){const link=document.createElement('a');link.textContent='出版社完整表格 ↗';link.href=table.sourceUrl;link.target='_blank';link.rel='noopener noreferrer';body.append(link);}
     const ask=document.createElement('button');ask.className='ask-table';ask.textContent='结合此表提问';ask.onclick=()=>{workflow.research.$('researchQuestion').value=`结合${label}与正文，解释表中的分组、数值、统计结果及其局限。`;$('figureWorkflow').open=true;workflow.research.$('researchQuestion').focus();};
     card.append(summary,body,ask);tableList.append(card);
   }
+  }
+  renderTables();
+  const linkedSection=$('linkedTableSources'),linkedList=$('linkedTableList');linkedSection.hidden=!linkedTables.length;
+  function renderLinkedTables(){
+    linkedList.replaceChildren();
+    for(const link of linkedTables){const row=document.createElement('li'),anchor=document.createElement('a'),state=document.createElement('span');anchor.href=link.url;anchor.target='_blank';anchor.rel='noopener noreferrer';anchor.textContent=link.caption+' ↗';state.textContent=link.status==='loaded'?'已读取 · 可复制':link.status==='loading'?'正在读取…':link.error||'等待读取完整表格';row.append(anchor,state);linkedList.append(row);}
+    $('loadLinkedTables').hidden=linkedTables.every(link=>link.status==='loaded');
+  }
+  async function loadLinkedTables(){
+    if(workflow.busy||workflow.importing||workflow.externalBusy||workflow.textBusy)return;
+    const todo=linkedTables.map((link,index)=>({link,index})).filter(({link})=>link.status!=='loaded');if(!todo.length)return;
+    const generation=workflow.generation,context=workflow.context,token={};workflow.externalBusy=token;workflow.controls();
+    const current=()=>generation===workflow.generation&&context===workflow.context&&workflow.externalBusy===token;
+    let added=0,failed=0;
+    try{for(const {link,index} of todo){
+      link.status='loading';link.error='';renderLinkedTables();$('linkedTableStatus').textContent=`正在读取 ${link.caption}，不调用 AI…`;
+      try{
+        const result=await researchMessage({type:'RESEARCH_TABLE_FETCH',captureId,index});if(!current())return;
+        const table=parseLinkedTable(result.html,result.link),saved=await researchMessage({type:'RESEARCH_TABLE_SAVE',captureId,index,table});if(!current())return;
+        if(!tables.some(table=>table.sourceUrl===saved.table.sourceUrl)){
+          tables.push(saved.table);
+          const material=saved.material||['## '+saved.table.caption,saved.table.markdown,saved.table.notes,'Table source: '+saved.table.sourceUrl].filter(Boolean).join('\n\n');
+          $('paperMaterial').value+=($('paperMaterial').value?'\n\n':'')+material;workflow.context.text=$('paperMaterial').value;capture.text=$('paperMaterial').value;capture.tables=tables;
+          $('materialCount').textContent=capture.text.length+' 字';if(!$('sourcePreview').hidden)renderResearch($('sourcePreview'),capture.text);
+          renderTables();updateCaptureStatus();added++;
+        }
+        link.status='loaded';
+      }catch(error){if(!current())return;link.status='pending';link.error=error.message;failed++;}
+      renderLinkedTables();showCoverage({...capture,figures:paperFigures});
+    }
+    $('linkedTableStatus').textContent=`已补全 ${added} 张文字表格${failed?`，${failed} 张未完成，可打开原表后重试`:''}。已读取的表格随正文参与问答。`;
+    }finally{if(workflow.externalBusy===token){workflow.externalBusy=null;workflow.controls();}}
+  }
+  renderLinkedTables();$('loadLinkedTables').onclick=loadLinkedTables;
   if(capture.attachments?.length){const note=document.createElement('p');note.textContent='外部附件（未读取内容，不计入本次分析）';$('paperAttachments').append(note);for(const attachment of capture.attachments){const link=document.createElement('a');link.href=attachment.url;link.textContent=attachment.label;link.target='_blank';link.rel='noopener noreferrer';$('paperAttachments').append(link);}}
   workflow.setContext({source,text:capture.text});
   const remote=[];
@@ -118,5 +156,6 @@ async function load(){
   $('loadAllFigures').hidden=!remote.some(item=>item.canLoad);
   $('loadAllFigures').onclick=()=>loadRemote(remote.map(item=>item.key));
   workflow.controls();
+  await loadLinkedTables();
 }
 load().catch(error=>{$('captureStatus').textContent=error.message;});

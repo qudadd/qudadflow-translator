@@ -1,16 +1,20 @@
 # QudadFlow Translator（Edge / Chrome 扩展）
 
-**0.8.7** 修正网页快捷键设置：默认 **Shift+A**，支持手动输入并保存或录制，非法组合明确提示；保留自定义颜色与论文图表一键全选。此次同步包含视区优先翻译、浮窗问答、图表编号识别、批量原图及可复制表格，见[更新说明](docs/RELEASE_NOTES_0.8.7.md)。
+**0.8.8** 修复 Springer 图表缩略图、侧栏与原图版本重复展示；自动读取符合条件的完整表格链接，供复制、导出和论文问答使用；主界面底部显示实际运行版本。保留视区优先、可自定义的 **Shift+A**、译文颜色及图表全选，见[更新说明](docs/RELEASE_NOTES_0.8.8.md)。
 
-这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，面向 Microsoft Edge 和 Google Chrome。支持自备 Google、DeepL、Microsoft、OpenAI 兼容及自定义 JSON API，提供 PDF/Word/TXT/Markdown 原位及对照阅读、论文问答、图表提取、Skill、可选跨页记忆和 Python/R 草稿。Edge 已完成隔离环境集成验证，本轮 Chrome 集成尚未验证。2026 年 10 月 22 日确认 Edge 0.7.1 已正式上线；0.8.7 三个平台的实际进度见[发布记录](docs/STORE_SUBMISSION_0.8.7.md)。
+这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，面向 Microsoft Edge 和 Google Chrome。支持自备 Google、DeepL、Microsoft、OpenAI 兼容及自定义 JSON API，提供 PDF/Word/TXT/Markdown 原位及对照阅读、论文问答、图表提取、Skill、可选跨页记忆和 Python/R 草稿。Edge 已完成隔离环境集成验证，本轮 Chrome 集成尚未验证。2026 年 10 月 22 日确认 Edge 0.8.7 已正式上线；0.8.8 的实际发布进度见[发布记录](docs/STORE_SUBMISSION_0.8.8.md)。
 
 **QQ 交流群：1048123205**。在 QQ 中搜索群号加入，交流使用体验、反馈问题与功能建议。扩展弹窗和“设置 → 交流与支持”也可查看群号。0.7.1 同时新增上游模型读取、明确选型、草稿测试及此交流入口，见[更新说明](docs/RELEASE_NOTES_0.7.1.md)。
 
-[![网页沉浸阅读、划词翻译、文档、论文分析、图表复现及模型设置](branding/store-0.8.7/preview.jpg)](docs/STORE_PRESENTATION_0.8.7.md)
+[![网页沉浸阅读、划词翻译、文档、论文分析、图表复现及模型设置](branding/store-0.8.8/preview.jpg)](docs/STORE_PRESENTATION_0.8.8.md)
 
-[新版商店展示资料](docs/STORE_PRESENTATION_0.8.7.md)包含中英文简介和六张截图。图片展示真实扩展界面，使用生成文档、模拟接口结果及示例模型列表；真实翻译质量与速度取决于服务商。
+[新版商店展示资料](docs/STORE_PRESENTATION_0.8.8.md)包含中英文简介和六张截图。完整表格截图来自 0.8.8，其余五张沿用 0.8.7 未改动功能的实拍界面，均注明生成样例、模拟接口及模型列表；真实翻译质量与速度取决于服务商。
 
-Edge 与 Chrome 的审核、上架状态以[0.8.7 发布记录](docs/STORE_SUBMISSION_0.8.7.md)为准，GitHub 发布不代表商店审核通过。按当前安排，优先发布 GitHub 与 Edge，Chrome 暂缓。
+Edge 与 Chrome 的审核、上架状态以[0.8.8 发布记录](docs/STORE_SUBMISSION_0.8.8.md)为准，GitHub 发布不代表商店审核通过。按当前安排，优先发布 GitHub 与 Edge，Chrome 暂缓。
+
+## 本次图表改进
+
+显式捕获论文时，自动读取同源、带编号且符合条件的完整表格 HTML 链接，沿用原论文的站点会话，API 密钥不会发送给出版商。解析后将全部表格、图注和脚注加入本地复制、Markdown/TSV 导出与论文问答，无需调用 AI；失败保留原链接及重试。原文导航后绑定失效，重定向及验证页拒绝读取，不自动抓取普通引用、外站或补充材料。缩略图和原图重复版本合并，同编号的不同分图仍分别保留。
 
 ## 当前功能
 
@@ -189,7 +193,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 - 按目标 API 服务商的条款确认用户文本和 Key 的处理方式。
 - 使用真实 API 在干净的 Edge 配置中完成侧载验收，再提交商店审核。
 
-三个平台实际进度见[0.8.7 发布记录](docs/STORE_SUBMISSION_0.8.7.md)；中英文商店简介和截图见[展示资料](docs/STORE_PRESENTATION_0.8.7.md)。
+三个平台实际进度见[0.8.8 发布记录](docs/STORE_SUBMISSION_0.8.8.md)；中英文商店简介和截图见[展示资料](docs/STORE_PRESENTATION_0.8.8.md)。
 
 ## 自动功能验证
 
@@ -209,7 +213,7 @@ node tools/research-coverage-check.mjs coverage-results.json
 node tools/build-check.mjs build-results.json
 ```
 
-0.8.7 本轮已通过 **342 项检查，0 失败：331 项行为检查及 11 项构建／打包检查**。行为检查覆盖 11 套隔离 Edge 检查，包括快捷键手动/录制/取消、颜色不重译、全选、视区优先、模型列表、文档、编号图注与原图、AI 补图、表格导出、记忆及引用核对。使用虚构凭据、生成文档、已保存公开网页与本地模拟 API；真实模型速度、准确率及本轮 Chrome 集成尚未经验证。结果与 ZIP 字节审计见[验证记录](docs/VERIFICATION.md)，完整功能见[0.8.7 更新说明](docs/RELEASE_NOTES_0.8.7.md)。
+0.8.7 本轮已通过 **342 项检查，0 失败：331 项行为检查及 11 项构建／打包检查**。行为检查覆盖 11 套隔离 Edge 检查，包括快捷键手动/录制/取消、颜色不重译、全选、视区优先、模型列表、文档、编号图注与原图、AI 补图、表格导出、记忆及引用核对。使用虚构凭据、生成文档、已保存公开网页与本地模拟 API；真实模型速度、准确率及本轮 Chrome 集成尚未经验证。结果与 ZIP 字节审计见[验证记录](docs/VERIFICATION.md)，完整功能见[0.8.7 更新说明](docs/RELEASE_NOTES_0.8.8.md)。
 
 此前 0.8.1 已通过 **240 项检查，0 失败**：八组 Edge 检查共 229 项，构建检查 11 项；本轮没有重复所有旧版检查。包含 Ovid 公开论文的 4 张独立图和 4 张独立表卡。问答浮窗脚本默认测试通用模拟论文；第二个参数可传入已保存的公开 Ovid HTML，加入该项检查。构建测试使用临时源码副本及故意损坏的安装包；浏览器测试使用生成文档、虚构 Key、本地模拟接口及独立 Edge 配置，不读取真实用户 API 设置。检查结果不能代表真实服务商速度、额度、可用性或翻译质量。此前独立 Chrome 检查未能加载扩展服务工作线程，不能据此宣称已在 Chrome 验证通过。具体结果见 [验证记录](docs/VERIFICATION.md)。
 

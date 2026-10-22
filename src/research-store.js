@@ -153,6 +153,17 @@ globalThis.QFResearch = (() => {
     capture.canSupplement=Boolean(capture.binding?.documentId);delete capture.binding;
     return capture;
   }
+  async function captureSaveTable(id,index,value){
+    const capture=await captureRead(id),link=capture.linkedTables?.[index];
+    if(!Number.isInteger(index)||index<0||!link)throw new Error('表格链接不存在。');
+    const existing=(capture.tables||[]).find(table=>table.sourceUrl===link.url);
+    if(existing)return {table:existing,duplicate:true};
+    if(!value||!Array.isArray(value.grid)||!value.grid.length||value.grid.length>10000||value.grid.some(row=>!Array.isArray(row)||row.length>256||row.some(cell=>typeof cell!=='string'))||value.grid.reduce((n,row)=>n+row.length,0)>100000||typeof value.markdown!=='string'||JSON.stringify(value).length>8*1024*1024)throw new Error('表格数据无效或过大，请在原表页单独提取。');
+    const table={id:'linked-table-'+index,caption:text(value.caption,2000)||link.caption,notes:text(value.notes,100000),grid:value.grid,markdown:value.markdown,rows:value.grid.length,columns:Math.max(...value.grid.map(row=>row.length)),truncated:Boolean(value.truncated),sourceUrl:link.url};
+    const material=['## '+table.caption,table.markdown,table.notes,'Table source: '+link.url,table.truncated?'[Table truncated: verify against the original.]':''].filter(Boolean).join('\n\n');
+    capture.tables=[...capture.tables||[],table];capture.text+=(capture.text?'\n\n':'')+material;
+    link.status='loaded';await write([{store:'captures',value:capture}]);return {table,material};
+  }
   async function captureAppendView(id,figure) {
     const capture=await captureRead(id),supplements=capture.supplements||[];
     if(supplements.some(f=>f.key===figure.key))return {figure,duplicate:true,count:supplements.length};
@@ -162,5 +173,5 @@ globalThis.QFResearch = (() => {
     await write([{store:'captures',value:{...capture,supplements:[...supplements,stored]}}]);
     return {figure,duplicate:false,count:supplements.length+1};
   }
-  return {source,action:message=>queued(()=>action(message)),context:message=>queued(()=>context(message)),remember:(...args)=>queued(()=>remember(...args)),skill:async id=>BUILTINS.find(s=>s.id===id)||await read('skills',id),capturePut:c=>queued(()=>capturePut(c)),captureGet,captureFigure,captureBinding:async id=>(await captureRead(id)).binding,captureAppendView:(...args)=>queued(()=>captureAppendView(...args)),captureDelete:id=>queued(()=>write([{store:'captures',id,remove:true}]))};
+  return {source,action:message=>queued(()=>action(message)),context:message=>queued(()=>context(message)),remember:(...args)=>queued(()=>remember(...args)),skill:async id=>BUILTINS.find(s=>s.id===id)||await read('skills',id),capturePut:c=>queued(()=>capturePut(c)),captureGet,captureFigure,captureBinding:async id=>(await captureRead(id)).binding,captureLinkedTable:async(id,index)=>(await captureRead(id)).linkedTables?.[index],captureSaveTable:(...args)=>queued(()=>captureSaveTable(...args)),captureAppendView:(...args)=>queued(()=>captureAppendView(...args)),captureDelete:id=>queued(()=>write([{store:'captures',id,remove:true}]))};
 })();

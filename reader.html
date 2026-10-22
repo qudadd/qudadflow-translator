@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QudadFlow Translator · Document Reader</title><link rel="icon" href="assets/icon32.png"><link rel="stylesheet" href="vendor/pdfjs/web/pdf_viewer.css"><link rel="stylesheet" href="reader.css"><link rel="stylesheet" href="research.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QudadFlow Translator · Document Reader</title><link rel="icon" href="assets/icon32.png"><link rel="stylesheet" href="vendor/pdfjs/web/pdf_viewer.css"><link rel="stylesheet" href="reader.css"><link rel="stylesheet" href="research.css"><link rel="stylesheet" href="src/version.css"></head>
 <body>
   <header class="app-header"><a class="brand" href="reader.html"><img src="assets/icon48.png" alt=""><span>QudadFlow Translator<small>DOCUMENT READER</small></span></a><div class="header-actions"><button id="cancelLoad" hidden>取消加载</button><button id="openFile">打开文件</button><button id="showLink">打开链接</button><button id="settings" class="subtle">API 设置</button></div></header>
   <input id="file" type="file" accept=".pdf,.docx,.txt,.md,.markdown" hidden>
@@ -17,4 +17,4 @@
   <dialog id="blockDetail"><form method="dialog"><button aria-label="关闭段落详情">关闭</button></form><h2>原文与完整译文</h2><h3>原文</h3><div id="detailOriginal"></div><h3>译文</h3><div id="detailTranslation"></div></dialog>
   <script src="vendor/jszip/jszip.min.js"></script><script src="vendor/docx-preview/docx-preview.min.js"></script>
   <script type="module" src="reader.js"></script>
-</body></html>
+<script src="src/version.js"></script></body></html>

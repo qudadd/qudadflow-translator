@@ -1,0 +1,11 @@
+QudadFlow Translator 0.8.8 needs no extension account. Live APIs use the reviewer's own endpoint/key; no shared key is bundled. Settings > 快速试用 > 启用 MyMemory 基础试用 offers short English-to-Chinese tests without a key, subject to quota. AI research/vision needs a compatible API profile and image-capable model.
+
+Review guide and source-only simulated API:
+https://github.com/qudadd/qudadflow-translator/blob/main/docs/REVIEWER_GUIDE.md
+147 targeted checks passed using isolated Edge, saved public DOM and simulated APIs. Live publisher availability and real AI quality/speed are not claimed.
+
+New in 0.8.8: merge Springer figure size/format variants across the article and reading companion, while retaining distinct panels. Explicit article capture discovers eligible same-origin full-table links, reads them with the original article's session cookies, and adds full table text/captions/notes to Markdown/TSV copy/export and paper Q&A. No translation API credentials go to publishers; no AI call/new host permission is needed. Source identity is checked before/after; redirects, challenges, wrong or ambiguous pages are rejected. Failed tables keep source links/retry. Resource downloads are bounded to 20 seconds/5 MB, separate from unlimited-wait AI calls. Popup, Settings, reader and research display the running version in a footer.
+
+Retained: configurable Shift+A, immersive colors, viewport-first translation, selection translation, figure select-all and batch originals, optional vision transcription, paper Q&A, inert Python/R drafts, editable Skills and optional exportable notebook memory (off by default). PDF/DOCX/TXT/Markdown use a separate local reader. Body text has no fixed character cutoff; browser/model/resource limits remain. No scanned-body OCR or layout-preserving PDF/DOCX export. No remote executable code, telemetry, ads or developer translation proxy.
+
+Support: lcf1249288484@outlook.com; QQ: 1048123205

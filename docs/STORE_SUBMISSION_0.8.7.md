@@ -5,7 +5,7 @@ Prepared October 22, 2026 (Asia/Shanghai). Publication of GitHub and store updat
 | Platform | Observed state |
 | --- | --- |
 | GitHub | Release: [v0.8.7](https://github.com/qudadd/qudadflow-translator/releases/tag/v0.8.7), with runtime ZIP, source ZIP, exact-entry audit JSON and SHA256 checksums. Source, English/Chinese guides and store presentation are included in main. |
-| Microsoft Edge Add-ons | 0.8.7 submitted October 22, 2026; Partner Center confirms **In review**. The current public version remains 0.7.1 Live. Microsoft estimates a response in 7 business days; submission is not approval. |
+| Microsoft Edge Add-ons | 0.8.7 submitted October 22, 2026. Later the same day, Partner Center confirmed **0.8.7 Live** with Update enabled. This supersedes the earlier In review observation. |
 | Chrome Web Store | Deferred by the owner. Existing 0.7.1 was observed pending review; no 0.8.7 submission is claimed. |
 
 Product name: QudadFlow Translator in English and Chinese. [Refreshed descriptions and screenshots](STORE_PRESENTATION_0.8.7.md). Support: lcf1249288484@outlook.com; QQ: 1048123205.

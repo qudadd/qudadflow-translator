@@ -104,6 +104,31 @@ async function fetchResearchImage(message) {
   const bytes=await new Blob(chunks).arrayBuffer(),type=researchImageType(bytes,response.headers.get('content-type')||'');
   return {data:await researchImage(bytes,type,3200)};
 }
+// Runs in the already granted source document, so ordinary same-site session
+// cookies work without adding host permissions or opening background tabs.
+async function readResearchTablePage(href){
+  try{
+    const url=new URL(href);if(url.origin!==location.origin||url.username||url.password||!/^https?:$/.test(url.protocol))throw new Error('表格链接必须属于原论文网站。');
+    const response=await fetch(url.href,{credentials:'same-origin',redirect:'error',signal:AbortSignal.timeout(20000)});
+    if(!response.ok){await response.body?.cancel();throw new Error(`表格读取失败（HTTP ${response.status}），可打开原表后重试。`);}
+    if(!/^(text\/html|application\/xhtml\+xml)(?:;|$)/i.test(response.headers.get('content-type')||'')){await response.body?.cancel();throw new Error('来源未返回 HTML 表格页。');}
+    const limit=5*1024*1024;if(Number(response.headers.get('content-length'))>limit){await response.body?.cancel();throw new Error('表格页超过 5 MB，可打开原表后单独提取。');}
+    const reader=response.body.getReader(),chunks=[];let size=0;
+    try{while(true){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>limit)throw new Error('表格页超过 5 MB，可打开原表后单独提取。');chunks.push(part.value);}}
+    finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
+    return {html:await new Blob(chunks).text()};
+  }catch(error){return {error:error.name==='TimeoutError'?'表格页下载未完成，可打开原表后重试。':error.message};}
+}
+async function fetchResearchTable(message){
+  const index=Number(message.index);if(!Number.isInteger(index)||index<0)throw new Error('表格链接不存在。');
+  const link=await QFResearch.captureLinkedTable(message.captureId,index),binding=await QFResearch.captureBinding(message.captureId);
+  if(!link)throw new Error('表格链接不存在。');
+  await researchSourceState(binding);
+  const results=await chrome.scripting.executeScript({target:{tabId:binding.tabId,documentIds:[binding.documentId]},func:readResearchTablePage,args:[link.url]});
+  await researchSourceState(binding);
+  const result=results[0]?.result;if(!result?.html)throw new Error(result?.error||'未能读取表格页，请重试。');
+  return {...result,link};
+}
 async function analyzeResearch(message,controller,onProgress,metadata) {
   const image=message.type==='RESEARCH_ANALYZE'?undefined:message.imageData,code=message.type==='FIGURE_CODE';
   const validImage=value=>typeof value==='string'&&value.length<=4*1024*1024&&/^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);

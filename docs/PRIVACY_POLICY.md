@@ -2,6 +2,8 @@
 
 英文政策源文件 privacy.html 与 GitHub Pages 的 docs/privacy.html 必须完全一致。中文政策为 docs/privacy.zh-CN.html。
 
+0.8.8 政策补充：主动提取论文后自动读取符合条件的同源编号表格页，下载可能携带原网站会话 Cookie，不附加 API Key，不调用 AI。HTML 在本地惰性解析；读取成功后表格加入临时缓存和主动问答材料。20 秒资源下载超时、5 MB 上限不适用于翻译/AI 请求。公开站点随本版发布同步，部署结果见发布记录。
+
 - 英文：https://qudadd.github.io/qudadflow-translator/privacy.html
 - 中文：https://qudadd.github.io/qudadflow-translator/privacy.zh-CN.html
 - 支持/隐私邮箱：lcf1249288484@outlook.com

@@ -1,0 +1,142 @@
+{
+  "version": "0.8.8",
+  "scope": "Isolated Edge, synthetic API and optional saved public Springer DOM. No user profile, live publisher fetch or real AI accuracy test.",
+  "passed": 21,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Springer reading-companion size/format duplicates collapse to five complete captions and one linked table",
+      "passed": true
+    },
+    {
+      "name": "Distinct panels and query identities survive; small download controls disappear but real SVG charts remain",
+      "passed": true
+    },
+    {
+      "name": "Link discovery rejects citations, external origins, binary downloads and already readable tables; repeated links merge",
+      "passed": true
+    },
+    {
+      "name": "Linked table parser preserves complete 54-by-5 grid, captions, notes and Markdown",
+      "passed": true
+    },
+    {
+      "name": "Span expansion retains table values and accessible captions",
+      "passed": true
+    },
+    {
+      "name": "Remote scripts, image handlers and frames stay inert while hidden/script text is excluded",
+      "passed": true
+    },
+    {
+      "name": "Challenge pages, wrong table numbers and ambiguous different same-number tables fail explicitly",
+      "passed": true
+    },
+    {
+      "name": "Saved real Springer article has exactly five figures, one table link and full descriptions",
+      "passed": true,
+      "detail": {
+        "figures": [
+          {
+            "caption": "Fig. 1 · Traffic-light plots by quality assessment tool. Domain-level RoB 2 and ROBINS-I judgments are summarized across randomized and nonrandomized studies",
+            "src": "https://media.springernature.com/lw685/springer-static/image/art%3A10.1186%2Fs40001-026-04947-z/MediaObjects/40001_2026_4947_Fig1_HTML.png?as=webp"
+          },
+          {
+            "caption": "Fig. 2 · PRISMA 2020 flow diagram of study selection. Includes records identified through database searching and reasons for exclusion at screening and full-text review",
+            "src": "https://media.springernature.com/lw685/springer-static/image/art%3A10.1186%2Fs40001-026-04947-z/MediaObjects/40001_2026_4947_Fig2_HTML.png?as=webp"
+          },
+          {
+            "caption": "Fig. 3 · Acute hemostasis: intervention ranking. Predicted probabilities of hemostatic failure within 0鈥�3 h are shown across acute interventions relative to the reference category",
+            "src": "https://media.springernature.com/lw685/springer-static/image/art%3A10.1186%2Fs40001-026-04947-z/MediaObjects/40001_2026_4947_Fig3_HTML.png?as=webp"
+          },
+          {
+            "caption": "Fig. 4 · Phase-specific comparative event-risk plot. Predicted event probabilities and 95% confidence intervals are shown by intervention group across acute hemostatic-failure and post-hemostasis rebleeding windows",
+            "src": "https://media.springernature.com/lw685/springer-static/image/art%3A10.1186%2Fs40001-026-04947-z/MediaObjects/40001_2026_4947_Fig4_HTML.png?as=webp"
+          },
+          {
+            "caption": "Fig. 5 · Integrated GLMM time course across hemostatic failure and post-hemostasis rebleeding. Blue curves show predicted hemostatic failure within 0鈥�3 h; orange curves show predicted rebleeding after successful hemostasis from鈥�>鈥�3 h onward. Points show observed study-arm event rates at reported follow-up timepoints to distinguish observed data from model-based smoothing",
+            "src": "https://media.springernature.com/lw685/springer-static/image/art%3A10.1186%2Fs40001-026-04947-z/MediaObjects/40001_2026_4947_Fig5_HTML.png?as=webp"
+          }
+        ],
+        "linkedTables": [
+          {
+            "caption": "Table 1 Overview of basic information included in the study",
+            "identity": "table:1",
+            "status": "pending",
+            "url": "https://link.springer.com/article/10.1186/s40001-026-04947-z/tables/1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Saved real Springer Table 1 yields all 54 rows and 5 columns with exact first/last study data",
+      "passed": true,
+      "detail": {
+        "rows": 54,
+        "columns": 5,
+        "first": [
+          "Johnson 2015 [30]",
+          "Cohort study",
+          "2–18",
+          "United States",
+          "Anterior"
+        ],
+        "last": [
+          "Ala 2018 [80]",
+          "RCT",
+          "18–65",
+          "Iran",
+          "Non-traumatic epistaxis in ED"
+        ]
+      }
+    },
+    {
+      "name": "Research window reads source-bound tables with site cookies, without API credentials or AI, and persists copyable data",
+      "passed": true
+    },
+    {
+      "name": "Table export and explicit paper Q&A include all rows without selecting an image",
+      "passed": true
+    },
+    {
+      "name": "Reload retains downloaded tables without duplicate material or a repeated network request",
+      "passed": true
+    },
+    {
+      "name": "A failed table remains linked and retryable; user material edits survive retry",
+      "passed": true
+    },
+    {
+      "name": "Downloads only use stored same-origin links and reject invalid indices and privileged page callers",
+      "passed": true
+    },
+    {
+      "name": "HTTP errors, redirects, wrong MIME and oversized declared/streamed table pages fail without following redirects",
+      "passed": true
+    },
+    {
+      "name": "Navigated or expired source documents cannot fetch linked tables",
+      "passed": true
+    },
+    {
+      "name": "Source changes during a table download reject stale results before they reach material",
+      "passed": true
+    },
+    {
+      "name": "Queued concurrent saves append once and reject invalid table grids",
+      "passed": true
+    },
+    {
+      "name": "Loaded tables clear reference gaps; pending or failed table links stay explicitly unread",
+      "passed": true
+    },
+    {
+      "name": "All four interfaces show the running version at the bottom; research stays usable at narrow widths",
+      "passed": true
+    },
+    {
+      "name": "No unhandled browser errors and no automatic AI calls",
+      "passed": true
+    }
+  ]
+}
