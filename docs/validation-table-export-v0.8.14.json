@@ -1,0 +1,96 @@
+{
+  "version": "0.8.14",
+  "scope": "Isolated Edge, local documents, synthetic credentials and mock vision; no real model accuracy claim.",
+  "passed": 22,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Markdown roundtrip preserves escaped pipes, backslashes, blank cells and Unicode",
+      "passed": true
+    },
+    {
+      "name": "Markdown table extraction keeps captions/footnotes and ignores code samples in both fence styles",
+      "passed": true
+    },
+    {
+      "name": "TSV retains numeric strings, quotes multiline cells, pads missing fields and literalizes formulas",
+      "passed": true
+    },
+    {
+      "name": "Plain prose or a chart description does not become a copyable table",
+      "passed": true
+    },
+    {
+      "name": "Web native tables expose Markdown and TSV immediately, with repeated merged headers, caption and footnote and no AI",
+      "passed": true
+    },
+    {
+      "name": "A 350-row native table is fully copyable without the former 300-row truncation",
+      "passed": true
+    },
+    {
+      "name": "Native table display and TSV preserve literal Markdown punctuation, link syntax and HTML-like text",
+      "passed": true
+    },
+    {
+      "name": "Markdown/TSV downloads contain the same table and TSV has a UTF-8 BOM",
+      "passed": true
+    },
+    {
+      "name": "Clipboard denial exposes selected read-only manual copy text instead of claiming success",
+      "passed": true
+    },
+    {
+      "name": "Native table expansion preserves rowSpan=0, line breaks and numeric text, and removes generated/hidden text",
+      "passed": true
+    },
+    {
+      "name": "Image tables load locally and batch transcription is explicit, carries original pixels and faithful-data instructions",
+      "passed": true
+    },
+    {
+      "name": "AI table results provide copy/download tools, preserve escaped pipes, and mark the transcription as unverified",
+      "passed": true
+    },
+    {
+      "name": "Per-image transcription gives an honest no-table outcome without fabricating a table or keeping stale data",
+      "passed": true
+    },
+    {
+      "name": "A later successful transcription replaces the empty result and can be copied again",
+      "passed": true
+    },
+    {
+      "name": "Copy controls, table scrolling and results fit 390, 620 and 1440 pixel windows",
+      "passed": true
+    },
+    {
+      "name": "Markdown reader extracts whole-document tables across paragraph/page splitting without AI",
+      "passed": true
+    },
+    {
+      "name": "TXT supports text tables and replacing a document clears the prior table inventory",
+      "passed": true
+    },
+    {
+      "name": "Word table cells are locally copyable through the shared document workflow",
+      "passed": true
+    },
+    {
+      "name": "PDF whole-page capture uses the same explicit AI-to-copyable-table workflow",
+      "passed": true
+    },
+    {
+      "name": "Stopping table transcription aborts HTTP, retains no stale prior table and permits retry",
+      "passed": true
+    },
+    {
+      "name": "Code blocks remain inert and do not expose false table-copy controls",
+      "passed": true
+    },
+    {
+      "name": "No uncaught browser errors",
+      "passed": true
+    }
+  ]
+}

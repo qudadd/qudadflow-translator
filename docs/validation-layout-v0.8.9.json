@@ -1,0 +1,88 @@
+{
+  "version": "0.8.9",
+  "scope": "Generated documents in isolated Edge with simulated translation/vision only; actual private API and original user browser profile not accessed.",
+  "passed": 20,
+  "failed": 0,
+  "results": [
+    {
+      "name": "PDF: default immersive mode keeps exact portrait page ratio without API calls on open",
+      "passed": true
+    },
+    {
+      "name": "PDF: translated text replaces original at the known heading position; oversize text gets an explicit full-text link",
+      "passed": true
+    },
+    {
+      "name": "PDF: raster image and vector chart pixels remain unchanged; source heading glyph pixels are removed",
+      "passed": true
+    },
+    {
+      "name": "PDF color: live immersive recoloring preserves all canvas pixels, overlay geometry, fallback and original text",
+      "passed": true
+    },
+    {
+      "name": "PDF: original toggle and side-by-side keep page and overlay proportions",
+      "passed": true
+    },
+    {
+      "name": "Figures: local image extraction deduplicates and preserves aspect ratio without API",
+      "passed": true
+    },
+    {
+      "name": "Figures: image analysis sends a bounded image only after click and streams safe text",
+      "passed": true
+    },
+    {
+      "name": "Figures: vector chart can be selected from the original PDF and downloaded",
+      "passed": true
+    },
+    {
+      "name": "Figures: stop cancels pending AI request and does not affect translated page",
+      "passed": true
+    },
+    {
+      "name": "Figures: unsupported vision model shows an actionable error",
+      "passed": true
+    },
+    {
+      "name": "Traditional translation remains independent from saved figure AI configuration",
+      "passed": true
+    },
+    {
+      "name": "PDF: rotated original retains aspect ratio and translated coordinates after viewport resize",
+      "passed": true
+    },
+    {
+      "name": "Word: page proportions, margins, table and raster image survive original-position translation",
+      "passed": true
+    },
+    {
+      "name": "Word color: compare mode and original text retain colors while immersive overlays update without API calls",
+      "passed": true
+    },
+    {
+      "name": "TXT and Markdown: immersive replacements keep paragraph positions and expose full translation on click",
+      "passed": true
+    },
+    {
+      "name": "Text color: TXT and Markdown recolor translated paragraphs while preserving positions, source and overflow fallback",
+      "passed": true
+    },
+    {
+      "name": "Figure configuration changes cancel active requests, clear partial output and keep extracted pictures",
+      "passed": true
+    },
+    {
+      "name": "Document/config replacement cancels AI and clears image results without leaking stale output",
+      "passed": true
+    },
+    {
+      "name": "Reader-only figure API: invalid images, non-reader senders and traditional vision providers are rejected",
+      "passed": true
+    },
+    {
+      "name": "No browser errors or external document/network loads; no keys exposed by figure profile summaries",
+      "passed": true
+    }
+  ]
+}

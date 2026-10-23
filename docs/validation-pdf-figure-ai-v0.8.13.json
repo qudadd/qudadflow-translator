@@ -1,0 +1,112 @@
+{
+  "version": "0.8.13",
+  "scope": "Isolated Edge; synthetic page images and vision API only. No user profile or credentials accessed.",
+  "passed": 26,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Caption identities reject in-text references and accept supplementary and Chinese labels",
+      "passed": true
+    },
+    {
+      "name": "Untrusted AI JSON, invalid coordinates and mismatched labels are rejected without execution",
+      "passed": true
+    },
+    {
+      "name": "Coordinate normalization preserves fractional, declared pixel and xyxy geometry; roundoff is bounded and bad crops do not discard valid crops",
+      "passed": true
+    },
+    {
+      "name": "Local extraction does not invoke AI, excludes anonymous graphics and leads to gallery supplementation",
+      "passed": true
+    },
+    {
+      "name": "Partly invalid pages retain valid candidates without extra requests; retry targets only reported problem pages",
+      "passed": true
+    },
+    {
+      "name": "An unusable format is corrected once with the same page and explicit dimensions before preview",
+      "passed": true
+    },
+    {
+      "name": "A page still invalid after one correction is reported while later valid pages remain reviewable",
+      "passed": true
+    },
+    {
+      "name": "HTTP failure stops subsequent pages without a correction request and retains earlier candidates for explicit review",
+      "passed": true
+    },
+    {
+      "name": "Inferred corner coordinates are visibly marked and require manual selection; cancel returns to the gallery",
+      "passed": true
+    },
+    {
+      "name": "Stopping the corrective request cancels it and prevents preview or further pages",
+      "passed": true
+    },
+    {
+      "name": "Unified workbench collapses to a single row and preserves PDF reading space even with AI options open",
+      "passed": true
+    },
+    {
+      "name": "Page range validation prevents requests before any page is transmitted",
+      "passed": true
+    },
+    {
+      "name": "AI receives only explicitly selected pages; crops wait for visible preview confirmation",
+      "passed": true
+    },
+    {
+      "name": "Duplicate AI reruns preserve existing crops and analyses, adding only confirmed missing candidates",
+      "passed": true
+    },
+    {
+      "name": "Unnamed or misnumbered AI boxes cannot duplicate previously captured figures and tables",
+      "passed": true
+    },
+    {
+      "name": "AI controls and crop preview fit a narrow viewport without horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "Changed named crop requires explicit replacement selection",
+      "passed": true
+    },
+    {
+      "name": "Unusable responses after bounded correction and HTTP 401 retain existing crops and actionable reports",
+      "passed": true
+    },
+    {
+      "name": "Stopping a stalled AI call cancels its API request and releases extraction controls",
+      "passed": true
+    },
+    {
+      "name": "Changing the AI configuration dismisses an unconfirmed preview and keeps existing crops",
+      "passed": true
+    },
+    {
+      "name": "PDF all-figure question selects in one action, sends nothing before submit and synthesizes all five readings",
+      "passed": true
+    },
+    {
+      "name": "Stopping all-figure PDF question aborts the current reading without remaining images or a synthesis call",
+      "passed": true
+    },
+    {
+      "name": "All-figure PDF question stops on HTTP 401 and retains prior per-image results without synthesizing incomplete evidence",
+      "passed": true
+    },
+    {
+      "name": "Document replacement cancels pending AI and prevents stale crops from entering the new document",
+      "passed": true
+    },
+    {
+      "name": "Document replacement dismisses unconfirmed previews without retaining private page crops",
+      "passed": true
+    },
+    {
+      "name": "No uncaught errors or unexpected network requests",
+      "passed": true
+    }
+  ]
+}

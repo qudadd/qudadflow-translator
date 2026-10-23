@@ -11,7 +11,7 @@ import shutil
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.8.8"
+VERSION = "0.8.15"
 BASE_CAPTURE_VERSION = "0.8.7"
 DEST = ROOT / "branding" / f"store-{VERSION}"
 SOURCES = DEST / "sources"
@@ -40,19 +40,19 @@ SLIDES = [
          caption_zh="就近划词翻译（模拟结果及耗时演示）"),
     dict(slug="03-documents", category="DOCUMENT READING", title="Keep the page. Change the language.",
          subtitle="PDF · Word DOCX · TXT · Markdown — immersive or side-by-side reading.",
-         source=f"qudadflow-inplace-pdf-v{BASE_CAPTURE_VERSION}.png", crop=(0, 65, 1440, 1030), aside=[
+         source=f"qudadflow-inplace-pdf-v{VERSION}.png", crop=(0, 65, 1440, 1030), aside=[
              ("PDF page proportions", "Keep images and charts\nin their original positions."),
              ("Choose your view", "In-place, original-layout\nor paired paragraphs."),
              ("Read the full meaning", "Open the complete translation\nwhen text cannot fit.")],
          note="Generated PDF · Simulated translation · No layout-preserving PDF/DOCX export",
          caption_en="PDF in-place and original-layout comparison — generated document demo",
          caption_zh="PDF 原位及原版对照阅读（生成文档演示）"),
-    dict(slug="04-paper-figures", category="PAPER FIGURES & TABLES", title="Read the full table. Keep the evidence.",
-         subtitle="Merge duplicate figure variants. Read linked tables into copy/export and paper Q&A.",
-         source=f"qudadflow-linked-tables-1440-v{VERSION}.png", crop=(26, 390, 1414, 1082), aside=[],
-         note="0.8.8 UI · Generated table and mock figures · Loading tables does not call AI",
-         caption_en="Linked full tables, copyable rows and figure overview — generated 0.8.8 fixture",
-         caption_zh="完整表格链接、可复制表格与图表总览（0.8.8 生成样例）"),
+    dict(slug="04-paper-figures", category="PAPER FIGURES & TABLES", title="Select the evidence. Ask with context.",
+         subtitle="Select all, search and batch questions in one compact figure workbench.",
+         source=f"qudadflow-figure-picker-1440-v{VERSION}.png", crop=(0, 0, 828, 393), aside=[],
+         note="0.8.15 UI · Generated figure cards · Selection and local extraction do not call AI",
+         caption_en="Select-all and batch figure questions — generated 0.8.15 fixture",
+         caption_zh="图表全选与批量提问（0.8.15 生成样例）"),
     dict(slug="05-reading-preferences", category="READING PREFERENCES", title="Your colors. Your reading shortcut.",
          subtitle="Default Shift + A. Type or record a shortcut, then save your choice.",
          source=f"qudadflow-reading-preferences-1180-v{BASE_CAPTURE_VERSION}.png", crop=(20, 285, 842, 751), aside=[],
@@ -60,12 +60,12 @@ SLIDES = [
          caption_en="Custom immersive colors and editable Shift+A shortcut — real settings UI",
          caption_zh="沉浸式颜色及可手动修改、录制的 Shift+A 快捷键（实际设置界面）"),
     dict(slug="06-model-settings", category="SETTINGS & MODELS", title="Choose a model your provider returns.",
-         subtitle="Search upstream models, inspect reported capabilities and test before saving.",
-         source=f"qudadflow-model-settings-v{BASE_CAPTURE_VERSION}.png", crop=(380, 409, 1240, 960), aside=[
-             ("Explicit model choice", "Browse the returned catalog,\nthen apply your selection."),
-             ("Reported capabilities", "Missing metadata stays\nmarked as unknown."),
+         subtitle="API connections in Settings. Model choice in every reading view.",
+         source=f"qudadflow-model-settings-v{VERSION}.png", crop=(330, 40, 1265, 960), aside=[
+             ("Upstream model IDs", "Read or refresh the catalog\nfrom your active API."),
+             ("One active connection", "Reading views change models.\nSwitch APIs in Settings."),
              ("Test your draft", "A connection test does not\nsave or activate changes.")],
-         note="Example API catalog · Capabilities are provider-declared · Test does not verify image input",
+         note="Example API catalog · 0.8.15 UI · Model names do not establish image capability",
          caption_en="Redesigned settings and upstream model discovery — example API catalog",
          caption_zh="新版设置及上游模型读取（示例 API 模型列表）"),
 ]
@@ -120,7 +120,7 @@ def compose(index, spec):
 DEST.mkdir(parents=True, exist_ok=True)
 SOURCES.mkdir(parents=True, exist_ok=True)
 for slide in SLIDES:
-    slide["capture_version"] = VERSION if slide["slug"] == "04-paper-figures" else BASE_CAPTURE_VERSION
+    slide["capture_version"] = VERSION if slide["slug"] in {"03-documents", "04-paper-figures", "06-model-settings"} else BASE_CAPTURE_VERSION
     if slide["capture_version"] != VERSION:
         slide["note"] += " · 0.8.7 capture"
     shutil.copyfile(ROOT / "docs" / slide["source"], SOURCES / slide["source"])
@@ -130,7 +130,7 @@ for i, slide in enumerate(SLIDES, 1):
     records.append({**slide, "file": destination.name, "dimensions": [1280, 800],
                     "sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
                     "source_sha256": hashlib.sha256((SOURCES / slide["source"]).read_bytes()).hexdigest()})
-(DEST / "media.json").write_text(json.dumps({"version": VERSION, "source": "Linked-table capture: real 0.8.8 UI with generated table and mock figure thumbnails. Five unchanged feature views reuse 0.8.7 captures with generated fixtures, synthetic API responses and an example model catalog. Capture versions, crops and hashes are recorded below; provider speed and accuracy are not measured.", "screenshots": records}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+(DEST / "media.json").write_text(json.dumps({"version": VERSION, "source": "Real extension UI with generated fixtures, mock figure cards, synthetic API responses and an example model catalog. Document, gallery and model captures use 0.8.15; three unchanged feature views reuse labeled 0.8.7 captures. Capture versions, crops and hashes are recorded below; provider speed and accuracy are not measured.", "screenshots": records}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 # Review-only contact sheet, not a store screenshot.
 sheet = Image.new("RGB", (1280, 1200), "#dce3ef")
 for i, item in enumerate(records):

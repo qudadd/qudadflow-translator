@@ -34,7 +34,7 @@ for(const [id,type]of [['focusResearchSource','RESEARCH_FOCUS_SOURCE'],['supplem
     if(type==='RESEARCH_FOCUS_SOURCE'){$('supplementStatus').textContent='在原文展开并完整显示图表，再回到此窗口点击“补入当前视区截图”。';return;}
     const added=addSupplement(result.figure);$('figureWorkflow').open=true;
     $('supplementStatus').textContent=added?'截图已加入本窗口。核对预览后，点击卡片“用 AI 补读图表”；已有问答与原始表格保留。':'相同截图已在本窗口，未重复添加。可滚动原文后补充其他图表。';
-    const card=workflow.items.find(item=>item.key==='supplement-'+result.figure.key)?.card;if(card){card.scrollIntoView({behavior:'smooth',block:'center'});card.focus({preventScroll:true});}
+    const card=workflow.items.find(item=>item.key==='supplement-'+result.figure.key)?.card;if(card){workflow.workbench.show('analysis');card.scrollIntoView({behavior:'smooth',block:'center'});card.focus({preventScroll:true});}
   }catch(error){if(generation===workflow.generation){$('supplementStatus').textContent=error.message;$('supplementStatus').classList.add('error');}}
   finally{if(workflow.externalBusy===token){workflow.externalBusy=null;workflow.controls();}}
 };
@@ -43,7 +43,7 @@ $('editMaterial').onclick=()=>{const read=!$('paperMaterial').hidden;$('paperMat
 $('resizeResearch').onclick=async()=>{try{const current=await chrome.windows.getCurrent(),maximized=current.state!=='maximized';await chrome.windows.update(current.id,{state:maximized?'maximized':'normal'});$('resizeResearch').textContent=maximized?'还原窗口':'展开窗口';}catch(error){$('captureStatus').textContent='窗口调整失败：'+error.message;}};
 const heartbeat=setInterval(()=>{if(pending.size)try{port?.postMessage({type:'PING'});}catch{}},20000);
 window.addEventListener('pagehide',()=>{clearInterval(heartbeat);cancel();});
-chrome.storage.onChanged.addListener((changes,area)=>{if(area!=='local'||!Object.keys(changes).some(k=>['apiStyle','endpoint','apiKey','model','sourceLanguage','targetLanguage','temperature','streamOpenAi','customHeaders','savedProfiles'].includes(k)))return;cancel();workflow.clearResults();workflow.research.notice('API 配置已改变，旧结果已清除，请重新分析。');});
+chrome.storage.onChanged.addListener((changes,area)=>{if(area!=='local'||!Object.keys(changes).some(k=>['apiStyle','endpoint','apiKey','model','sourceLanguage','targetLanguage','temperature','streamOpenAi','customHeaders','activeProfileId'].includes(k)))return;cancel();workflow.clearResults();workflow.research.notice('API 配置已改变，旧结果已清除，请重新分析。');});
 async function load(){
   captureId=new URLSearchParams(location.hash.slice(1)).get('capture')||'';if(!captureId)return;
   const capture=await researchMessage({type:'RESEARCH_GET_CAPTURE',id:captureId});source={title:capture.title,url:capture.url,page:'web'};
@@ -63,7 +63,7 @@ async function load(){
   $('tableHint').textContent=(tables.length?'这些文字表格已随正文参与论文问答，无需逐张打开或勾选。可展开全部核对内容。':'本地未提取到文字表格。')+(imageTableKeys.length?'已找到的图片表格保留了编号和图注，可一键选中并载入高清原图，再用 AI 转写和分析；数值需对照原图核验。':tables.length?'':'若原文确有表格，可在上方补图或导入局部截图，核对后用 AI 补读。');
   const tableTools=document.createElement('div');tableTools.className='figure-picker-tools paper-table-tools';tableTools.hidden=!tables.length&&!imageTableKeys.length;
   if(tables.length)for(const [text,open]of [['展开全部表格',true],['收起全部表格',false]]){const button=document.createElement('button');button.textContent=text;button.onclick=()=>{for(const table of tableList.querySelectorAll('details'))table.open=open;};tableTools.append(button);}
-  if(imageTableKeys.length){const button=document.createElement('button');button.id='selectImageTables';button.textContent='选中图片表格';button.title='替换当前选择，不会下载图片或调用 AI';button.onclick=()=>{workflow.picker.$('figureSearch').value='';workflow.picker.selected=new Set(imageTableKeys.filter(key=>workflow.picker.selectable(workflow.picker.records.get(key)||{})));workflow.picker.changed();$('figureWorkflow').open=true;workflow.picker.container.open=true;workflow.picker.$('loadSelectedFigures').scrollIntoView({behavior:'smooth',block:'center'});workflow.picker.$('loadSelectedFigures').focus({preventScroll:true});};tableTools.append(button);}
+  if(imageTableKeys.length){const button=document.createElement('button');button.id='selectImageTables';button.textContent='选中图片表格';button.title='替换当前选择，不会下载图片或调用 AI';button.onclick=()=>{workflow.picker.$('figureSearch').value='';workflow.picker.selected=new Set(imageTableKeys.filter(key=>workflow.picker.selectable(workflow.picker.records.get(key)||{})));workflow.picker.changed();workflow.workbench.show('gallery');workflow.picker.container.open=true;workflow.picker.$('loadSelectedFigures').scrollIntoView({behavior:'smooth',block:'center'});workflow.picker.$('loadSelectedFigures').focus({preventScroll:true});};tableTools.append(button);}
   tableList.before(tableTools);
   for(const [index,table] of tables.entries()){
     const card=document.createElement('details');card.className='paper-table-card';card.open=index===0;
@@ -72,7 +72,7 @@ async function load(){
     if(table.markdown)renderResearch(body,table.markdown,{tableGrid:table.grid,tableCaption:label,tableNotes:table.notes,truncated:table.truncated});else body.textContent='旧版提取记录未保存表格预览，请返回论文网页重新提取。';
     if(table.notes){const notes=document.createElement('p');notes.className='table-notes';notes.textContent=table.notes;body.append(notes);}
     if(table.sourceUrl){const link=document.createElement('a');link.textContent='出版社完整表格 ↗';link.href=table.sourceUrl;link.target='_blank';link.rel='noopener noreferrer';body.append(link);}
-    const ask=document.createElement('button');ask.className='ask-table';ask.textContent='结合此表提问';ask.onclick=()=>{workflow.research.$('researchQuestion').value=`结合${label}与正文，解释表中的分组、数值、统计结果及其局限。`;$('figureWorkflow').open=true;workflow.research.$('researchQuestion').focus();};
+    const ask=document.createElement('button');ask.className='ask-table';ask.textContent='结合此表提问';ask.onclick=()=>{workflow.research.$('researchQuestion').value=`结合${label}与正文，解释表中的分组、数值、统计结果及其局限。`;workflow.workbench.show('analysis');workflow.research.$('researchQuestion').focus();};
     card.append(summary,body,ask);tableList.append(card);
   }
   }

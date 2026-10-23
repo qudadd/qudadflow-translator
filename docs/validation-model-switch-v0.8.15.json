@@ -1,0 +1,116 @@
+{
+  "version": "0.8.15",
+  "scope": "Isolated Edge; synthetic API profiles, localhost model discovery and translation. No real user credentials or provider access.",
+  "passed": 27,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Opening all reading views automatically shares one upstream request and retains the current model",
+      "passed": true
+    },
+    {
+      "name": "Explicit discovery persists only sanitized model metadata and populates all reading surfaces",
+      "passed": true
+    },
+    {
+      "name": "Every reading selector refreshes the active upstream directly without opening Settings or changing API",
+      "passed": true
+    },
+    {
+      "name": "Reading-page discovery cannot override the saved active address or credentials",
+      "passed": true
+    },
+    {
+      "name": "Popup switches only the model, synchronizes reader/research and updates active saved default",
+      "passed": true
+    },
+    {
+      "name": "Reader model selector controls actual document body translation",
+      "passed": true
+    },
+    {
+      "name": "Research selector uses the same API for questions and rejects legacy alternate-profile routing",
+      "passed": true
+    },
+    {
+      "name": "API mutation outside Settings and selecting an unlisted model are rejected without changing state",
+      "passed": true
+    },
+    {
+      "name": "A model selection awaiting commit prevents a new document request with the previous model",
+      "passed": true
+    },
+    {
+      "name": "A model change in another window cancels a pending document request without mixing answers",
+      "passed": true
+    },
+    {
+      "name": "Refreshing model metadata does not cancel or restart an active translation",
+      "passed": true
+    },
+    {
+      "name": "A stale settings tab cannot overwrite a model selection made during reading",
+      "passed": true
+    },
+    {
+      "name": "Discovering an unsaved alternate API stores a separate catalog without changing the active connection",
+      "passed": true
+    },
+    {
+      "name": "Only settings switches APIs; stale model selections cannot cross the new connection",
+      "passed": true
+    },
+    {
+      "name": "Changed credentials or headers trigger their own discovery; returning restores the original catalog",
+      "passed": true
+    },
+    {
+      "name": "Upstream failure preserves a previously read catalog and saved active model",
+      "passed": true
+    },
+    {
+      "name": "Reopening readers restores cached models without fetching upstream or applying a model",
+      "passed": true
+    },
+    {
+      "name": "A failed automatic read is shown beside the selector, keeps the manual model and retries only on request",
+      "passed": true
+    },
+    {
+      "name": "Empty upstream catalogs retain the current model and are not repeatedly fetched on reopen",
+      "passed": true
+    },
+    {
+      "name": "Concurrent manual refreshes share one request and any reading view can cancel it without discarding the cache",
+      "passed": true
+    },
+    {
+      "name": "Switching API in Settings aborts the prior list request and prevents stale results reaching the new selector",
+      "passed": true
+    },
+    {
+      "name": "New installations without API credentials perform no discovery and direct users to Settings",
+      "passed": true
+    },
+    {
+      "name": "A missing saved model still discovers options without silently selecting the first upstream ID",
+      "passed": true
+    },
+    {
+      "name": "Reading-page discovery with no host grant shows a permission error without making a network request",
+      "passed": true
+    },
+    {
+      "name": "Traditional active APIs hide unrelated AI models while preserving ordinary document use",
+      "passed": true
+    },
+    {
+      "name": "Catalog storage is bounded by bytes and connection count; cancelled discovery cannot overwrite it",
+      "passed": true
+    },
+    {
+      "name": "Compact model selectors render without horizontal overflow or uncaught errors",
+      "passed": true
+    }
+  ]
+}

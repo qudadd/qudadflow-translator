@@ -6,6 +6,15 @@ body { margin: 0; width: 320px; color: #172033; background: #fff; }
 .brand img { width: 32px; height: 32px; }
 h1 { margin: 0; font-size: 16px; }
 .brand p { margin: 3px 0 0; color: #6c7890; font-size: 12px; }
+.site-authorization { padding:10px; margin:0 0 12px; border:1px solid #cbd9f3; border-radius:10px; background:#f3f7ff; }
+.site-authorization[hidden] { display:none; }
+.site-authorization-row { display:flex; align-items:center; gap:8px; }
+.site-authorization-row>div { flex:1; min-width:0; }
+.site-authorization h2 { margin:0; font-size:12px; color:#273f70; }
+.site-authorization p { margin:4px 0 0; font-size:11px; line-height:1.5; overflow-wrap:anywhere; color:#596780; }
+.site-authorization .primary { width:auto; flex-shrink:0; padding:7px 8px; margin-top:0; font-size:11px; }
+.site-authorization details { margin-top:6px; font-size:11px; color:#60708a; }
+.site-authorization summary { cursor:pointer; }
 label { display: block; margin-bottom: 6px; color: #596780; font-size: 12px; font-weight: 600; }
 select, button { width: 100%; border-radius: 8px; font: inherit; }
 select { padding: 9px 10px; border: 1px solid #ccd5e5; background: #fff; color: #172033; }

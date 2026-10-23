@@ -30,8 +30,8 @@
         <summary class="section-heading"><h2 id="profilesTitle">保存的配置方案</h2><span class="badge">仅本地保存</span></summary>
         <div class="grid"><div><label for="savedProfile">选择方案</label><select id="savedProfile"><option value="">新建方案</option></select></div>
         <div><label for="profileName">方案名称</label><input id="profileName" maxlength="60" placeholder="例如：日常阅读 / 论文图表"></div></div>
-        <div class="profile-actions"><button type="button" class="secondary" id="saveAsProfile">另存为新方案并使用</button><button type="button" class="secondary" id="deleteProfile" disabled>删除选中方案</button></div>
-        <p class="hint" id="profileStatus">最多 20 个方案，包含各自的 API Key。载入方案仅用于编辑，点击“保存设置”才会应用。</p>
+        <div class="profile-actions"><button type="button" class="secondary" id="saveAsProfile">新增 API 配置并使用</button><button type="button" class="secondary" id="deleteProfile" disabled>删除选中方案</button></div>
+        <p class="hint" id="profileStatus">API 仅在本设置页切换。最多 20 个方案，包含各自的 API Key；载入后点击“保存设置”应用。翻译页只切换当前 API 的模型。</p>
       </details>
       <details class="card settings-section" id="connectionSettings" aria-labelledby="connectionTitle" open>
         <summary class="section-heading"><h2 id="connectionTitle">API 连接与模型</h2><span class="badge">直连所选服务</span></summary>
@@ -58,7 +58,7 @@
         <div id="modelWrap">
           <label for="model">当前模型 ID</label>
           <div class="model-input"><input id="model" type="text" placeholder="读取列表后选择，或手动填写准确 ID" autocomplete="off" maxlength="256"><button type="button" class="secondary" id="fetchModels">读取上游模型</button><button type="button" class="secondary" id="cancelModels" hidden>取消读取</button></div>
-          <p class="hint" id="modelStatus" role="status">填写端点和 Key 后读取；列表不会自动替换当前模型。</p>
+          <p class="hint" id="modelStatus" role="status">读取后在本地保存此 API 的模型列表，供所有翻译页切换；不自动更改当前模型。</p>
           <div class="model-browser" id="modelBrowser" hidden>
             <div class="model-filters"><div><label for="modelSearch">搜索上游模型</label><input type="search" id="modelSearch" placeholder="模型 ID、名称或提供方" maxlength="200"></div><div><label for="modelFilter">按上游声明筛选</label><select id="modelFilter"><option value="all">全部模型</option><option value="text">明确声明文本输入与输出</option><option value="vision">明确声明图片输入</option><option value="unknown">能力信息不完整</option></select></div></div>
             <div class="model-picker"><div><label for="modelCandidates">返回的模型</label><select id="modelCandidates" size="7" aria-describedby="modelCount"></select><p class="hint" id="modelCount"></p></div><section class="model-detail" aria-label="上游模型信息"><p id="modelDetailEmpty">先选择一个模型查看信息，再决定是否填入。</p><dl id="modelMetadata" hidden></dl><button type="button" class="secondary" id="applyModel" disabled>填入此模型</button></section></div>

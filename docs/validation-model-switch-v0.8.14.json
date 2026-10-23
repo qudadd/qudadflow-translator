@@ -1,0 +1,76 @@
+{
+  "version": "0.8.14",
+  "scope": "Isolated Edge; synthetic API profiles, localhost model discovery and translation. No real user credentials or provider access.",
+  "passed": 17,
+  "failed": 0,
+  "results": [
+    {
+      "name": "No page switches APIs; configured manual model is retained before discovery",
+      "passed": true
+    },
+    {
+      "name": "Explicit discovery persists only sanitized model metadata and populates all reading surfaces",
+      "passed": true
+    },
+    {
+      "name": "Popup switches only the model, synchronizes reader/research and updates active saved default",
+      "passed": true
+    },
+    {
+      "name": "Reader model selector controls actual document body translation",
+      "passed": true
+    },
+    {
+      "name": "Research selector uses the same API for questions and rejects legacy alternate-profile routing",
+      "passed": true
+    },
+    {
+      "name": "API mutation outside Settings and selecting an unlisted model are rejected without changing state",
+      "passed": true
+    },
+    {
+      "name": "A model selection awaiting commit prevents a new document request with the previous model",
+      "passed": true
+    },
+    {
+      "name": "A model change in another window cancels a pending document request without mixing answers",
+      "passed": true
+    },
+    {
+      "name": "A stale settings tab cannot overwrite a model selection made during reading",
+      "passed": true
+    },
+    {
+      "name": "Discovering an unsaved alternate API stores a separate catalog without changing the active connection",
+      "passed": true
+    },
+    {
+      "name": "Only settings switches APIs; stale model selections cannot cross the new connection",
+      "passed": true
+    },
+    {
+      "name": "Changing credentials or custom headers invalidates the visible catalog; returning restores its own list",
+      "passed": true
+    },
+    {
+      "name": "Upstream failure preserves a previously read catalog and saved active model",
+      "passed": true
+    },
+    {
+      "name": "Reopening readers restores cached models without fetching upstream or applying a model",
+      "passed": true
+    },
+    {
+      "name": "Traditional active APIs hide unrelated AI models while preserving ordinary document use",
+      "passed": true
+    },
+    {
+      "name": "Catalog storage is bounded by bytes and connection count; cancelled discovery cannot overwrite it",
+      "passed": true
+    },
+    {
+      "name": "Compact model selectors render without horizontal overflow or uncaught errors",
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "version": "0.8.13",
+  "scope": "Generated PDF layout metadata; no files, API or browser profile accessed.",
+  "passed": 7,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Explicit separated legends map a complete ordered run to named figures while excluding legends-only pages",
+      "passed": true
+    },
+    {
+      "name": "Missing or extra figure pages do not cause guessed identifiers",
+      "passed": true
+    },
+    {
+      "name": "A body reference without an explicit legend heading cannot name anonymous graphics",
+      "passed": true
+    },
+    {
+      "name": "Gaps and prose pages prevent ambiguous legend ordering",
+      "passed": true
+    },
+    {
+      "name": "Journal banners and isolated small graphics are excluded from detached figure candidates",
+      "passed": true
+    },
+    {
+      "name": "Vector-only figure pages qualify alongside raster figures without extracting decorative paths",
+      "passed": true
+    },
+    {
+      "name": "Already associated inline figures prevent a second detached mapping of the same identities",
+      "passed": true
+    }
+  ]
+}

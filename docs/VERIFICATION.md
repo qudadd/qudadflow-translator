@@ -1,4 +1,159 @@
-# QudadFlow Translator 0.8.8 release verification
+# QudadFlow Translator 0.8.15 release verification
+
+October 23, 2026. **121 checks passed, zero failures: 110 behavior checks and 11 build/package checks.** The owner has authorized three-platform publication; actual platform states are tracked in [the publication record](STORE_SUBMISSION_0.8.15.md).
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| Automatic/shared model discovery, inline refresh/cancel, real request routing and layouts | 27 | [model selection](validation-model-switch-v0.8.15.json) |
+| Settings discovery, draft tests, model errors and safeguards | 23 | [upstream models](validation-models-v0.8.15.json) |
+| Adding and switching API schemes, permissions and traditional provider | 15 | [configurations](validation-configuration-v0.8.15.json) |
+| PDF/Word/TXT/Markdown display and figure workflow | 20 | [document layouts](validation-layout-v0.8.15.json) |
+| Web research, model-backed questions and multi-image workflows | 25 | [web companion](validation-companion-v0.8.15.json) |
+| Deterministic packages, resource integrity and damaged-build rejection | 11 | [build](validation-build-v0.8.15.json) |
+
+The model-label follow-up removes capability/current-model suffixes from all reading selectors and passes the same 27 model-selection checks again, including bare-ID options on all four selectors. See the [follow-up report](validation-model-switch-v0.8.15-model-labels.json); this rerun is not added to the 121-check total. The local version remains 0.8.15.
+
+New reading views automatically discover the saved active API's models only when no cached catalog exists. Tests verify one shared request for simultaneous views, selection/request-body synchronization, inline refresh from all four selectors, cancellation, cached/empty/failed list behavior, no implicit model choice, missing credentials/permissions, credentials/header isolation and stale-request rejection when Settings switches APIs. An injected reading-page draft cannot change the discovery connection. Refreshing metadata preserves active translation; changing models cancels earlier translation. Configuration checks create and apply separate API schemes without losing the original.
+
+These tests use disposable Edge profiles, generated documents, synthetic API keys and local simulated providers. No actual user browser profile or API settings were read. They establish software behavior, not live-provider model availability, cost, latency or translation quality. Existing AI/PDF extraction tests were passed in 0.8.14 and are historical below; unchanged extraction algorithms are not retested in this model-control change. English installed/hosted privacy pages match; updated privacy text describes automatic discovery. UI screenshots cover popup, document and web research controls including 390-pixel layouts.
+
+Trial steps: reload the extension manually, reopen reader/research pages and confirm **v0.8.15**. Read/refresh models beside the selector; add or switch API schemes in Settings. See [release notes](RELEASE_NOTES_0.8.15.md).
+
+## Previous: QudadFlow Translator 0.8.14 local trial verification
+
+October 23, 2026, isolated Microsoft Edge. **241 checks passed, zero failures: 230 behavior checks and 11 build/package checks.** Local trial only; wait for user verification before uploading to GitHub or stores.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| PDF reader, ordinary extraction and continuous navigation | 16 | [report](validation-pdf-reader-v0.8.14.json) |
+| AI crop recovery, table deduplication, review and cancellation | 29 | [report](validation-pdf-figure-ai-v0.8.14.json) |
+| Three supplied PDFs, ordinary extraction and annotated AI reruns | 19 | [report](validation-pdf-samples-v0.8.14.json) |
+| Upstream model discovery and draft testing | 23 | [report](validation-models-v0.8.14.json) |
+| Shared active-API model selection, isolation and storage bounds | 17 | [report](validation-model-switch-v0.8.14.json) |
+| API schemes, permission UI and basic translation provider | 15 | [report](validation-configuration-v0.8.14.json) |
+| Document layout, colors and figure workflow | 20 | [report](validation-layout-v0.8.14.json) |
+| Research, Skills and memory | 19 | [report](validation-research-v0.8.14.json) |
+| Webpage companion, all-figure questions and streaming | 25 | [report](validation-companion-v0.8.14.json) |
+| Webpage vision and supplementation | 25 | [report](validation-research-vision-v0.8.14.json) |
+| Table transcription, copying and exports | 22 | [report](validation-table-export-v0.8.14.json) |
+| Deterministic build and archive integrity | 11 | [report](validation-build-v0.8.14.json) |
+
+New model checks verify that popup, document and research selections modify only the model on the active API. Actual simulated body translation and question requests use that choice and keep the same address/credentials. API scheme mutations outside Settings, stale connection selections and legacy alternate-profile requests are rejected. Other views synchronize; pending requests stop; a delayed selection commit disables new request controls. Catalogs persist per connection and are invalidated by changed keys/headers, with no network call on reopening. Cancelled or failed discovery preserves the previous list. Large-list checks enforce the 20-connection/2-MB bounds without recording raw credentials in catalog entries. Unknown image capability stays unknown.
+
+AI deduplication covers repeated and unnamed table boxes, shifted boundaries, inconsistent numbers, conflicting figure/table classifications, adjacent tables, cross-page continuations and ordinary extraction after AI. Existing crop labels/bounds accompany explicit localisation requests. A useful enlarged crop requires explicit replacement; uncertain label conflicts require manual selection. The three supplied PDFs retain their expected ordinary extraction counts and tolerate annotated fractional/pixel/corner responses and duplicate reruns. The separate 16-check reader suite used generated fixtures; its optional private-sample cases were not rerun there because all three are covered in the 19-check sample suite.
+
+These checks use isolated Edge profiles, synthetic credentials, local simulated APIs, generated inputs and actual local PDF page pixels. Manually annotated AI outputs validate geometry and workflow; **no real-model recognition accuracy, provider latency or universal extraction coverage is established**. No real user browser profile or credentials were read. Screenshots were inspected at desktop and narrow widths. Private PDFs, annotations, crops and screenshots remain outside packages. The prior detached-legend and document-parser suites were not rerun or counted. Source page boundaries still limit recoverable figure content. The local update verifies backup and runtime file hashes; activating it requires manual reload and version confirmation. See [trial instructions](RELEASE_NOTES_0.8.14.md). Earlier results below are historical.
+
+## Previous: QudadFlow Translator 0.8.13 local trial verification
+
+October 23, 2026, isolated Microsoft Edge. **195 checks passed, zero failures: 184 behavior checks and 11 build/package checks.** Local trial only; wait for the user's verification before GitHub, Edge or Chrome uploads.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| PDF extraction, prior two supplied samples and continuous reader | 21 | [report](validation-pdf-reader-v0.8.13.json) |
+| PDF AI coordinates, partial results, correction, retry, HTTP and cancellation | 26 | [report](validation-pdf-figure-ai-v0.8.13.json) |
+| All three actual PDFs, ordinary extraction and annotated AI geometry | 19 | [report](validation-pdf-samples-v0.8.13.json) |
+| Detached legend matching and conservative rejection fixtures | 7 | [report](validation-pdf-plan-v0.8.13.json) |
+| Layout, colors and image workflow | 20 | [report](validation-layout-v0.8.13.json) |
+| Research, Skills and memory | 19 | [report](validation-research-v0.8.13.json) |
+| Webpage companion and all-figure questions | 25 | [report](validation-companion-v0.8.13.json) |
+| Webpage vision, supplementation and streaming | 25 | [report](validation-research-vision-v0.8.13.json) |
+| Table transcription, copying and exports | 22 | [report](validation-table-export-v0.8.13.json) |
+| Deterministic build and archive integrity | 11 | [report](validation-build-v0.8.13.json) |
+
+The supplied 46-page reference yields five main figures and four Table 1 segments. Its explicitly headed detached legends are linked only when a complete ordered sequence matches the exact contiguous graphics-page count. Negative fixtures reject incomplete lists, gaps, missing headings and identities already matched elsewhere. Native table cells exclude rotated watermark text; continued pages do not duplicate a printed header. The earlier 10-page paper retains four figures and a 24-row/six-column table. The 42-page manuscript retains 17 segments: Figure 1 on page 13, Figure 2 on pages 14-15, Figure 3 on pages 16-17, Figure 4 on page 17, Table 1 on pages 19-28 and Table 2 on page 28. Section-numbered unruled supplementary tables remain outside reliable local detection. Some reference plates are already clipped by the original PDF page boundary and cannot be reconstructed beyond it.
+
+AI checks retain valid neighbors of invalid crops, convert declared units and corner formats, surface inferred formats for manual selection, clamp only minor rounding, reject unreliable whole-page ranges and handle uncertain merged ranges. Unusable page formats get one correction; repeated geometry failure continues to later selected pages. HTTP errors stop immediately without correction retries while earlier successful crops remain available for confirmation. Explicit problem-page retries, partial reports, Stop, document/configuration changes and duplicate insertion are covered. AI and webpage supplementation controls now belong to the gallery; confirmation and cancellation return there. Screenshots were visually reviewed, including the new sample and corrected manuscript crop.
+
+All three sample tests use actual local PDF pixels but **manually annotated simulated AI responses**, not a real vision provider. Other suites use isolated Edge profiles, generated inputs and simulated APIs. These checks establish extraction behavior, geometry and UI flow, not real-model accuracy, translation quality, provider speed or universal publisher coverage. Real user profiles, keys and API settings were not accessed. The 15-check configuration suite from 0.8.12 and 34-check document-parser suite from 0.8.11 were not rerun or counted. Private PDFs, annotations, crops and screenshots remain outside repository/package inventories. The local update verifies a backup and every copied runtime byte; activating it requires manual reload and version confirmation. See [local trial steps](RELEASE_NOTES_0.8.13.md). Earlier results below remain historical.
+
+## Previous: QudadFlow Translator 0.8.12 local trial verification
+
+October 23, 2026, isolated Microsoft Edge. **177 checks passed, zero failures: 166 behavior checks and 11 build/package checks.** Local trial only; wait for the user's verification before GitHub or store uploads.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| PDF extraction, both supplied samples and continuous reader | 21 | [report](validation-pdf-reader-v0.8.12.json) |
+| PDF workbench, AI localisation, all-figure questions and cancellation | 19 | [report](validation-pdf-figure-ai-v0.8.12.json) |
+| Layout, colors and image workflow | 20 | [report](validation-layout-v0.8.12.json) |
+| Research, Skills and memory | 19 | [report](validation-research-v0.8.12.json) |
+| Webpage companion, all-figure questions and streaming | 25 | [report](validation-companion-v0.8.12.json) |
+| Vision workflow, screenshot import and streaming | 25 | [report](validation-research-vision-v0.8.12.json) |
+| Table transcription, copying and exports | 22 | [report](validation-table-export-v0.8.12.json) |
+| Immediate authorization hiding, revocation, profiles and basic provider | 15 | [report](validation-configuration-v0.8.12.json) |
+| Deterministic build and archive integrity | 11 | [report](validation-build-v0.8.12.json) |
+
+PDF checks cover a one-row collapsed workbench, bounded expanded height, narrow screens and in-workbench candidate review without a modal or backdrop. The original PDF remains scrollable and navigable. Both webpage and PDF checks select all figures, retain custom questions and previous answers, send nothing before submission, then read five originals and synthesize all five labeled notes with paper text. Stop and HTTP 401 abort remaining PDF readings without synthesizing incomplete evidence. Permission checks cover immediate removal before page initialisation, reopening, revocation and zero layout space while hidden.
+
+The supplied 42-page manuscript still yields Figures 1–4 and Tables 1–2 in 17 page segments; the earlier 10-page sample retains four figures and one 24-row/six-column table. Section-numbered, unruled supplementary tables remain outside reliable local detection. Native-table reconstruction and AI readings require source checking.
+
+Tests use isolated Edge profiles, synthetic credentials and simulated APIs; permission outcomes use a browser API harness. They do not access real user profiles/keys or establish real vision-model accuracy, translation quality, provider speed or universal publisher coverage. The 34-check document-parser suite from 0.8.11 was not rerun or counted in this total. Private PDFs, crops and screenshots stay outside repository/package inventories. The local update backs up the prior installation and verifies copied runtime bytes. Browser activation requires manual reload and version confirmation. See [trial steps](RELEASE_NOTES_0.8.12.md). Earlier results below remain historical.
+
+## Previous: QudadFlow Translator 0.8.11 local trial verification
+
+October 23, 2026, isolated Microsoft Edge. **182 checks passed, zero failures: 171 behavior checks and 11 build/package checks.** Local trial only; wait for the user's verification before any upload.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| PDF extraction, both supplied samples and continuous reader | 21 | [report](validation-pdf-reader-v0.8.11.json) |
+| Optional AI localisation, preview and cancellation | 15 | [report](validation-pdf-figure-ai-v0.8.11.json) |
+| Layout, colors and image workflow | 20 | [report](validation-layout-v0.8.11.json) |
+| PDF/DOCX/TXT/Markdown reader | 34 | [report](validation-documents-v0.8.11.json) |
+| Research, Skills and memory | 19 | [report](validation-research-v0.8.11.json) |
+| Vision workflow, screenshot import and streaming | 25 | [report](validation-research-vision-v0.8.11.json) |
+| Table transcription, copying and exports | 22 | [report](validation-table-export-v0.8.11.json) |
+| Site authorization prompt, profiles and basic provider | 15 | [report](validation-configuration-v0.8.11.json) |
+| Deterministic build and archive integrity | 11 | [report](validation-build-v0.8.11.json) |
+
+The supplied 42-page manuscript yields Figures 1–4 and Tables 1–2 in 17 page segments without journal banners or anonymous image fallback. Checks cover following-page captions, continued panels, ten pages of nine-column Table 1 and the seven-row/eight-column Table 2. The earlier 10-page sample retains four figures and one 24-row/six-column table. Section-numbered, unruled supplementary tables are not covered reliably; the AI/manual fallback is documented rather than counted as a local detection success.
+
+Synthetic vision responses exercise explicit page selection, no automatic fallback, previews before insertion, duplicate/misnumbered boxes, explicit crop replacement, invalid JSON/bounds, HTTP 401, stalled cancellation and stale document/configuration previews. Desktop and 390-pixel previews were visually inspected. The first-use permission UI is tested with a browser API harness: no automatic request, denied retry, trusted click activation, only the displayed host, unchanged settings/selection state, granted-site suppression and protected-page guidance. This simulates consent outcomes; it does not automate a real user browser permission dialog.
+
+Tests use isolated Edge profiles and generated/mock inputs; real user profiles, credentials and API settings are not accessed. Mock responses establish flow and layout, not real-provider vision accuracy, translation quality or speed. Private PDFs, crops, diagnostics and screenshots are outside the repository/package inventories. The local update verifies a backup and every copied runtime byte; browser activation still requires the user's manual reload and version check. See [trial steps](RELEASE_NOTES_0.8.11.md). Earlier results below remain historical.
+
+## Previous: QudadFlow Translator 0.8.10 local trial verification
+
+October 23, 2026 (Asia/Shanghai), isolated Microsoft Edge. **103 targeted checks passed, zero failures: 92 behavior checks and 11 build/package checks.** This is a local trial; no GitHub or store upload is authorized before the user's verification.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| PDF extraction, pending translation, navigation and supplied sample | 19 | [report](validation-pdf-reader-v0.8.10.json) |
+| Document layout, colors and image workflow | 20 | [report](validation-layout-v0.8.10.json) |
+| PDF/DOCX/TXT/Markdown reader | 34 | [report](validation-documents-v0.8.10.json) |
+| Research, Skills and memory | 19 | [report](validation-research-v0.8.10.json) |
+| Deterministic build and archive integrity | 11 | [report](validation-build-v0.8.10.json) |
+
+The delayed-API regression reproduces the 0.8.9 disabled all-page extraction button before the fix. After the fix, all-page extraction finishes while the body request is still pending; stopping either task preserves the other. Local screenshot import and extraction make no additional API request. UI controls remain locked during conflicting image/import tasks and release afterward.
+
+In the supplied 10-page PDF, extracting only page 1 yields zero regions and a page-specific message; all-page extraction yields four figures and one table while the translation response remains held. Table 1 retains 24 rows including the header and six columns. Extraction controls appear before the gallery and paper Q&A. A local screenshot verifies five overview cards alongside a still-pending body translation. The private PDF and screenshots are excluded from both package inventories.
+
+Tests use synthetic APIs and isolated Edge profiles, without real user browser settings or keys. They establish local behavior and geometry, not real translation/AI quality or speed. Coordinate-based tables and heuristic figure detection still require source checking. Browser activation must be confirmed by the user after manually reloading the existing unpacked extension, closing old reader tabs, reopening the PDF and checking **v0.8.10**. See [local retest steps](RELEASE_NOTES_0.8.10.md). Earlier counts below remain historical.
+
+Build checks validate staged resources, syntax, repeatable archives, archive entries/bytes and rejection of private or damaged packages. Final packaging independently validates the runtime/source ZIPs. The local update backs up the existing installation and verifies every copied runtime file; it does not change browser settings or establish activation.
+
+## Previous: QudadFlow Translator 0.8.9 local trial verification
+
+October 22, 2026, isolated Microsoft Edge. **99 targeted checks passed, zero failures: 88 behavior checks and 11 build/package checks.** This version is for local user testing; no GitHub, Edge or Chrome update has been uploaded.
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| PDF extraction, continuous reading and local sample | 15 | [report](validation-pdf-reader-v0.8.9.json) |
+| Document layout, colors and image workflow | 20 | [report](validation-layout-v0.8.9.json) |
+| PDF/DOCX/TXT/Markdown reader | 34 | [report](validation-documents-v0.8.9.json) |
+| Research, Skills and memory | 19 | [report](validation-research-v0.8.9.json) |
+| Deterministic build and archive integrity | 11 | [report](validation-build-v0.8.9.json) |
+
+The supplied local 10-page PDF produces four labeled figures and one native text table with 24 rows including the header and six columns. Checks cover vector and raster crops, side captions, separate same-page charts, a full-width text table, rotation, logical-region deduplication, cross-page table retention and local extraction without API calls. The private PDF, crops, diagnostics and screenshots remain outside repository packages.
+
+Continuous-reader checks cover lightweight placeholders, bounded nearby canvases, rapid navigation, active-page tracking, paired pane anchors, mixed page dimensions, rotation, resizing, saved reading mode, stop/replacement cleanup and active-page translation priority. A delayed-layout regression confirms that rendering does not restore an obsolete anchor after a later user scroll. An image-only page retains original pixels and OCR guidance. Layout checks compare canvas pixels and overlay geometry and exercise explicit overflow links, colors, DOCX, TXT and Markdown. A layout test now waits for the existing asynchronous text fitting before asserting its result.
+
+Tests use isolated Edge profiles and simulated translation/vision APIs. No real user browser profile, keys or API settings are accessed. Synthetic translations verify flow and geometry, not real translation accuracy/speed. Heuristic extraction and coordinate-based native tables require source checking; scanned content has no new automatic OCR. Current Chrome integration and live publisher access were not rerun. Earlier 0.8.8 results below are historical, not added to this version's totals.
+
+Build checks validate staged local dependencies and script syntax, repeatable runtime/source archives, matching privacy-policy sources, and rejection of missing, altered or private archive entries. Final packaging independently compares every included path and byte with the working files. Only runtime files are copied to the existing local unpacked installation, after a verified backup; browser activation requires manual reload.
+
+Reload the existing unpacked installation in `edge://extensions`, close old reader tabs, reopen the PDF and confirm **v0.8.9** at the bottom. File copying does not establish browser activation. Follow [the local trial steps](RELEASE_NOTES_0.8.9.md), and wait for the user's local verification before any upload.
+
+## Previous: QudadFlow Translator 0.8.8 release verification
 
 October 22, 2026 (Asia/Shanghai), isolated Microsoft Edge. **147 targeted checks passed, zero failures: 136 behavior checks and 11 build/package checks.** GitHub and Edge publication are authorized; actual states are tracked in [the release record](STORE_SUBMISSION_0.8.8.md). Chrome remains deferred.
 

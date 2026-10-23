@@ -1,4 +1,4 @@
-/* Upstream model discovery. Called only from the extension settings page. */
+/* Upstream discovery: settings drafts or the saved active API on reading pages. */
 const QFModelCatalog = (() => {
   const LIMIT = 1000;
   const fail = (message, code) => Object.assign(new Error(message), { code });

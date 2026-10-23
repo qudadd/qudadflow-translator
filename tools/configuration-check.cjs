@@ -50,12 +50,76 @@ const server=http.createServer(async(req,res)=>{
         assert.equal(await page.locator('#grantAllWebsites').isVisible(),true);const removed=await page.evaluate(()=>window.permissionHarness.removals);assert.equal(removed.length,1);assert.ok(removed[0].origins.includes('https://papers.example/*'));assert.deepEqual(await get(),saved);
       }finally{await page.evaluate(()=>{for(const [name,fn]of Object.entries(window.permissionHarness.originals))chrome.permissions[name]=fn;});await page.reload();await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.locator('#expandSettings').click();}
     });
+    await check('Compact site prompt: denied retry, immediate grant hiding, persisted suppression, revoked-site reminder and protected-page suppression',async()=>{
+      const saved=await get(),before=calls.length,site=await context.newPage(),popup=await context.newPage();
+      await site.goto(origin+'/first-use?private=SYNTHETIC');
+      const tab=await worker.evaluate(async url=>(await chrome.tabs.query({})).find(t=>t.url===url),site.url());
+      await popup.addInitScript(tab=>{
+        const query=chrome.tabs.query.bind(chrome.tabs),getTab=chrome.tabs.get.bind(chrome.tabs);
+        chrome.tabs.query=args=>args.active?Promise.resolve([tab]):query(args);
+        const h=window.sitePermissionHarness={granted:sessionStorage.getItem('qf-test-site-granted')==='true',allow:false,requests:[],added:[],removed:[]};
+        chrome.permissions.contains=async()=>h.holdPermissionCheck?new Promise(resolve=>{h.releasePermissionCheck=resolve;}):h.granted;
+        chrome.permissions.request=async args=>{
+          h.requests.push({...args,active:navigator.userActivation.isActive});
+          if(h.holdRequest)await new Promise(resolve=>{h.releaseRequest=resolve;});
+          h.granted=h.allow;sessionStorage.setItem('qf-test-site-granted',String(h.granted));return h.granted;
+        };
+        chrome.permissions.onAdded.addListener=listener=>h.added.push(listener);
+        chrome.permissions.onRemoved.addListener=listener=>h.removed.push(listener);
+        chrome.tabs.get=async id=>{if(h.holdTab){h.tabWaiting=true;await new Promise(resolve=>{h.releaseTab=resolve;});}return getTab(id);};
+      },tab);
+      try{
+        await popup.goto(base+'popup.html');await popup.locator('#authorizeCurrentSite:not([disabled])').waitFor();
+        assert.equal(await popup.locator('#siteAuthorization').isVisible(),true);assert.match(await popup.locator('#siteAuthorizationHint').textContent(),/127\.0\.0\.1/);
+        assert.doesNotMatch(await popup.locator('#siteAuthorization').textContent(),/private=|SYNTHETIC|ORIGINAL-KEY/);
+        assert.equal(await popup.evaluate(()=>window.sitePermissionHarness.requests.length),0);
+        assert.equal(await popup.locator('#siteAuthorizationDetails').evaluate(e=>e.open),false);
+        assert.ok(await popup.locator('#siteAuthorization').evaluate(e=>e.getBoundingClientRect().height)<=110);
+        await popup.locator('.popup').screenshot({path:path.join(path.dirname(reportPath),'qudadflow-site-authorization-v'+manifest.version+'.png')});
+        await popup.locator('#authorizeCurrentSite').click();await popup.waitForFunction(()=>document.querySelector('#status').textContent.includes('未授予'));
+        assert.equal(await popup.locator('#siteAuthorization').isVisible(),true);assert.equal(await popup.locator('#authorizeCurrentSite').isEnabled(),true);assert.deepEqual(await get(),saved);
+        assert.match(await popup.locator('#siteAuthorizationHint').textContent(),/未授权，可重试/);
+        await popup.locator('#siteAuthorizationDetails summary').click();
+        await popup.evaluate(()=>Object.assign(window.sitePermissionHarness,{allow:true,holdRequest:true,holdTab:true}));
+        await popup.locator('#authorizeCurrentSite').click();await popup.waitForFunction(()=>window.sitePermissionHarness.releaseRequest);
+        await popup.evaluate(()=>{window.sitePermissionHarness.holdPermissionCheck=true;window.pendingSiteRecheck=updateSiteAuthorization();});
+        await popup.evaluate(()=>window.sitePermissionHarness.releaseRequest());
+        await popup.waitForFunction(()=>window.sitePermissionHarness.tabWaiting);
+        assert.equal(await popup.locator('#siteAuthorization').isHidden(),true);
+        assert.equal(await popup.locator('#siteAuthorization').evaluate(e=>e.getBoundingClientRect().height),0);
+        assert.equal(await popup.locator('#siteAuthorizationDetails').evaluate(e=>e.open),false);
+        await popup.evaluate(async()=>{const h=window.sitePermissionHarness;h.holdPermissionCheck=false;h.releasePermissionCheck(false);await window.pendingSiteRecheck;});
+        assert.equal(await popup.locator('#siteAuthorization').isHidden(),true);
+        await popup.evaluate(()=>{const h=window.sitePermissionHarness;h.holdTab=false;h.releaseTab();});
+        await popup.waitForFunction(()=>!authorizingSite);
+        const requests=await popup.evaluate(()=>window.sitePermissionHarness.requests);assert.equal(requests.length,2);assert.ok(requests.every(r=>r.active));assert.deepEqual(requests[1].origins,['http://127.0.0.1/*']);
+        assert.equal(await popup.locator('#selectionEnabled').isChecked(),false);assert.deepEqual(await get(),saved);assert.equal(calls.length,before);
+        await popup.reload();await popup.waitForFunction(()=>siteAuthorizationTarget&&!document.querySelector('#selectionEnabled').disabled);
+        assert.equal(await popup.evaluate(()=>window.sitePermissionHarness.granted),true);
+        assert.equal(await popup.locator('#siteAuthorization').isHidden(),true);
+        assert.equal(await popup.locator('#siteAuthorization').evaluate(e=>e.getBoundingClientRect().height),0);
+        assert.equal(await popup.evaluate(()=>window.sitePermissionHarness.requests.length),0);
+        await popup.locator('.popup').screenshot({path:path.join(path.dirname(reportPath),'qudadflow-site-authorized-v'+manifest.version+'.png')});
+        await popup.evaluate(async()=>{const h=window.sitePermissionHarness;h.granted=false;sessionStorage.setItem('qf-test-site-granted','false');await Promise.all(h.removed.map(listener=>listener({origins:['http://127.0.0.1/*']})));});
+        assert.equal(await popup.locator('#siteAuthorization').isVisible(),true);
+        assert.equal(await popup.locator('#authorizeCurrentSite').isEnabled(),true);
+        assert.equal(await popup.locator('#siteAuthorizationDetails').evaluate(e=>e.open),false);
+        assert.equal(await popup.evaluate(()=>window.sitePermissionHarness.requests.length),0);
+        for(const url of ['edge://settings/','chrome-extension://example/options.html','https://chromewebstore.google.com/detail/test','https://microsoftedge.microsoft.com/addons/detail/test']){
+          await popup.evaluate(async url=>{activeTab={id:1,url};await updateSiteAuthorization();},url);
+          assert.equal(await popup.locator('#siteAuthorization').isHidden(),true);
+          assert.equal(await popup.locator('#siteAuthorization').evaluate(e=>e.getBoundingClientRect().height),0);
+        }
+        assert.equal(await popup.evaluate(()=>window.sitePermissionHarness.requests.length),0);
+        assert.deepEqual(await get(),saved);assert.equal(calls.length,before);
+      }finally{await popup.close();await site.close();}
+    });
     await check('Profiles: existing settings migrate without losing endpoint or key',async()=>{const state=await get();assert.equal(state.savedProfiles.length,1);assert.equal(state.savedProfiles[0].values.apiKey,initial.apiKey);assert.equal(state.endpoint,initial.endpoint);assert.equal(await page.locator('#apiKey').getAttribute('type'),'password');});
     await check('Profiles: save a named copy and retain original configuration',async()=>{await page.locator('#model').fill('second-model');await page.locator('#apiKey').fill('SYNTHETIC-SECOND-KEY');await save('Research API',{copy:true});const state=await get();assert.equal(state.savedProfiles.length,2);assert.equal(state.savedProfiles[0].values.apiKey,initial.apiKey);assert.equal(state.apiKey,'SYNTHETIC-SECOND-KEY');});
     await check('Profiles: reload, select, edit and apply a saved scheme',async()=>{await page.reload();await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.locator('#expandSettings').click();const first=(await get()).savedProfiles[0].id;await page.locator('#savedProfile').selectOption(first);assert.equal(await page.locator('#model').inputValue(),'original-model');assert.equal((await get()).model,'second-model');await page.locator('#model').fill('edited-original');await save('Daily reading');const state=await get();assert.equal(state.savedProfiles.length,2);assert.equal(state.model,'edited-original');assert.equal(state.savedProfiles[0].name,'Daily reading');});
     await check('Profiles: metadata list never returns credentials',async()=>{const result=await action({type:'PROFILE_LIST'});assert.ok(!JSON.stringify(result).includes('SYNTHETIC'));assert.ok(result.profiles.every(profile=>!profile.values));});
     await check('Profiles: stale settings tab cannot overwrite newer saved profiles',async()=>{const state=await get();const response=await action({type:'PROFILE_SAVE',revision:state.profileRevision-1,profileId:state.savedProfiles[0].id,name:'stale',values:initial});assert.equal(response.ok,false);assert.match(response.error,/其他窗口/);assert.equal((await get()).savedProfiles[0].name,'Daily reading');});
-    await check('Profiles: popup applies saved scheme and updates target language',async()=>{const popup=await context.newPage();await popup.goto(base+'popup.html');await popup.waitForFunction(()=>document.querySelector('#activeProfile').options.length>1);const target=(await get()).savedProfiles[1].id;await popup.locator('#activeProfile').selectOption(target);await popup.waitForFunction(()=>document.querySelector('#status').textContent.includes('已切换'));assert.equal((await get()).model,'second-model');await popup.close();});
+    await check('Profiles: popup exposes only models and cannot apply another API scheme',async()=>{const popup=await context.newPage();await popup.goto(base+'popup.html');await popup.locator('#activeModel').waitFor();assert.equal(await popup.locator('#activeProfile').count(),0);const before=await get();const denied=await popup.evaluate(profileId=>chrome.runtime.sendMessage({type:'PROFILE_APPLY',profileId}),before.savedProfiles[1].id);assert.equal(denied.ok,false);assert.deepEqual(await get(),before);await popup.close();});
     await check('Profiles: quick trial preserves both saved keyed configurations',async()=>{await page.reload();await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.locator('#expandSettings').click();await page.locator('#useTrial').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('基础试用已启用'));const state=await get();assert.equal(state.apiStyle,'mymemory');assert.equal(state.apiKey,'');assert.equal(state.sourceLanguage,'en');assert.equal(state.savedProfiles.length,3);assert.equal(state.savedProfiles[0].values.apiKey,initial.apiKey);assert.equal(state.customHeaders,'{}');assert.equal(await page.locator('#apiKeyWrap').isVisible(),false);});
     await check('Profiles: repeated trial activation does not duplicate the preset',async()=>{await page.locator('#useTrial').click();await page.waitForFunction(()=>!document.querySelector('#useTrial').disabled);assert.equal((await get()).savedProfiles.length,3);});
     await check('Profiles: deleting active profile clears its live credentials only',async()=>{await page.locator('#savedProfile').selectOption((await get()).savedProfiles[1].id);await save('Research API');page.once('dialog',dialog=>dialog.accept());await page.locator('#deleteProfile').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('已删除'));const state=await get();assert.equal(state.savedProfiles.length,2);assert.equal(state.apiKey,'');assert.equal(state.savedProfiles[0].values.apiKey,initial.apiKey);});

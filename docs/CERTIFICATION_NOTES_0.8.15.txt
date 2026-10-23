@@ -1,0 +1,14 @@
+QudadFlow Translator 0.8.15 needs no extension account. Live APIs use the reviewer's own endpoint/key; no shared key is bundled. Settings > 快速试用 > 启用 MyMemory 基础试用 offers limited English-to-Chinese tests without a key. AI research/vision requires a compatible model on the active API.
+
+Review guide and source-only simulated API:
+https://github.com/qudadd/qudadflow-translator/blob/main/docs/REVIEWER_GUIDE.md
+
+New since 0.8.8: PDF page-by-page/continuous reading, caption/drawing-aware document figure and native text-table extraction, compact tabbed workbench, AI supplementation inside the figure overview, crop-coordinate normalization/recovery and shared duplicate-table review. AI localisation is explicit and sends chosen page images/text; candidates require review before insertion. Opening/parsing/local extraction sends no AI request. Native tables copy locally; AI transcriptions are unverified.
+
+Popup, document and paper views automatically read the saved active API's model catalog when uncached, with inline refresh/cancel and plain model-ID lists. No page text accompanies model discovery. API connections are added/switched only in Settings. The selected model synchronizes across views; no first model is silently selected. Catalogs are bounded locally per connection and contain no raw keys.
+
+0.8.15: 121 checks passed; the bare-ID follow-up reran 27 successfully, not added to the total. 0.8.14: 241 checks including three supplied PDFs and annotated simulated vision responses. Isolated Edge/synthetic providers only; real AI quality, speed and current Chrome integration are not claimed. Private samples/credentials are excluded.
+
+Retained: immersive/selection translation, viewport priority, colors/custom Shift+A, linked webpage tables, batch originals/select-all, paper Q&A, inert Python/R drafts, editable Skills and optional exportable memory (off by default). No scanned-body OCR or layout-preserving PDF/DOCX export. No remote executable code, telemetry, ads or developer proxy. Source files parse locally; explicitly requested content goes directly to the chosen API. Original document bytes/passwords are not uploaded. Resource limits remain; API calls have no extension deadline and stop manually or on actual errors.
+
+Support: lcf1249288484@outlook.com; QQ: 1048123205

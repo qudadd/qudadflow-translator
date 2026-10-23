@@ -71,7 +71,7 @@ export class FigurePicker {
     for(const [key,tile] of this.tiles){const record=this.records.get(key);tile.element.hidden=!visibleKeys.has(key);tile.checkbox.checked=this.selected.has(key);tile.checkbox.disabled=this.locked||!this.selectable(record);tile.inspect.disabled=this.locked;tile.element.classList.toggle('selected',tile.checkbox.checked);}
     const pending=selected.filter(r=>!r.data).length,hidden=selected.filter(r=>!visibleKeys.has(r.key)).length;
     this.$('figurePickerCount').textContent=`${this.records.size} 项`;
-    this.$('figureSelectionStatus').textContent=`已选 ${selected.length} 项${pending?` · ${pending} 项待载入`:''}${hidden?` · ${hidden} 项不在当前筛选中`:''}。批量解读逐张进行；论文问答每次最多结合 4 张原图。`;
+    this.$('figureSelectionStatus').textContent=`已选 ${selected.length} 项${pending?` · ${pending} 项待载入`:''}${hidden?` · ${hidden} 项不在当前筛选中`:''}。可全选并提问；超过 4 张时先逐张读图，再综合回答。`;
     this.$('figurePickerEmpty').hidden=visible.length>0;
     this.$('figurePickerEmpty').textContent=this.records.size?'没有匹配的图表，请调整搜索。':'提取或导入图表后，即可在此批量选择。';
     this.$('figureSearch').disabled=this.locked;

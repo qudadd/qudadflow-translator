@@ -1,0 +1,175 @@
+{
+  "version": "0.8.13",
+  "scope": "Three user-supplied local PDFs; isolated Edge and manually annotated simulated vision responses. No real model accuracy claim. Private fixtures, page pixels and filenames are excluded from packages.",
+  "passed": 19,
+  "failed": 0,
+  "results": [
+    {
+      "name": "reference-46: full local extraction retains every expected named figure/table segment and excludes legends-only pages",
+      "passed": true,
+      "detail": {
+        "pages": 46,
+        "segments": 9
+      }
+    },
+    {
+      "name": "reference-46: native table exports preserve expected columns with one header per continued segment",
+      "passed": true,
+      "detail": {
+        "tables": 4,
+        "columns": [
+          5,
+          5,
+          5,
+          5
+        ]
+      }
+    },
+    {
+      "name": "reference-46: repeating local extraction does not duplicate crops or send API requests",
+      "passed": true
+    },
+    {
+      "name": "reference-46: real page images accept annotated fractional, pixel and corner formats without aborting the selected page batch",
+      "passed": true,
+      "detail": {
+        "pagesSent": [
+          31,
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "formats": [
+          "normalized_1/xywh",
+          "pixels/xywh",
+          "normalized_1000/xyxy",
+          "normalized_1000/xywh",
+          "normalized_1/xywh",
+          "pixels/xyxy"
+        ]
+      }
+    },
+    {
+      "name": "reference-46: explicit confirmation adds bounded crops and keeps the gallery supplement entry in place",
+      "passed": true
+    },
+    {
+      "name": "reference-46: subsequent AI localisation recognizes existing crops without replacing analyses or showing duplicate candidates",
+      "passed": true
+    },
+    {
+      "name": "sample-10: full local extraction retains every expected named figure/table segment and excludes legends-only pages",
+      "passed": true,
+      "detail": {
+        "pages": 10,
+        "segments": 5
+      }
+    },
+    {
+      "name": "sample-10: native table exports preserve expected columns with one header per continued segment",
+      "passed": true,
+      "detail": {
+        "tables": 1,
+        "columns": [
+          6
+        ]
+      }
+    },
+    {
+      "name": "sample-10: repeating local extraction does not duplicate crops or send API requests",
+      "passed": true
+    },
+    {
+      "name": "sample-10: real page images accept annotated fractional, pixel and corner formats without aborting the selected page batch",
+      "passed": true,
+      "detail": {
+        "pagesSent": [
+          3,
+          5,
+          6,
+          7,
+          8
+        ],
+        "formats": [
+          "normalized_1/xywh",
+          "pixels/xywh",
+          "normalized_1000/xyxy",
+          "normalized_1000/xywh",
+          "normalized_1/xywh"
+        ]
+      }
+    },
+    {
+      "name": "sample-10: explicit confirmation adds bounded crops and keeps the gallery supplement entry in place",
+      "passed": true
+    },
+    {
+      "name": "sample-10: subsequent AI localisation recognizes existing crops without replacing analyses or showing duplicate candidates",
+      "passed": true
+    },
+    {
+      "name": "manuscript-42: full local extraction retains every expected named figure/table segment and excludes legends-only pages",
+      "passed": true,
+      "detail": {
+        "pages": 42,
+        "segments": 17
+      }
+    },
+    {
+      "name": "manuscript-42: native table exports preserve expected columns with one header per continued segment",
+      "passed": true,
+      "detail": {
+        "tables": 11,
+        "columns": [
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          8
+        ]
+      }
+    },
+    {
+      "name": "manuscript-42: repeating local extraction does not duplicate crops or send API requests",
+      "passed": true
+    },
+    {
+      "name": "manuscript-42: real page images accept annotated fractional, pixel and corner formats without aborting the selected page batch",
+      "passed": true,
+      "detail": {
+        "pagesSent": [
+          13,
+          16,
+          19,
+          28
+        ],
+        "formats": [
+          "normalized_1/xywh",
+          "pixels/xywh",
+          "normalized_1000/xyxy",
+          "normalized_1000/xywh"
+        ]
+      }
+    },
+    {
+      "name": "manuscript-42: explicit confirmation adds bounded crops and keeps the gallery supplement entry in place",
+      "passed": true
+    },
+    {
+      "name": "manuscript-42: subsequent AI localisation recognizes existing crops without replacing analyses or showing duplicate candidates",
+      "passed": true
+    },
+    {
+      "name": "No uncaught errors, external network requests or unexpected correction calls",
+      "passed": true
+    }
+  ]
+}

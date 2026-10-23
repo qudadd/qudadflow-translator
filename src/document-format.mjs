@@ -66,15 +66,20 @@ export function parseDocxXml(xml) {
   return textPages(paragraphs);
 }
 
-export function pdfBlocks(content, viewport, transform) {
-  const items = content.items.filter(item => typeof item.str === 'string' && item.str.trim()).map(item => {
+export function pdfTextItems(content, viewport, transform) {
+  return content.items.filter(item => typeof item.str === 'string' && item.str.trim()).map(item => {
     const matrix = transform(viewport.transform, item.transform);
-    const height = Math.max(4, Math.abs(item.height) || Math.hypot(matrix[2], matrix[3]));
-    const ascent = content.styles?.[item.fontName]?.ascent ?? .85;
-    return {text: item.str, x: matrix[4], y: matrix[5], width: item.width, height,
+    const style=content.styles?.[item.fontName]||{},height=Math.max(4,Math.hypot(matrix[2],matrix[3])||Math.abs(item.height));
+    const ascent=style.ascent??.85,font=style.name||style.fontFamily||'';
+    return {text:item.str,x:matrix[4],y:matrix[5],width:Math.abs(item.width)*(viewport.scale||1),height,
       top: matrix[5] - height * ascent, bottom: matrix[5] + height * (1-ascent),
-      supported: Math.abs(Math.atan2(matrix[1],matrix[0])) < .02 && !content.styles?.[item.fontName]?.vertical};
+      typography:{fontWeight:/bold|black|heavy/i.test(font)?'700':'400',fontStyle:/italic|oblique/i.test(font)?'italic':'normal',
+        fontFamily:/serif|times|roman|cambria/i.test(font)&&!/sans/i.test(font)?'Georgia,"Noto Serif CJK SC","SimSun",serif':'"Segoe UI","Microsoft YaHei",sans-serif'},
+      supported:Math.abs(Math.atan2(matrix[1],matrix[0]))<.02&&!style.vertical};
   });
+}
+export function pdfTextLines(content,viewport,transform) {
+  const items=pdfTextItems(content,viewport,transform);
   items.sort((a, b) => a.y - b.y || a.x - b.x);
   const rows = [];
   for (const item of items) {
@@ -83,20 +88,33 @@ export function pdfBlocks(content, viewport, transform) {
     row.items.push(item);
   }
   const lines = [];
+  // A narrow two-column gutter can be smaller than an ordinary word gap threshold.
+  // Repeated right-column starts identify it without splitting spanning headings.
+  const starts=[];
+  for(const row of rows)for(const item of row.items)if(item.x>viewport.width*.46&&item.x<viewport.width*.59){
+    let start=starts.find(s=>Math.abs(s.x-item.x)<2);if(!start)starts.push(start={x:item.x,count:0});start.count++;
+  }
+  const gutter=starts.filter(s=>s.count>=4).sort((a,b)=>b.count-a.count)[0]?.x;
   for (const row of rows) {
     row.items.sort((a, b) => a.x - b.x);
     let line;
     for (const item of row.items) {
-      if (!line || item.x - line.right > Math.max(18, item.height * 2)) {
-        line = {text: '', x: item.x, y: row.y, right: item.x, height: item.height, top:item.top, bottom:item.bottom, supported:true, rects:[]}; lines.push(line);
+      if (!line || item.x - line.right > Math.max(18, item.height * 3) || gutter!==undefined&&Math.abs(item.x-gutter)<2&&line.x<gutter-item.height*3&&item.x-line.right>3) {
+        line = {text: '', x: item.x, y: row.y, right: item.x, height: item.height, top:item.top, bottom:item.bottom, supported:true, rects:[],typography:item.typography}; lines.push(line);
       }
       const gap = item.x - line.right;
       const separator = line.text && gap > item.height * .15 && !/\s$/.test(line.text) ? ' ' : '';
+      // A list marker often uses a separate symbol font; body typography controls the text.
+      if(/^[•●▪◦‣–−-]\s*$/.test(line.text))line.typography=item.typography;
       line.text += separator + item.text; line.right = item.x + item.width; line.height = Math.max(line.height, item.height);
       line.top=Math.min(line.top,item.top);line.bottom=Math.max(line.bottom,item.bottom);line.supported &&= item.supported;
       line.rects.push({x:item.x-.7,y:item.top-.7,width:item.width+1.4,height:item.bottom-item.top+1.4});
     }
   }
+  return lines;
+}
+export function pdfBlocks(content, viewport, transform) {
+  const lines=pdfTextLines(content,viewport,transform);
   const middle = viewport.width / 2;
   const left = line => line.right < middle + 5;
   const right = line => line.x > middle - 5;
@@ -111,7 +129,9 @@ export function pdfBlocks(content, viewport, transform) {
   const paragraphs = [];
   let current, previous;
   for (const line of ordered) {
-    const isNew = !previous || line.y < previous.y - 2 || line.y - previous.y > Math.max(line.height, previous.height) * 1.75 || Math.abs(line.x - previous.x) > line.height * 2.5 || Math.abs(line.height-previous.height)>previous.height*.2 || (current?.text.length||0)+line.text.length>1500 || !line.supported || !previous.supported;
+    const caption=/^(?:(?:fig(?:ure)?s?\.?|table)\s*\d|[图表]\s*\d)/i.test(line.text);
+    const listItem=/^[•●▪◦‣]\s/.test(line.text);
+    const isNew = !previous || caption || listItem || line.y < previous.y - 2 || line.y - previous.y > Math.max(line.height, previous.height) * 1.75 || Math.abs(line.x - previous.x) > line.height * 2.5 || Math.abs(line.height-previous.height)>previous.height*.2 || JSON.stringify(line.typography)!==JSON.stringify(previous.typography) || (current?.text.length||0)+line.text.length>1500 || !line.supported || !previous.supported;
     if (isNew) { current = {text: '', kind: 'paragraph', lines:[]}; paragraphs.push(current); }
     const join = current.text && /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]$/u.test(current.text) && /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(line.text) ? '' : ' ';
     if (/[a-z]-$/.test(current.text) && /^[a-z]/.test(line.text)) current.text = current.text.slice(0, -1) + line.text;
@@ -121,8 +141,10 @@ export function pdfBlocks(content, viewport, transform) {
   }
   return paragraphs.flatMap(paragraph => {
     const {lines}=paragraph,x=Math.min(...lines.map(l=>l.x)),y=Math.min(...lines.map(l=>l.top));
+    const fontSize=Math.max(...lines.map(l=>l.height)),gaps=lines.slice(1).map((l,i)=>l.y-lines[i].y).filter(n=>n>0).sort((a,b)=>a-b);
+    const lineHeight=gaps.length?Math.max(1,Math.min(1.8,gaps[Math.floor(gaps.length/2)]/fontSize)):1;
     const geometry={x,y,width:Math.max(...lines.map(l=>l.right))-x,height:Math.max(...lines.map(l=>l.bottom))-y,
-      fontSize:Math.max(...lines.map(l=>l.height)),rects:lines.flatMap(l=>l.rects),supported:lines.every(l=>l.supported)};
+      fontSize,typography:{...lines[0].typography,lineHeight:String(lineHeight)},rects:lines.flatMap(l=>l.rects),supported:lines.every(l=>l.supported)};
     const parts=splitParagraph(paragraph.text);
     return parts.map(text=>({text,kind:paragraph.kind,geometry:{...geometry,supported:geometry.supported&&parts.length===1}}));
   });

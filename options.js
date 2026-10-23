@@ -222,7 +222,7 @@ function resetModelList() {
   $('modelCandidates').replaceChildren();
   $('modelSearch').value = '';
   $('modelFilter').value = 'all';
-  $('modelStatus').textContent = '填写端点和 Key 后读取；列表不会自动替换当前模型。';
+  $('modelStatus').textContent = '读取后在本地保存此 API 的模型列表，供所有翻译页切换；不自动更改当前模型。';
   $('modelStatus').classList.remove('error');
   showModelDetail();
 }
@@ -620,7 +620,7 @@ $('fetchModels').addEventListener('click', async () => {
     $('modelSearch').value = ''; $('modelFilter').value = 'all';
     renderModelList();
     const currentMissing = values.model && !modelList.some(model => model.id === values.model);
-    $('modelStatus').textContent = `已从 ${response.source} 读取 ${modelList.length} 个模型。${currentMissing ? '当前模型未在列表中，已保留；可手动测试。' : '当前模型未更改，请选择并查看详情。'}${response.truncated ? '列表较大或上游还有分页，当前仅显示本批最多 1000 个。' : ''}${response.skipped ? '已忽略无效条目。' : ''}`;
+    $('modelStatus').textContent = `已从 ${response.source} 读取 ${modelList.length} 个模型，列表已在本地保存并按连接隔离。${currentMissing ? '当前模型未在列表中，已保留；可手动测试。' : '当前模型未更改，请选择并查看详情。'}${response.truncated ? '列表较大或上游还有分页，当前仅显示本批最多 1000 个。' : ''}${response.skipped ? '已忽略无效条目。' : ''}`;
   } catch (error) {
     if (modelRequestId === requestId) {
       $('modelStatus').textContent = error.message;

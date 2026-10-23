@@ -55,7 +55,7 @@ const server=http.createServer(async(req,res)=>{
     const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'),base='chrome-extension://'+new URL(worker.url()).host+'/';
     const page=await context.newPage();page.setDefaultTimeout(7000);
     const initial={apiStyle:'openai-compatible',apiKey:key,endpoint:origin+'/gateway/v1/chat/completions',model:'original-model',customHeaders:JSON.stringify({'X-Access':headerSecret}),targetLanguage:'zh-CN',streamOpenAi:false};
-    const get=()=>worker.evaluate(()=>chrome.storage.local.get(null));
+    const get=()=>worker.evaluate(async()=>{const {modelCatalogs,...values}=await chrome.storage.local.get(null);return values;});
     const invoke=message=>page.evaluate(message=>chrome.runtime.sendMessage(message),message);
     const values=extra=>({...initial,...extra});
     async function reset(){mode='normal';await worker.evaluate(v=>chrome.storage.local.set(v),initial);await page.goto(base+'options.html');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.locator('#expandSettings').click();}
@@ -110,7 +110,7 @@ const server=http.createServer(async(req,res)=>{
       const before=calls.length;const provider=await invoke({type:'FETCH_MODELS',requestId:'provider',values:values({apiStyle:'deepl'})});assert.equal(provider.code,'UNSUPPORTED_PROVIDER');
       const permission=await invoke({type:'FETCH_MODELS',requestId:'permission',values:values({endpoint:'https://example.invalid/v1'})});assert.equal(permission.code,'PERMISSION_REQUIRED');assert.equal(calls.length,before);
     });
-    await check('Models: popup cannot read catalogs, cancel requests or test draft credentials',async()=>{
+    await check('Models: popup cannot read or cancel Settings draft requests or test draft credentials',async()=>{
       const popup=await context.newPage();await popup.goto(base+'popup.html');const before=calls.length;for(const type of ['FETCH_MODELS','CANCEL_MODELS','TRANSLATE_TEST_DRAFT','CANCEL_TEST_DRAFT']){const result=await popup.evaluate(message=>chrome.runtime.sendMessage(message),{type,requestId:'blocked',values:values()});assert.equal(result.code,'FORBIDDEN');}assert.equal(calls.length,before);await popup.close();
     });
     await check('Models: test output hides reflected authentication values',async()=>{

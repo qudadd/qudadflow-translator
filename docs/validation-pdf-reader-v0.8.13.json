@@ -1,0 +1,92 @@
+{
+  "version": "0.8.13",
+  "scope": "Isolated Edge, generated fixtures and optionally a private local PDF; synthetic translation only. No user browser or API settings accessed.",
+  "passed": 21,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Paged mode remains default; local open makes no API request",
+      "passed": true
+    },
+    {
+      "name": "Continuous mode mounts all placeholders and renders only neighboring pages",
+      "passed": true
+    },
+    {
+      "name": "Continuous navigation, current-page tracking and paired pane anchors",
+      "passed": true
+    },
+    {
+      "name": "A pending layout rebuild preserves a later user scroll instead of restoring its old anchor",
+      "passed": true
+    },
+    {
+      "name": "Rapid page jumps release distant canvases and do not leave loading slots stuck",
+      "passed": true
+    },
+    {
+      "name": "Mixed sizes, rotated page and resize preserve ratios and current anchor",
+      "passed": true
+    },
+    {
+      "name": "Local full-document extraction finds separate vectors, side image, rotated chart and full-width table",
+      "passed": true
+    },
+    {
+      "name": "Extraction deduplicates across render sizes and preserves tables after page changes",
+      "passed": true
+    },
+    {
+      "name": "Read mode persists to another reader; switching modes retains the page",
+      "passed": true
+    },
+    {
+      "name": "Full translation starts with visible page and reprioritizes navigation without an API deadline",
+      "passed": true
+    },
+    {
+      "name": "Stop extraction releases controls, and document replacement removes stale figures and pages",
+      "passed": true
+    },
+    {
+      "name": "Local PDF extraction remains usable while the translation API is still pending",
+      "passed": true
+    },
+    {
+      "name": "Stopping local extraction leaves a pending translation untouched",
+      "passed": true
+    },
+    {
+      "name": "Stopping translation does not stop or erase a running local extraction",
+      "passed": true
+    },
+    {
+      "name": "Image-only PDF preserves original pixels and displays its OCR guidance",
+      "passed": true
+    },
+    {
+      "name": "User sample: first-page scope is explicit and all-page extraction works during a held body request",
+      "passed": true
+    },
+    {
+      "name": "User sample: all four labeled figures and one six-column native table are extracted locally",
+      "passed": true
+    },
+    {
+      "name": "User sample: Chinese synthetic translations fit columns and preserve page proportions",
+      "passed": true
+    },
+    {
+      "name": "Multi-page manuscript: numbered figures and split panels exclude repeated header/footer images",
+      "passed": true
+    },
+    {
+      "name": "Multi-page manuscript: nine-column table continues across ten pages and keeps copyable cells",
+      "passed": true
+    },
+    {
+      "name": "No uncaught errors or external network requests",
+      "passed": true
+    }
+  ]
+}

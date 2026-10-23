@@ -20,7 +20,7 @@ const DEFAULTS = {
   responsePath: "choices[0].message.content"
 };
 
-if (typeof importScripts === "function") importScripts("profile-store.js", "my-memory.js", "research-store.js", "research-service.js", "model-catalog.js", "immersive-shortcut.js");
+if (typeof importScripts === "function") importScripts("profile-store.js", "my-memory.js", "research-store.js", "research-service.js", "model-catalog.js", "model-store.js", "immersive-shortcut.js");
 
 const MAX_INPUT_CHARS = 12000;
 const activeRequests = new Map();
@@ -521,7 +521,8 @@ function createContextMenu() {
 chrome.runtime.onInstalled.addListener(createContextMenu);
 chrome.runtime.onStartup.addListener(createContextMenu);
 chrome.storage.onChanged?.addListener((changes, area) => {
-  if (area === "local" && Object.keys(changes).some(key => !['immersiveTranslationColor', 'immersiveShortcut', 'immersiveShortcutVersion'].includes(key))) clearTranslationCache();
+  if (area === "local" && Object.keys(changes).some(key => !['immersiveTranslationColor', 'immersiveShortcut', 'immersiveShortcutVersion', 'modelCatalogs'].includes(key))) clearTranslationCache();
+  if(area==='local'&&['apiStyle','endpoint','apiKey','customHeaders','model'].some(key=>key in changes))void QFModels.connectionChanged().catch(()=>{});
 });
 
 // Register only a small keyboard listener, using host access the user already granted.
@@ -599,7 +600,7 @@ chrome.runtime.onConnect?.addListener((port) => {
     if (message?.type === "PING") { post({ type: "PONG" }); return; }
     if (typeof requestId !== "string" || requestId.length > 80) return;
     if (message.type === "CANCEL") { requests.get(requestId)?.abort(); return; }
-    if (!["TRANSLATE","FIGURE_ANALYZE","FIGURE_CODE","RESEARCH_ANALYZE"].includes(message.type) || requests.has(requestId)) return;
+    if (!["TRANSLATE","FIGURE_ANALYZE","FIGURE_CODE","RESEARCH_ANALYZE","PDF_FIGURE_DETECT"].includes(message.type) || requests.has(requestId)) return;
     if (requests.size >= 2) {
       post({ type: "RESULT", requestId, ok: false, error: "已有两个文档翻译请求正在进行，请稍后重试。" });
       return;
@@ -615,7 +616,7 @@ chrome.runtime.onConnect?.addListener((port) => {
     (async () => {
       let result;
       try {
-        const translation = await (message.type==='TRANSLATE'?translateText:analyzeResearch)(message, controller, progress, metadata);
+        const translation = await (message.type==='TRANSLATE'?translateText:message.type==='PDF_FIGURE_DETECT'?detectPdfResearchFigures:analyzeResearch)(message, controller, progress, metadata);
         result = { ok: true, translation, cached: Boolean(metadata.cached), memoryCount:metadata.memoryCount, memoryWarning:metadata.memoryWarning };
       } catch (error) { result = { ok: false, error: error.message, code: error.code || "TRANSLATION_FAILED" }; }
       finally { requests.delete(requestId); }
@@ -667,7 +668,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const active = { requestId: message.requestId, controller: new AbortController() };
       activeModelRequests.set(owner, active);
       QFModelCatalog.fetchModels(message.values, active.controller)
-        .then(result => sendResponse({ ok: true, ...result }))
+        .then(async result => {await QFModels.remember(message.values,result,active.controller.signal);sendResponse({ ok: true, ...result });})
         .catch(error => sendResponse({ ok: false, code: error.code || 'MODEL_LIST_FAILED', error: QFModelCatalog.errorText(error, message.values) }))
         .finally(() => { if (activeModelRequests.get(owner) === active) activeModelRequests.delete(owner); });
       return true;
@@ -693,13 +694,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const action=message.type==='RESEARCH_TABLE_FETCH'?()=>fetchResearchTable(message):message.type==='RESEARCH_TABLE_SAVE'?()=>QFResearch.captureSaveTable(message.captureId,Number(message.index),message.table):message.type==='RESEARCH_FOCUS_SOURCE'?()=>focusResearchSource(message.id):message.type==='RESEARCH_SUPPLEMENT_VIEW'?()=>supplementResearchView(message.id):message.type==='RESEARCH_CAPTURE'?()=>captureResearch(message.tabId):message.type==='RESEARCH_GET_CAPTURE'?()=>QFResearch.captureGet(message.id):message.type==='RESEARCH_IMAGE_FETCH'?()=>fetchResearchImage(message):message.type==='RESEARCH_DROP_CAPTURE'?()=>QFResearch.captureDelete(message.id):()=>QFResearch.action(message);
     Promise.resolve().then(action).then(data=>sendResponse({ok:true,...data})).catch(error=>sendResponse({ok:false,error:error.message}));return true;
   }
-  if(message?.type==='FIGURE_PROFILES') {
-    if(sender.id!==chrome.runtime.id||!['reader.html','research.html'].some(page=>sender.url?.split(/[?#]/)[0]===chrome.runtime.getURL(page))){sendResponse({ok:false});return false;}
-    storageGet({...DEFAULTS,savedProfiles:[]}).then(state=>sendResponse({ok:true,current:{apiStyle:state.apiStyle,model:state.model},profiles:(Array.isArray(state.savedProfiles)?state.savedProfiles:[]).filter(p=>p.values?.apiStyle==='openai-compatible').map(p=>({id:p.id,name:p.name,model:p.values.model}))})).catch(()=>sendResponse({ok:false}));return true;
+  if(message?.type==='FIGURE_PROFILES'){sendResponse({ok:false,error:'请重新打开新版界面；API 仅在设置中切换。'});return false;}
+  if(['MODEL_STATE','MODEL_SELECT','MODEL_DISCOVER','MODEL_CANCEL'].includes(message?.type)) {
+    if(sender.id!==chrome.runtime.id||!['options.html','popup.html','reader.html','research.html'].some(page=>sender.url?.split(/[?#]/)[0]===chrome.runtime.getURL(page))){sendResponse({ok:false,error:'此操作仅限扩展界面。'});return false;}
+    const action=message.type==='MODEL_STATE'?()=>QFModels.state():message.type==='MODEL_SELECT'?()=>QFModels.select(message):message.type==='MODEL_DISCOVER'?()=>QFModels.discover(message):()=>QFModels.cancel(message);
+    Promise.resolve().then(action).then(sendResponse).catch(error=>sendResponse({ok:false,error:error.message}));return true;
   }
   if (message?.type?.startsWith('PROFILE_')) {
-    const ownPage=sender.id===chrome.runtime.id && ['options.html','popup.html'].some(page=>sender.url?.split(/[?#]/)[0]===chrome.runtime.getURL(page));
-    if(!ownPage){sendResponse({ok:false,error:'仅扩展设置和弹窗可管理配置方案。'});return false;}
+    const ownPage=sender.id===chrome.runtime.id && sender.url?.split(/[?#]/)[0]===chrome.runtime.getURL('options.html');
+    if(!ownPage){sendResponse({ok:false,error:'API 配置仅能在扩展设置中切换和管理。'});return false;}
     queuedProfileAction(message).then(sendResponse).catch(error=>sendResponse({ok:false,error:error.message}));return true;
   }
   if (message?.type === "GET_SELECTION_ENABLED") {

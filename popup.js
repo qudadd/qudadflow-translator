@@ -1,10 +1,12 @@
 /* global chrome */
 
 const DEFAULT_TARGET = "zh-CN";
-let activeTab;
+let activeTab,modelPicker;
 let busy = false;
 let selectionSitePattern;
 let selectionSiteId;
+let siteAuthorizationTarget;
+let authorizingSite = false;
 
 const $ = (id) => document.getElementById(id);
 
@@ -28,6 +30,68 @@ async function ensureContentScript(tabId) {
     await sendTabMessage(tabId, { type: "PING" });
   } catch {
     await chrome.scripting.executeScript({ target: { tabId }, files: ["src/content.js"] });
+  }
+}
+
+function siteAuthorizationFor(tab) {
+  try {
+    const url = new URL(tab?.url);
+    if (!/^https?:$/.test(url.protocol) || !tab?.id) return null;
+    if (url.hostname === 'chromewebstore.google.com' ||
+        url.hostname === 'chrome.google.com' && /^\/webstore(?:\/|$)/.test(url.pathname) ||
+        url.hostname === 'microsoftedge.microsoft.com' && /^\/addons(?:\/|$)/.test(url.pathname)) return null;
+    return {tabId:tab.id,pattern:`${url.protocol}//${url.hostname}/*`,host:url.host};
+  } catch { return null; }
+}
+
+async function updateSiteAuthorization() {
+  const card = $('siteAuthorization'), button = $('authorizeCurrentSite');
+  const target = siteAuthorizationFor(activeTab);
+  siteAuthorizationTarget = target;
+  card.hidden = true; button.disabled = true;
+  if (!target) {
+    $('siteAuthorizationDetails').open = false;
+    return;
+  }
+  try {
+    const allowed = await chrome.permissions.contains({origins:[target.pattern]});
+    if (siteAuthorizationTarget !== target) return;
+    card.hidden = allowed; button.disabled = allowed || authorizingSite;
+    $('siteAuthorizationHint').textContent = target.host;
+    if (allowed) $('siteAuthorizationDetails').open = false;
+  } catch {
+    if (siteAuthorizationTarget === target) siteAuthorizationTarget = null;
+  }
+}
+
+async function authorizeCurrentSite() {
+  const target = siteAuthorizationTarget;
+  if (!target || authorizingSite) return;
+  authorizingSite = true; $('authorizeCurrentSite').disabled = true;
+  try {
+    // Keep the permission request inside the click's user activation.
+    const allowed = await chrome.permissions.request({origins:[target.pattern]});
+    if (!allowed) {
+      $('siteAuthorizationHint').textContent = `${target.host} · 未授权，可重试`;
+      setStatus('未授予本站权限。可以稍后重试，或在设置中管理网站授权。', true);
+      return;
+    }
+    // Hide immediately on consent, even if page setup or an older permission check is pending.
+    siteAuthorizationTarget = null;
+    $('siteAuthorization').hidden = true;
+    $('siteAuthorizationDetails').open = false;
+    setStatus(`已授权 ${target.host}。可以开始沉浸式翻译，或自行开启下方划词按钮。`);
+    const tab = await chrome.tabs.get(target.tabId).catch(() => null);
+    if (tab) activeTab = tab;
+    if (tab && siteAuthorizationFor(tab)?.pattern === target.pattern) {
+      try { await ensureContentScript(tab.id); await loadSelectionSite(); }
+      catch { setStatus(`已授权 ${target.host}。当前页面不支持网页注入；PDF 请使用文档阅读器。`); }
+    }
+    await updateSiteAuthorization();
+  } catch (error) {
+    setStatus(`网站授权未完成：${error.message}`, true);
+  } finally {
+    authorizingSite = false; $('authorizeCurrentSite').disabled = $('siteAuthorization').hidden || !siteAuthorizationTarget;
   }
 }
 
@@ -96,7 +160,7 @@ async function setSelectionSite() {
 }
 
 async function run(type) {
-  if (busy) return;
+  if (busy||modelPicker?.pending) return;
   busy = true;
   const buttons = ["translateSelection", "translatePage", "translateImmersive"].map($);
   buttons.forEach((button) => { button.disabled = true; });
@@ -143,15 +207,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("translateImmersive").addEventListener("click", () => run("TRANSLATE_IMMERSIVE"));
   $("restoreImmersive").addEventListener("click", restoreImmersive);
   $("selectionEnabled").addEventListener("change", setSelectionSite);
+  $('authorizeCurrentSite').addEventListener('click', authorizeCurrentSite);
+  for (const event of [chrome.permissions.onAdded, chrome.permissions.onRemoved]) event?.addListener(() => updateSiteAuthorization());
   $("openOptions").addEventListener("click", () => chrome.runtime.openOptionsPage());
-  try {
-    const profiles=await chrome.runtime.sendMessage({type:'PROFILE_LIST'});
-    if(profiles?.ok){$('activeProfile').replaceChildren(new Option('当前配置',''),...profiles.profiles.map(profile=>new Option(profile.name,profile.id)));$('activeProfile').value=profiles.activeProfileId;}
-  } catch {}
-  $('activeProfile').addEventListener('change',async()=>{
-    if(!$('activeProfile').value)return;
-    try {const result=await chrome.runtime.sendMessage({type:'PROFILE_APPLY',profileId:$('activeProfile').value});if(!result?.ok)throw new Error(result?.error||'切换失败');const values=await chrome.storage.local.get({targetLanguage:DEFAULT_TARGET});$('targetLanguage').value=values.targetLanguage;setStatus('已切换翻译方案。若尚未授权该 API 域名，请打开设置授权。');}catch(error){setStatus(error.message,true);}
-  });
+  const {ModelPicker}=await import('./src/model-picker.mjs');
+  modelPicker=new ModelPicker($('activeModel'),{onNotice:setStatus,onPending:pending=>{for(const id of ['translateSelection','translatePage','translateImmersive'])$(id).disabled=pending||busy;}});
   $("openDocument").addEventListener("click", async () => {
     const tab = activeTab || (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
     let fragment = "local=1";
@@ -167,5 +227,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     try{const tab=activeTab||(await chrome.tabs.query({active:true,currentWindow:true}))[0];const result=await chrome.runtime.sendMessage({type:'RESEARCH_CAPTURE',tabId:tab?.id});if(!result?.ok)throw new Error(result?.error||'提取失败');window.close();}catch(error){setStatus(error.message,true);}finally{$('openResearch').disabled=false;}
   });
   await loadSelection();
+  await updateSiteAuthorization();
   await loadSelectionSite();
 });

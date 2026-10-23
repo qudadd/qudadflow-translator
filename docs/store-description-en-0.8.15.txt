@@ -1,0 +1,30 @@
+QudadFlow Translator combines immersive webpage translation, nearby selection translation, document reading and optional AI paper research. Bring your own translation API. The extension interface is Simplified Chinese; the product name stays in English.
+
+NEW IN 0.8.15
+Read the active API's upstream models automatically in the popup, document reader and paper workbench. Refresh/cancel inline and select a model from a plain model-ID list. API connections are added and switched only in Settings. PDF reading now supports page-by-page and continuous modes, caption-aware figure/table extraction, copyable text tables and reviewed AI supplementation inside the compact figure overview.
+
+IMMERSIVE WEB AND SELECTION TRANSLATION
+Keep original paragraphs and read translations beside them. Prioritize the live viewport, supplement dynamically revealed content and skip confidently detected target-language text. Enable the nearby selection button per site, then select and click to translate; selecting alone sends nothing. Customize immersive text colors and the default Shift+A shortcut. Inputs and editors keep normal typing.
+
+YOUR API, YOUR MODEL
+Use Google Cloud Translation, DeepL, Microsoft Translator, OpenAI-compatible Chat Completions/Responses or custom JSON APIs. Save up to 20 local API configurations in Settings. Reading views switch only models on the active connection. Discovery sends no page text, reuses a bounded local catalog and preserves your model after errors. Some upstreams lack a model list; enter their documented ID in Settings. Names alone do not verify vision capability. MyMemory provides a limited key-free trial, typically 5,000 anonymous characters/day.
+
+Translation and AI have no extension-imposed deadline. Stop manually or on actual HTTP/network/stream errors. Provider limits apply; document/image downloads keep resource safeguards.
+
+PDF, WORD, TXT AND MARKDOWN
+Read local files or permitted document URLs in a separate reader. Choose in-place immersion, original-layout comparison or paragraph comparison. PDF preserves page proportions and chart positions; text that cannot fit has a full-translation fallback. Use page-by-page or continuous PDF reading. Translate current/all pages, stop/resume and export bilingual TXT. Word layouts can differ from Microsoft Word. Maximum 25 MB/file and 300 PDF/rendered Word pages. Scanned body replacement needs external OCR. Layout-preserving translated PDF/DOCX export is not included.
+
+PAPERS, FIGURES AND COPYABLE TABLES
+Use a movable paper Q&A window or compact document figure workbench. Caption/number-aware extraction finds named figures, image tables and supported native tables. PDF extraction uses captions, drawing geometry, continued-table evidence and ordered figure legends. Merge duplicate variants; retain distinct panels. Read eligible linked full tables through the original article's site session. Copy native tables locally as Markdown/TSV. Search, select all and batch-load available high-resolution originals, then ask with selected evidence.
+
+For missed PDF material, explicitly use AI supplementary recognition in the figure overview. Choose pages, review candidate crops and confirm before adding. Local/AI results share table/crop deduplication. Image tables can use explicit vision transcription. Opening, local extraction, selection and loading do not call AI. Recognition is heuristic and may need manual correction.
+
+Optional AI explains figures and creates downloadable Python/R reproduction drafts; code is never executed. Use editable Skill prompts and optional cross-page notebook memory, off by default and exportable in Settings. No fixed body-character cutoff; browser/model/resource limits remain. AI output, numerical tables and code require independent verification.
+
+DATA AND PERMISSIONS
+Files and downloaded table HTML parse locally. Only requested text, selected images and enabled research context go directly to your configured provider. Model discovery uses the saved API without page content. Keys/settings stay in browser-local extension storage. No developer translation proxy, advertising, analytics or remote executable code. Site/API grants are optional; a first-use site reminder hides after consent. An explicit all-websites grant can reduce prompts. Browser-internal pages and built-in PDF viewers use separate extension entry points.
+
+Support: lcf1249288484@outlook.com
+QQ community: 1048123205
+Privacy: https://qudadd.github.io/qudadflow-translator/privacy.html
+Source and guides: https://github.com/qudadd/qudadflow-translator

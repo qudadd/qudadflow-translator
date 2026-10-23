@@ -1,0 +1,68 @@
+{
+  "browser": "155.0.4283.62",
+  "scope": "Isolated Edge, synthetic configuration keys and local simulated translation responses only. No live provider requests in this run.",
+  "passed": 15,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Website permission UI: optional one-click grant requires activation, denial preserves settings, and revoke clears grants",
+      "passed": true
+    },
+    {
+      "name": "Compact site prompt: denied retry, immediate grant hiding, persisted suppression, revoked-site reminder and protected-page suppression",
+      "passed": true
+    },
+    {
+      "name": "Profiles: existing settings migrate without losing endpoint or key",
+      "passed": true
+    },
+    {
+      "name": "Profiles: save a named copy and retain original configuration",
+      "passed": true
+    },
+    {
+      "name": "Profiles: reload, select, edit and apply a saved scheme",
+      "passed": true
+    },
+    {
+      "name": "Profiles: metadata list never returns credentials",
+      "passed": true
+    },
+    {
+      "name": "Profiles: stale settings tab cannot overwrite newer saved profiles",
+      "passed": true
+    },
+    {
+      "name": "Profiles: popup exposes only models and cannot apply another API scheme",
+      "passed": true
+    },
+    {
+      "name": "Profiles: quick trial preserves both saved keyed configurations",
+      "passed": true
+    },
+    {
+      "name": "Profiles: repeated trial activation does not duplicate the preset",
+      "passed": true
+    },
+    {
+      "name": "Profiles: deleting active profile clears its live credentials only",
+      "passed": true
+    },
+    {
+      "name": "MyMemory: no key/custom headers, valid language pair, entity decoding",
+      "passed": true
+    },
+    {
+      "name": "MyMemory: marker preservation and single-paragraph, <=500-byte requests",
+      "passed": true
+    },
+    {
+      "name": "MyMemory: quota/auto-language errors are explicit and not cached",
+      "passed": true
+    },
+    {
+      "name": "MyMemory: cancellation aborts HTTP and profile switch stops page translation",
+      "passed": true
+    }
+  ]
+}

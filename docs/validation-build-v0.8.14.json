@@ -1,0 +1,56 @@
+{
+  "version": "0.8.14",
+  "scope": "Local source snapshot, isolated package outputs and intentionally damaged fixtures. No publication, user browser or network API.",
+  "passed": 11,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Build validates staged resources and automatically emits both audited ZIPs and SHA256 checksums",
+      "passed": true,
+      "detail": {
+        "runtimeFiles": 265,
+        "sourceFiles": 730
+      }
+    },
+    {
+      "name": "Identical source bytes produce identical runtime/source ZIPs despite changed source modification times",
+      "passed": true
+    },
+    {
+      "name": "New source modules join the runtime inventory and missing transitive imports fail validation",
+      "passed": true
+    },
+    {
+      "name": "Syntax errors in first-party runtime code fail the build checks",
+      "passed": true
+    },
+    {
+      "name": "Remote module imports fail validation without executing or fetching them",
+      "passed": true
+    },
+    {
+      "name": "Missing bundled PDF codec is detected before an installable package is produced",
+      "passed": true
+    },
+    {
+      "name": "Private-file rejection preserves existing output packages and leaves no staging directory",
+      "passed": true
+    },
+    {
+      "name": "Archive auditing rejects an omitted binary even when no static import names it",
+      "passed": true
+    },
+    {
+      "name": "Archive auditing rejects modified runtime bytes",
+      "passed": true
+    },
+    {
+      "name": "Archive auditing rejects development files injected into the runtime",
+      "passed": true
+    },
+    {
+      "name": "Divergent hosted and installed English privacy policies fail validation",
+      "passed": true
+    }
+  ]
+}

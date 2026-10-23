@@ -5,12 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>QudadFlow Translator</title>
   <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="src/model-picker.css">
   <link rel="stylesheet" href="src/version.css">
 </head>
 <body>
   <main class="popup">
     <div class="brand"><img src="assets/icon32.png" alt=""><div><h1>QudadFlow Translator</h1><p>使用你配置的第三方 API</p></div></div>
-    <label for="activeProfile">翻译方案</label><select id="activeProfile"><option value="">当前配置</option></select><p class="hint">在 API 设置中保存、编辑方案；免 Key 基础试用也在设置中启用。</p>
+    <section id="siteAuthorization" class="site-authorization" aria-labelledby="siteAuthorizationTitle" hidden>
+      <div class="site-authorization-row"><div><h2 id="siteAuthorizationTitle">当前网站未授权</h2><p id="siteAuthorizationHint"></p></div><button id="authorizeCurrentSite" class="primary" type="button" disabled>授权当前网站</button></div>
+      <details id="siteAuthorizationDetails"><summary>授权说明</summary><p>允许读取本站页面，用于沉浸式翻译、划词和快捷键。点击后由浏览器确认，范围为该协议和主机的所有端口；不会发起翻译或自动开启划词，可在扩展设置中撤销。</p></details>
+    </section>
+    <label for="activeModel">翻译模型</label><select id="activeModel" disabled></select><p class="hint">自动读取当前 API 的上游模型。新增或切换 API 请打开设置。</p>
     <label for="targetLanguage">目标语言</label>
     <select id="targetLanguage">
       <option value="zh-CN">简体中文</option>
