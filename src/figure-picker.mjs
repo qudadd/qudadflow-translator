@@ -7,10 +7,10 @@ export class FigurePicker {
     this.container=document.createElement('details');this.container.className='figure-picker';this.container.open=true;
     this.container.innerHTML=`<summary><strong>图表总览</strong><span id="figurePickerCount"></span></summary>
       <p class="research-hint">一键全选图表，也可直接勾选缩略图，再批量载入和解读。已提取的文字表格全部随正文参与问答，无需勾选。</p>
-      <label class="figure-search">查找图表<input id="figureSearch" type="search" placeholder="搜索图号、图注或页码" autocomplete="off"></label>
+      <div class="figure-picker-toolbar"><label class="figure-search">查找图表<input id="figureSearch" type="search" placeholder="搜索图号、图注或页码" autocomplete="off"></label>
       <div class="figure-picker-tools"><button id="selectAllFigures" title="选中全部可用图表，包含搜索结果以外及原图待载入的项目">全选图表</button><button id="selectVisibleFigures" hidden>选中筛选结果</button><button id="selectUnfinishedFigures" title="替换当前选择，仅保留筛选结果中未分析的图片">仅选未分析</button><button id="clearFigureSelection">取消全选</button><button id="nextFigureGroup" title="替换当前选择，依次选择筛选结果中的已载入图片，每组最多 4 张">下一组（最多 4 张）</button></div>
-      <p id="figureSelectionStatus" class="research-hint" role="status"></p><div class="figure-grid"></div>
-      <p id="figurePickerEmpty" class="research-hint"></p><div class="figure-picker-actions"><button id="loadFilteredFigures">批量载入全部原图</button><button id="loadSelectedFigures">载入所选原图</button><button id="askSelectedFigures">结合所选提问</button></div>`;
+      <p id="figureSelectionStatus" class="research-hint" role="status"></p><div class="figure-picker-actions"><button id="loadFilteredFigures">批量载入全部原图</button><button id="loadSelectedFigures">载入所选原图</button><button id="askSelectedFigures">结合所选提问</button></div></div>
+      <div class="figure-grid"></div><p id="figurePickerEmpty" class="research-hint"></p>`;
     container.prepend(this.container);this.$=id=>this.container.querySelector('#'+id);this.grid=this.container.querySelector('.figure-grid');
     this.container.querySelector('.figure-picker-actions').append(analyzeButton,stopButton);
     this.$('figureSearch').oninput=()=>{this.groupOffset=0;this.render();};

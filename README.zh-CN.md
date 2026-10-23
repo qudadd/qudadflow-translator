@@ -1,16 +1,18 @@
 # QudadFlow Translator（Edge / Chrome 扩展）
 
+**版本 0.8.16**：网页论文与 PDF/Word/TXT/Markdown 图表工作台新增 **展开工作台 / 返回阅读**，提供大图总览、集中的批量操作和问答结果分栏。切换布局保留选择、草稿及进行中的分析。见[更新说明](docs/RELEASE_NOTES_0.8.16.md)。
+
 **0.8.15** 支持所有阅读界面自动读取上游模型，下拉框仅显示模型 ID；API 方案只在设置中新增和切换。PDF 可选逐页／连续阅读，增强按图注编号提取图表、可复制表格和总览内的 AI 候选核对流程，并收紧工作台占用。见[更新说明](docs/RELEASE_NOTES_0.8.15.md)和[三平台发布状态](docs/STORE_SUBMISSION_0.8.15.md)。
 
-这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，面向 Microsoft Edge 和 Google Chrome。支持自备 Google、DeepL、Microsoft、OpenAI 兼容及自定义 JSON API，提供 PDF/Word/TXT/Markdown 原位及对照阅读、论文问答、图表提取、Skill、可选跨页记忆和 Python/R 草稿。Edge 已完成隔离环境集成验证，本轮 Chrome 集成尚未验证。当前三平台进度见[发布记录](docs/STORE_SUBMISSION_0.8.15.md)。
+这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，面向 Microsoft Edge 和 Google Chrome。支持自备 Google、DeepL、Microsoft、OpenAI 兼容及自定义 JSON API，提供 PDF/Word/TXT/Markdown 原位及对照阅读、论文问答、图表提取、Skill、可选跨页记忆和 Python/R 草稿。Edge 已完成隔离环境集成验证，本轮 Chrome 集成尚未验证。当前三平台进度见[发布记录](docs/STORE_SUBMISSION_0.8.16.md)。
 
 **QQ 交流群：1048123205**。在 QQ 中搜索群号加入，交流使用体验、反馈问题与功能建议。扩展弹窗和“设置 → 交流与支持”也可查看群号。0.7.1 同时新增上游模型读取、明确选型、草稿测试及此交流入口，见[更新说明](docs/RELEASE_NOTES_0.7.1.md)。
 
-[![网页沉浸阅读、划词翻译、文档、论文分析、图表复现及模型设置](branding/store-0.8.15/preview.jpg)](docs/STORE_PRESENTATION_0.8.15.md)
+[![网页沉浸阅读、划词翻译、文档、论文分析、图表复现及模型设置](branding/store-0.8.16/preview.jpg)](docs/STORE_PRESENTATION_0.8.16.md)
 
-[新版商店展示资料](docs/STORE_PRESENTATION_0.8.15.md)包含中英文简介和六张截图，标明生成样例、模拟接口与截图版本；真实翻译质量及速度取决于服务商。
+[新版商店展示资料](docs/STORE_PRESENTATION_0.8.16.md)包含中英文简介和六张截图，标明生成样例、模拟接口与截图版本；真实翻译质量及速度取决于服务商。
 
-GitHub、Edge 与 Chrome 的实际更新状态见[0.8.15 发布记录](docs/STORE_SUBMISSION_0.8.15.md)，商店提交与审核通过分别记录。
+GitHub、Edge 与 Chrome 的实际更新状态见[0.8.16 发布记录](docs/STORE_SUBMISSION_0.8.16.md)，商店提交与审核通过分别记录。
 
 ## 本次图表改进
 
@@ -204,7 +206,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 - 按目标 API 服务商的条款确认用户文本和 Key 的处理方式。
 - 使用真实 API 在干净的 Edge 配置中完成侧载验收，再提交商店审核。
 
-三个平台实际进度见[0.8.8 发布记录](docs/STORE_SUBMISSION_0.8.8.md)；中英文商店简介和截图见[展示资料](docs/STORE_PRESENTATION_0.8.15.md)。
+三个平台实际进度见[0.8.8 发布记录](docs/STORE_SUBMISSION_0.8.8.md)；中英文商店简介和截图见[展示资料](docs/STORE_PRESENTATION_0.8.16.md)。
 
 ## 自动功能验证
 

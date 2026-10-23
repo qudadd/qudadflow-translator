@@ -1,4 +1,17 @@
-# QudadFlow Translator 0.8.15 release verification
+# QudadFlow Translator 0.8.16 verification
+
+October 23, 2026. **87 behavior checks passed, zero failures.** This build expands the existing figure workbench into a dedicated view. Actual publication states are recorded in [the publication record](STORE_SUBMISSION_0.8.16.md).
+
+| Suite | Passed | Report |
+| --- | ---: | --- |
+| Expanded paper/document workbenches, state retention, running answers, keyboard navigation, cropping and responsive layouts | 8 | [workbench](validation-workbench-v0.8.16.json) |
+| PDF AI localization, deduplication, candidate review, source pages and cancellation | 29 | [PDF AI](validation-pdf-ai-v0.8.16.json) |
+| Web paper analysis, table/figure selection, questions and safe rendering | 25 | [companion](validation-companion-v0.8.16.json) |
+| Screenshot supplementation, import, source binding and streamed results | 25 | [visual supplementation](validation-research-vision-v0.8.16.json) |
+
+Manifest, 266 runtime files, 34 script syntax checks and local dependency validation also pass. Tests run in isolated Edge profiles with generated papers/images and synthetic APIs, independently of user credentials. The desktop gallery, analysis view and phone layouts were visually inspected. Live provider accuracy, speed and store approval are outside this verification.
+
+## 0.8.15 release verification
 
 October 23, 2026. **121 checks passed, zero failures: 110 behavior checks and 11 build/package checks.** The owner has authorized three-platform publication; actual platform states are tracked in [the publication record](STORE_SUBMISSION_0.8.15.md).
 

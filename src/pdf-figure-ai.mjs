@@ -97,7 +97,7 @@ export function previewPdfDetections(candidates,{signal,workbench,onSource,summa
     const img=document.createElement('img');img.src=candidate.data;img.alt=heading.textContent;
     const caption=document.createElement('small');caption.textContent=candidate.region.caption||'未识别图注，请对照原页核查。';card.append(input,heading,img,caption);
     if(candidate.region.coordinateNotes?.length){const warning=document.createElement('small');warning.className='pdf-detection-warning';warning.textContent=candidate.region.coordinateNotes.join('；');card.append(warning);}
-    if(onSource){const source=document.createElement('button');source.type='button';source.className='pdf-detection-source';source.textContent='查看原页';source.onclick=event=>{event.preventDefault();onSource(candidate.page);};card.append(source);}
+    if(onSource){const source=document.createElement('button');source.type='button';source.className='pdf-detection-source';source.textContent='查看原页';source.onclick=event=>{event.preventDefault();workbench?.setExpanded(false);onSource(candidate.page);};card.append(source);}
     grid.append(card);choices.push({input,candidate});
   }
   const update=()=>{const n=choices.filter(c=>c.input.checked).length;accept.textContent=`加入所选（${n}）`;accept.disabled=!n;};for(const c of choices)c.input.onchange=update;

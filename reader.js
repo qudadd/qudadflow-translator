@@ -586,7 +586,7 @@ function updateAiFigureScope(){
   catch(error){$('aiFigureScopeHint').textContent=error.message;}
 }
 $('enhancePdfFigures').addEventListener('click',enhancePdfFigures);
-$('cropFigure').addEventListener('click',()=>{if(layoutMode()==='immersive'){$('workspace').classList.add('show-original');$('showOriginal').setAttribute('aria-pressed','true');$('showOriginal').textContent='返回译文';}});
+$('cropFigure').addEventListener('click',()=>{if(layoutMode()==='immersive'){$('workspace').classList.add('show-original');$('showOriginal').setAttribute('aria-pressed','true');$('showOriginal').textContent='返回译文';}},{capture:true});
 for(const id of ['sourcePane','translationPane'])$(id).addEventListener('scroll',()=>{
   if(syncing)return;const source=$(id),target=$(id==='sourcePane'?'translationPane':'sourcePane');
   pageStack?.scroll(source);if(!$('syncScroll').checked)return;

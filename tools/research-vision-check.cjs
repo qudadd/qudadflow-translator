@@ -1,5 +1,5 @@
 /* Isolated Edge; local fixtures and mock AI only. Does not access a user profile. */
-async function workbenchView(page,stage){await page.locator('#figureWorkflow').evaluate(e=>e.open=true);const tab=page.locator('#figure-tab-'+stage);if(await tab.getAttribute('aria-selected')!=='true')await tab.click();if(stage==='acquire'){const manual=page.locator('.workbench-manual');if(await manual.count())await manual.evaluate(e=>e.open=true);}}
+async function workbenchView(page,stage){await page.locator('#figureWorkflow').evaluate(e=>e.open=true);const tab=page.locator('#figure-tab-'+stage);if(await tab.getAttribute('aria-selected')!=='true')await tab.click();if(stage==='acquire'){const manual=page.locator('.workbench-manual');if(await manual.count())await manual.evaluate(e=>e.open=true);}if(stage==='gallery'){const supplement=page.locator('.workbench-web-supplement');if(await supplement.count())await supplement.evaluate(e=>e.open=true);}}
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(__dirname,'..'),reportPath=path.resolve(process.argv[2]||'research-vision-results.json'),version=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'))).version;

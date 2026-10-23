@@ -1,4 +1,4 @@
-# QudadFlow Translator: certification review (0.8.15)
+# QudadFlow Translator: certification review (0.8.16)
 
 The extension has no QudadFlow account or login. Live Google Cloud Translation, DeepL, Microsoft Translator and OpenAI-compatible services use the reviewer's own endpoint and credentials. No shared production keys are supplied. The UI is Simplified Chinese; the product name and English/Chinese store metadata are included.
 
@@ -13,6 +13,10 @@ The optional source-only simulated API demonstrates the custom JSON path through
 3. Save and allow the local API domain. **测试连接** tests a fixed sentence using the current draft; it does not save/activate changes, use page text or verify vision. Save explicitly before using a profile elsewhere.
 4. Open `http://127.0.0.1:8765/`. The fixture maps **Hello world** to **你好，世界**, **Good morning** to **早上好**, and **Read more** to **了解更多**. Other text is echoed; paragraph markers are preserved.
 5. Test immersive insertion, selection translation, copy and restore. Enable the nearby selection button per site; selection alone sends nothing. Stop the local API and inspect the next request's failure message.
+
+## Expanded workbenches in 0.8.16
+
+On a paper or in the PDF/Word/TXT/Markdown reader, click **展开工作台**. Check the larger gallery, sticky search and bulk controls, and **解读与问答** with separate question/answer columns. Escape or **返回阅读** restores the reader without losing selections, drafts, results or pending requests. In AI candidate review, **查看原页** retains candidates; cropping first reveals the original and returns after success. Narrow views stack the columns. The installed version stays at the bottom. Expanding alone makes no API call.
 
 ## Reading and configuration
 
@@ -53,10 +57,10 @@ Confirm the running manifest version at the bottom of popup, Settings, reader an
 
 ## Verification and privacy
 
-**0.8.15 passed 121 checks, zero failures (110 behavior + 11 build/package).** The bare-ID follow-up reran 27 model checks successfully without adding to that total. 0.8.14 passed 241 checks including three supplied PDFs and manually annotated simulated vision responses. Tests establish behavior, not real-provider speed or accuracy; current Chrome integration was not rerun.
+**0.8.16 passed 87 behavior checks, zero failures, plus package/syntax validation (266 runtime files, 34 scripts). Isolated Edge, generated papers and synthetic APIs verify the expanded layout, state retention, PDF review, web analysis and supplementation. Real-provider speed/accuracy is not measured. 0.8.15 previously passed 121 checks, zero failures (110 behavior + 11 build/package).** The bare-ID follow-up reran 27 model checks successfully without adding to that total. 0.8.14 passed 241 checks including three supplied PDFs and manually annotated simulated vision responses. Tests establish behavior, not real-provider speed or accuracy; current Chrome integration was not rerun.
 
 Files parse locally; only requested text/selected images and enabled research context go to the configured provider. Keys/settings stay in browser-local extension storage. No developer proxy, ads, analytics or remote executable code. Parsers/WASM are bundled; API output is rendered as text. Protected browser pages cannot receive injected translation controls.
 
-See [verification](VERIFICATION.md), [release notes](RELEASE_NOTES_0.8.15.md), [submission record](STORE_SUBMISSION_0.8.15.md), [privacy](https://qudadd.github.io/qudadflow-translator/privacy.html) and [third-party notices](../THIRD_PARTY_NOTICES.md).
+See [verification](VERIFICATION.md), [release notes](RELEASE_NOTES_0.8.16.md), [submission record](STORE_SUBMISSION_0.8.16.md), [privacy](https://qudadd.github.io/qudadflow-translator/privacy.html) and [third-party notices](../THIRD_PARTY_NOTICES.md).
 
 Support: lcf1249288484@outlook.com · QQ community: 1048123205.

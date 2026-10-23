@@ -1,5 +1,7 @@
 # QudadFlow Translator
 
+**Version 0.8.16:** paper and PDF/Word/TXT/Markdown figure workbenches can expand into a dedicated viewport with larger previews, accessible bulk controls and separate question/answer columns. Layout changes retain selections, drafts and pending analyses. See [release notes](docs/RELEASE_NOTES_0.8.16.md) and [publication status](docs/STORE_SUBMISSION_0.8.16.md).
+
 A Manifest V3 extension for Microsoft Edge and Google Chrome, with immersive bilingual webpages, selection translation, and in-place document translation for PDF, Word DOCX, TXT, and Markdown. Traditional translation APIs and AI both power the base reading features. Vision AI adds an optional picture/chart workflow at the bottom.
 
 **0.8.15** adds automatic upstream model discovery in every reading view, plain model-ID lists and Settings-only API connection switching. PDF reading now offers page-by-page or continuous navigation, caption-aware figure/table extraction and an optional AI review workflow inside the compact figure overview. See [release notes](docs/RELEASE_NOTES_0.8.15.md) and [publication status](docs/STORE_SUBMISSION_0.8.15.md).
@@ -8,11 +10,11 @@ A Manifest V3 extension for Microsoft Edge and Google Chrome, with immersive bil
 
 **QQ community: 1048123205** — search for this group number in QQ to join, share feedback and discuss the extension. You can also find it in the extension popup and Settings → 交流与支持.
 
-[![Webpage reading, selection translation, documents, paper research, figures and model settings](branding/store-0.8.15/preview.jpg)](docs/STORE_PRESENTATION_0.8.15.md)
+[![Webpage reading, selection translation, documents, paper research, figures and model settings](branding/store-0.8.16/preview.jpg)](docs/STORE_PRESENTATION_0.8.16.md)
 
-The [store presentation](docs/STORE_PRESENTATION_0.8.15.md) includes current English/Chinese descriptions and six screenshots. Generated fixtures, simulated API responses and capture versions are labeled; provider quality and speed vary.
+The [store presentation](docs/STORE_PRESENTATION_0.8.16.md) includes current English/Chinese descriptions and six screenshots. Generated fixtures, simulated API responses and capture versions are labeled; provider quality and speed vary.
 
-GitHub and store submission states are recorded separately in the [0.8.15 publication record](docs/STORE_SUBMISSION_0.8.15.md). Store submission does not establish approval.
+GitHub and store submission states are recorded separately in the [0.8.16 publication record](docs/STORE_SUBMISSION_0.8.16.md). Store submission does not establish approval.
 
 ## Translation providers
 

@@ -207,9 +207,9 @@ export class FigureWorkflow {
     if(this.cropLayer){this.cropLayer.remove();this.cropLayer=null;$('figureWorkflow').open=true;this.notice('已取消框选。');return;}
     // Give the document room while selecting; the analysis panel opens again
     // once the selection ends, so its height cannot obscure the target region.
-    $('figureWorkflow').open=false;
+    const restoreWorkbench=this.workbench.withSource();$('figureWorkflow').open=false;
     const layer=document.createElement('div');layer.className='figure-crop-layer';layer.tabIndex=0;layer.setAttribute('aria-label','在原页拖动框选图表，Escape 取消');context.canvas.parentElement.append(layer);this.cropLayer=layer;
-    const finishCrop=()=>{layer.remove();this.cropLayer=null;$('figureWorkflow').open=true;};
+    const finishCrop=(restore=true)=>{layer.remove();this.cropLayer=null;$('figureWorkflow').open=true;if(restore)restoreWorkbench();};
     const selection=document.createElement('div');selection.className='figure-crop-selection';layer.append(selection);let start;
     const point=e=>{const box=layer.getBoundingClientRect();return {x:Math.max(0,Math.min(box.width,e.clientX-box.left)),y:Math.max(0,Math.min(box.height,e.clientY-box.top))};};
     layer.onpointerdown=e=>{if(e.button!==0)return;start=point(e);layer.setPointerCapture(e.pointerId);e.preventDefault();};
@@ -218,7 +218,7 @@ export class FigureWorkflow {
       if(!start)return;const end=point(e),box=layer.getBoundingClientRect(),width=Math.abs(end.x-start.x),height=Math.abs(end.y-start.y);
       try{if(width<12||height<12)throw new Error('框选区域过小，请重新框选。');const rect={x:Math.min(start.x,end.x)/box.width*context.canvas.width,y:Math.min(start.y,end.y)/box.height*context.canvas.height,width:width/box.width*context.canvas.width,height:height/box.height*context.canvas.height};this.add(imageData(context.canvas,rect),`第 ${context.page} 页 · 框选图表`,`crop-${context.page}-${Object.values(rect).map(Math.round).join('-')}`);this.notice('图表已加入，包含框选区域内的文字和矢量内容。');}catch(error){this.notice(error.message,true);}finally{finishCrop();}
     };
-    layer.onpointercancel=finishCrop;layer.onkeydown=e=>{if(e.key==='Escape'){finishCrop();this.notice('已取消框选。');}};layer.focus({preventScroll:true});this.notice('在左侧原页拖动框选图片或图表；再次点击框选或按 Escape 取消。');
+    layer.onpointercancel=()=>finishCrop(false);layer.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finishCrop(false);this.notice('已取消框选。');}};layer.focus({preventScroll:true});this.notice('在左侧原页拖动框选图片或图表；再次点击框选或按 Escape 取消。');
   }
   async analyzePaper(){
     if(this.busy||this.importing||this.externalBusy||this.textBusy||!this.hasAI)return;

@@ -1,0 +1,13 @@
+QudadFlow Translator 0.8.16 has no extension login. Settings > 快速试用 > 启用 MyMemory 基础试用 offers quota-limited English-to-Chinese text tests without a key. AI requires the reviewer's own compatible API/model. No shared keys are bundled.
+
+Guide: https://github.com/qudadd/qudadflow-translator/blob/main/docs/REVIEWER_GUIDE.md
+
+New in 0.8.16: on webpage papers or PDF/Word/TXT/Markdown, 展开工作台 opens a browser-sized gallery/analysis view. Search, select all and batch actions stay above larger previews. 解读与问答 separates questions/settings from long answers. Escape/返回阅读 restores reading while retaining selections, drafts, results and pending requests. Narrow screens stack columns. AI review has larger candidates; 查看原页 keeps candidates, and successful cropping returns to the expanded view. Expanding alone calls no API.
+
+Retained since live 0.8.8: PDF page-by-page/continuous navigation, caption/drawing-aware figure and copyable text-table extraction, AI supplementation inside 图表总览 with coordinate recovery and table/crop deduplication. Candidates require review before adding. Local opening/parsing/extraction sends no AI request.
+
+Reading views discover/refresh the saved API's upstream model IDs without source content. They switch models only; API connections are added/switched in Settings. No first model is silently selected. AI and translation have no extension deadline; Stop or actual HTTP/network errors end calls. Resource bounds remain.
+
+87 behavior checks passed plus package/syntax validation (266 files, 34 scripts), using isolated Edge, generated papers and synthetic APIs. Real-provider speed/accuracy and fresh Chrome integration are not claimed. Private PDFs/credentials are excluded. No new permissions, remote executable code, telemetry, ads or developer proxy. Requested content goes directly to the chosen API. Code drafts are never executed.
+
+Support: lcf1249288484@outlook.com; QQ: 1048123205

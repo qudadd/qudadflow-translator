@@ -1,0 +1,40 @@
+{
+  "version": "0.8.16",
+  "scope": "Generated papers and figures in isolated Edge; synthetic API only. No user browser, credentials or publication.",
+  "passed": 8,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Research expands to a modal workspace with larger previews, native tables and the same selections",
+      "passed": true
+    },
+    {
+      "name": "Expanded gallery keeps bulk actions visible while scrolling and keyboard focus stays inside",
+      "passed": true
+    },
+    {
+      "name": "Expanding and returning during an AI answer preserves the request, draft and full response",
+      "passed": true
+    },
+    {
+      "name": "PDF extraction and expanded workbench preserve the document, loaded figures and crop return path",
+      "passed": true
+    },
+    {
+      "name": "AI candidate review can reveal the original PDF page and return without losing the candidate",
+      "passed": true
+    },
+    {
+      "name": "DOCX, TXT and Markdown share the focused workbench and retain their figures on return",
+      "passed": true
+    },
+    {
+      "name": "Research and document workbenches remain usable at laptop and phone sizes without page overflow",
+      "passed": true
+    },
+    {
+      "name": "UI operations have no uncaught browser errors or non-fixture network requests",
+      "passed": true
+    }
+  ]
+}
