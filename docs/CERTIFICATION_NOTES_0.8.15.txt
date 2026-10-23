@@ -1,14 +1,14 @@
-QudadFlow Translator 0.8.15 needs no extension account. Live APIs use the reviewer's own endpoint/key; no shared key is bundled. Settings > 快速试用 > 启用 MyMemory 基础试用 offers limited English-to-Chinese tests without a key. AI research/vision requires a compatible model on the active API.
+QudadFlow Translator 0.8.15 has no extension account. Live APIs need the reviewer's own endpoint/key; none is bundled. In Settings > 快速试用, 启用 MyMemory 基础试用 offers quota-limited English-to-Chinese text tests without a key. AI research/vision needs a compatible model on the active API.
 
-Review guide and source-only simulated API:
+Guide and source-only local simulated API:
 https://github.com/qudadd/qudadflow-translator/blob/main/docs/REVIEWER_GUIDE.md
 
-New since 0.8.8: PDF page-by-page/continuous reading, caption/drawing-aware document figure and native text-table extraction, compact tabbed workbench, AI supplementation inside the figure overview, crop-coordinate normalization/recovery and shared duplicate-table review. AI localisation is explicit and sends chosen page images/text; candidates require review before insertion. Opening/parsing/local extraction sends no AI request. Native tables copy locally; AI transcriptions are unverified.
+New since 0.8.8: PDF page-by-page/continuous reading; caption/drawing-aware figure and copyable native text-table extraction; a compact tabbed workbench; explicit AI supplementation inside 图表总览 with candidate crop review, coordinate recovery and table/crop deduplication. Open/parse/local extraction sends no AI request. AI localisation sends chosen page images/text; candidates require confirmation. Transcriptions need checking.
 
-Popup, document and paper views automatically read the saved active API's model catalog when uncached, with inline refresh/cancel and plain model-ID lists. No page text accompanies model discovery. API connections are added/switched only in Settings. The selected model synchronizes across views; no first model is silently selected. Catalogs are bounded locally per connection and contain no raw keys.
+All reading views automatically discover the saved active API's model catalog when uncached, with refresh/cancel and plain model IDs. Discovery sends no page text. API connections are created/switched only in Settings. Model selection synchronizes across views; no first result is silently selected. Catalogs are bounded locally and contain no raw keys.
 
-0.8.15: 121 checks passed; the bare-ID follow-up reran 27 successfully, not added to the total. 0.8.14: 241 checks including three supplied PDFs and annotated simulated vision responses. Isolated Edge/synthetic providers only; real AI quality, speed and current Chrome integration are not claimed. Private samples/credentials are excluded.
+121 checks passed in 0.8.15; the plain-ID follow-up reran 27 without adding to that count. 0.8.14 passed 241 including three PDFs and annotated simulated vision. Isolated Edge/synthetic APIs; real AI speed/quality is not claimed. Private PDFs/credentials are excluded.
 
-Retained: immersive/selection translation, viewport priority, colors/custom Shift+A, linked webpage tables, batch originals/select-all, paper Q&A, inert Python/R drafts, editable Skills and optional exportable memory (off by default). No scanned-body OCR or layout-preserving PDF/DOCX export. No remote executable code, telemetry, ads or developer proxy. Source files parse locally; explicitly requested content goes directly to the chosen API. Original document bytes/passwords are not uploaded. Resource limits remain; API calls have no extension deadline and stop manually or on actual errors.
+Retained: immersive/selection translation, colors/custom Shift+A, paper Q&A, Python/R text drafts (never executed), Skills and optional exportable memory (off by default). No scanned-body OCR, layout-preserving PDF/DOCX export, remote executable code, telemetry, ads or developer proxy. Requested content goes directly to the chosen API. Original file bytes/passwords are not uploaded. Resource limits remain.
 
 Support: lcf1249288484@outlook.com; QQ: 1048123205
