@@ -20,6 +20,7 @@ assert(Array.isArray(manifest.optional_host_permissions), "必须显式声明可
 assert(manifest.permissions?.includes("activeTab"), "缺少 activeTab 权限");
 assert(manifest.permissions?.includes("scripting"), "缺少 scripting 权限");
 assert(manifest.permissions?.includes("storage"), "缺少 storage 权限");
+assert(manifest.permissions?.includes("offscreen"), "浏览器本地翻译需要 offscreen 权限");
 assert(manifest.commands?.["translate-immersive"], "缺少沉浸式翻译快捷键");
 
 assert(manifest.default_locale === "en", "默认语言必须为 en");
@@ -71,9 +72,9 @@ assert(manifest.content_security_policy?.extension_pages === "script-src 'self' 
 for (const file of ['reader.js','src/document-format.mjs','src/docx-worker.js','src/layout-view.mjs','src/word-layout.mjs','src/figure-workflow.mjs','vendor/docx-preview/docx-preview.min.js','vendor/docx-preview/LICENSE','vendor/jszip/jszip.min.js','vendor/jszip/LICENSE','vendor/pdfjs/legacy/build/pdf.mjs','vendor/pdfjs/legacy/build/pdf.worker.mjs','vendor/pdfjs/wasm/openjpeg.wasm','vendor/pdfjs/standard_fonts/LiberationSans-Regular.ttf','vendor/pdfjs/cmaps/Adobe-GB1-UCS2.bcmap','vendor/pdfjs/LICENSE','vendor/fflate/umd/index.js','vendor/fflate/LICENSE','vendor/dependencies.json','THIRD_PARTY_NOTICES.md']) {
   assert(fs.existsSync(path.join(root,file)), `缺少文档运行资源：${file}`);
 }
-for(const file of ['src/profile-store.js','src/my-memory.js','src/model-catalog.js'])assert(fs.existsSync(path.join(root,file)),`缺少配置/基础翻译资源：${file}`);
+for(const file of ['src/profile-store.js','src/my-memory.js','src/machine-translation.js','src/offscreen-translation.js','offscreen-translation.html','src/model-catalog.js'])assert(fs.existsSync(path.join(root,file)),`缺少配置/基础翻译资源：${file}`);
 for(const file of ['research.html','research.js','research.css','src/research-store.js','src/research-capture.js','src/research-service.js','src/research-ui.mjs','src/research-render.mjs','src/research-settings.mjs'])assert(fs.existsSync(path.join(root,file)),`缺少研究工作流资源：${file}`);
-assert(!manifest.host_permissions?.length, '生产包不得预先请求全部网站权限');
+assert(JSON.stringify(manifest.host_permissions||[])===JSON.stringify(['https://api.mymemory.translated.net/*']), '生产包只能预先请求 MyMemory 免费翻译域名，不得请求全部网站权限');
 let scripts=0,files=[];
 try {
   files=runtimeFiles(root);

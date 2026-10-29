@@ -27,7 +27,7 @@ const server=http.createServer(async(req,res)=>{
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
 try{
   const extension=path.join(scratch,'extension');fs.mkdirSync(extension);
-  for(const n of ['manifest.json','reader.html','reader.js','reader.css','research.html','research.js','research.css','popup.html','popup.js','popup.css','options.html','options.js','options.css','privacy.html','src','assets','vendor','_locales'])fs.cpSync(path.join(root,n),path.join(extension,n),{recursive:true});
+  for(const n of ['manifest.json','offscreen-translation.html','reader.html','reader.js','reader.css','research.html','research.js','research.css','popup.html','popup.js','popup.css','options.html','options.js','options.css','privacy.html','src','assets','vendor','_locales'])fs.cpSync(path.join(root,n),path.join(extension,n),{recursive:true});
   const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json')));manifest.host_permissions=['http://127.0.0.1/*'];fs.writeFileSync(path.join(extension,'manifest.json'),JSON.stringify(manifest));
   context=await chromium.launchPersistentContext(path.join(scratch,'profile'),{channel:'msedge',headless:true,viewport:{width:1480,height:1050},args:['--disable-extensions-except='+extension,'--load-extension='+extension]});
   const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'),base='chrome-extension://'+new URL(worker.url()).host+'/';

@@ -15,7 +15,7 @@ const digest=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
     assert.deepEqual(names.slice().sort(),expected,'Archive inventory differs from reviewed sources');
     for(const name of names)assert.equal(digest(entries[name]),digest(fs.readFileSync(path.join(root,name))),`Archive differs from working file: ${name}`);
     const manifest=JSON.parse(Buffer.from(entries['manifest.json']).toString());
-    assert.equal(manifest.version,version);assert.equal(manifest.manifest_version,3);assert.ok(!manifest.host_permissions?.length);
+    assert.equal(manifest.version,version);assert.equal(manifest.manifest_version,3);assert.deepEqual(manifest.host_permissions,['https://api.mymemory.translated.net/*']);
     checkLocalReferences(runtime,name=>Buffer.from(entries[name]).toString());
     reports.push({file,bytes:bytes.length,entries:names.length,sha256:digest(bytes),workingFileComparison:'passed',inventory:'passed',localReferences:'passed',version});
   }

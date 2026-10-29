@@ -6,17 +6,19 @@ import {fileURLToPath} from 'node:url';
 // documents and artwork never become part of the installed extension.
 const runtimeRoots=[
   'manifest.json','popup.html','popup.css','popup.js','options.html','options.css','options.js',
+  'offscreen-translation.html',
   'privacy.html','reader.html','reader.css','reader.js','research.html','research.css','research.js',
   'THIRD_PARTY_NOTICES.md','src','vendor','_locales',
   'assets/icon16.png','assets/icon32.png','assets/icon48.png','assets/icon128.png'
 ];
-const sourceRoots=[...runtimeRoots,'branding','docs','tools','README.md','README.zh-CN.md','.gitignore','package.ps1'];
+const sourceRoots=[...runtimeRoots,'branding','docs','tools','native-host','README.md','README.zh-CN.md','.gitignore','package.ps1'];
 
 export function safePackagePath(name) {
   return !name.includes('\\')&&!name.startsWith('/')&&!name.includes(':')&&
     !name.split('/').some(part=>!part||part==='.'||part==='..')&&
     !/(^|\/)(\.git|\.env[^/]*|node_modules|\.package-staging-[^/]*|package-audit-[^/]*)(\/|$)/i.test(name)&&
-    !/(^|\/)[^/]*profile[^/]*\//i.test(name);
+    !/(^|\/)[^/]*profile[^/]*\//i.test(name)&&
+    !/(^|\/)(accounts\.dpapi(?:\..*)?|host-config\.json|com\.qudadflow\.chatgpt\.json|node\.exe|QudadFlowBridge(?:\.Debug)?\.exe)$/i.test(name);
 }
 
 function inventory(root,roots) {

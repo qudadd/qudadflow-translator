@@ -1,5 +1,8 @@
 # QudadFlow Translator
 
+**Version 0.9.0:** key-free machine translation is the default. The extension first tries a ready browser-local Translator model, then MyMemory when unavailable. A first model download requires a click in Settings; default translation works without that step. MyMemory sends requested segments to its service and may share anonymous quota across a network. Bounded parallel requests and short-lived caching improve responsiveness; linked text and vertical-writing placements are improved. Saved profiles, provider choice, model selection, connection test and Save settings share one section.
+Optional official ChatGPT plan sign-in is a preview. Windows x64 users must separately install the native companion from the [v0.9.0 release](https://github.com/qudadd/qudadflow-translator/releases/tag/v0.9.0); the extension cannot install it during a browser update. A dismissible first-open offer guides the user without changing default translation. OpenAI currently explicitly lists eligible Plus/Pro for open-source plan usage; Business/Team access through this route is unconfirmed. One personal Pro account read eight real models and completed a fixed short inference. See [setup and limits](docs/CHATGPT_LOGIN.md), [release notes](docs/RELEASE_NOTES_0.9.0.md) and [three-platform status](docs/STORE_SUBMISSION_0.9.0.md).
+
 **Version 0.8.16:** paper and PDF/Word/TXT/Markdown figure workbenches can expand into a dedicated viewport with larger previews, accessible bulk controls and separate question/answer columns. Layout changes retain selections, drafts and pending analyses. See [release notes](docs/RELEASE_NOTES_0.8.16.md) and [publication status](docs/STORE_SUBMISSION_0.8.16.md).
 
 A Manifest V3 extension for Microsoft Edge and Google Chrome, with immersive bilingual webpages, selection translation, and in-place document translation for PDF, Word DOCX, TXT, and Markdown. Traditional translation APIs and AI both power the base reading features. Vision AI adds an optional picture/chart workflow at the bottom.
@@ -10,14 +13,15 @@ A Manifest V3 extension for Microsoft Edge and Google Chrome, with immersive bil
 
 **QQ community: 1048123205** — search for this group number in QQ to join, share feedback and discuss the extension. You can also find it in the extension popup and Settings → 交流与支持.
 
-[![Webpage reading, selection translation, documents, paper research, figures and model settings](branding/store-0.8.16/preview.jpg)](docs/STORE_PRESENTATION_0.8.16.md)
+[![Webpage reading, selection translation, documents, paper research, default translation and optional ChatGPT preview](branding/store-0.9.0/preview.jpg)](docs/STORE_PRESENTATION_0.9.0.md)
 
-The [store presentation](docs/STORE_PRESENTATION_0.8.16.md) includes current English/Chinese descriptions and six screenshots. Generated fixtures, simulated API responses and capture versions are labeled; provider quality and speed vary.
+The [store presentation](docs/STORE_PRESENTATION_0.9.0.md) includes current English/Chinese descriptions and seven versioned screenshots. Generated fixtures, simulated API responses and capture versions are labeled; provider quality and speed vary.
 
-GitHub and store submission states are recorded separately in the [0.8.16 publication record](docs/STORE_SUBMISSION_0.8.16.md). Store submission does not establish approval.
+GitHub and store submission states are recorded separately in the [0.9.0 publication record](docs/STORE_SUBMISSION_0.9.0.md). Store submission does not establish approval.
 
 ## Translation providers
 
+- Automatic key-free machine translation (browser-local model when available, then MyMemory)
 - Google Cloud Translation v2
 - DeepL API (Free and Pro endpoints)
 - Microsoft Translator (Azure)
@@ -25,19 +29,19 @@ GitHub and store submission states are recorded separately in the [0.8.16 public
 - Custom JSON APIs with request templates and response paths
 - MyMemory: a key-free basic trial using its documented public GET API, with a typical anonymous allowance of 5,000 characters/day
 
-Bring your own API credentials. Provider accounts, charges, availability, retention policies, and translation quality depend on the provider you choose. The extension does not include a translation subscription or developer-operated proxy. The current extension interface is in Simplified Chinese.
+The default machine translation mode needs no API credentials. Provider accounts, charges, availability, retention policies, and translation quality depend on the provider you choose. The extension does not include a translation subscription or developer-operated proxy. The current extension interface is in Simplified Chinese.
 
 ## Saved configurations and basic trial
 
-Settings can keep up to 20 named configurations, including provider, endpoint, key, model, headers, and language preferences, in browser-local storage. An existing configured connection is preserved on first use. Select a saved configuration to edit it, then Save to apply; **新增 API 配置并使用** creates a separate scheme and retains the previous one. Only Settings can switch API schemes. The popup selects models on the active API. Deleting an active scheme also clears its live connection; other saved schemes retain their own keys. Profile names and metadata are shown in the selector, never keys. This is configuration history, not a record of translated content.
+Settings can keep up to 20 named configurations, including provider, endpoint, key, model, headers, and language preferences, in browser-local storage. An existing configured connection is preserved on first use. The **API 方案与模型** section places saved configurations, provider choice, model settings, **测试连接** and **保存设置** together. Select a saved configuration to edit it, then save to apply; **另存为新方案** creates a separate scheme and retains the previous one. Only Settings can switch API schemes. The popup selects models on the active API. Deleting an active scheme also clears its live connection; other saved schemes retain their own keys. Profile names and metadata are shown in the selector, never keys. This is configuration history, not a record of translated content.
 
-For a quick start, choose **启用 MyMemory 基础试用** in Settings and allow its API domain. No key or account is needed. It starts with English → Simplified Chinese; choose a source language explicitly for other text. MyMemory combines translation-memory matches and machine translation. The extension sends one paragraph per request, splitting at 480 UTF-8 bytes, preserves internal paragraph markers locally, and stops on quota errors. It does not call contribution/upload endpoints or silently switch providers. Requests use HTTPS query parameters, without provider keys or source-site cookies.
+For a quick start, translate text with the default **自动机器翻译** setting. It detects the source language in the browser and first uses a ready browser-local Translator model. To download a model for a language pair, click **下载并准备本地模型** in the same Settings section; the browser must support this API. If no local model is ready, MyMemory receives the requested text through its documented HTTPS GET API without waiting for a download. You can add your own valid contact email in Settings for the provider's stated 50,000 characters/day instead of 5,000 anonymously; the email is sent as the <code>de</code> parameter. MyMemory does not promise independently isolated quotas on shared networks. Browser-local translation has no provider quota. The separate **启用 MyMemory 基础试用** preset remains available with an explicitly chosen source language. MyMemory requests are split by paragraph at 500 UTF-8 bytes, preserve internal paragraph markers locally, and stop on quota errors. Successful repeated segments can reuse a five-minute worker-memory cache; connection tests still send a fresh request. The extension does not call contribution/upload endpoints or send provider keys or source-site cookies.
 
 The free public service is quota-limited and may retain submitted text long-term; use it for non-private short samples. See [API documentation](https://mymemory.translated.net/doc/spec.php), [usage limits](https://mymemory.translated.net/doc/usagelimits.php), and [terms/privacy](https://mymemory.translated.net/terms-and-conditions). No free unlimited public API is promised. For extensive reading, use your own provider or self-host a compatible translation service.
 
 ## Choose an upstream model (0.8.15)
 
-Settings groups saved configurations, connection/model selection, translation preferences, research memory and support in a responsive sidebar layout. For OpenAI-compatible services, enter your endpoint, key and optional headers, then click **读取上游模型**. This explicitly requests a same-origin models route derived from your endpoint (normally `/v1/models`), without page text. The detailed discovery response stays in the settings tab. A compact list of up to 1,000 model IDs and declared modalities is saved locally for reading-page selectors, together with a fetch time and a digest of the connection. Up to 20 connection catalogs fit within a 2 MB budget; oldest catalogs are evicted. A changed endpoint, key or custom headers selects a different catalog. On first opening a reading view with a configured AI connection and no cached catalog, discovery runs automatically using that saved connection and existing host permission. Reading views offer inline Refresh/Cancel. Simultaneous views share one request. Cached lists do not trigger repeated reads; an error or empty list preserves the current model and requires an explicit retry for that worker session. A missing host grant directs you to Settings. No draft credentials from a reading view are accepted. Discovery has no extension deadline; cancel loading at any time.
+Settings groups API plans, provider/model selection, connection testing and saving in one section, followed by reading appearance, research memory and support in a responsive sidebar layout. For OpenAI-compatible services, enter your endpoint, key and optional headers, then click **读取上游模型**. This explicitly requests a same-origin models route derived from your endpoint (normally `/v1/models`), without page text. The detailed discovery response stays in the settings tab. A compact list of up to 1,000 model IDs and declared modalities is saved locally for reading-page selectors, together with a fetch time and a digest of the connection. Up to 20 connection catalogs fit within a 2 MB budget; oldest catalogs are evicted. A changed endpoint, key or custom headers selects a different catalog. On first opening a reading view with a configured AI connection and no cached catalog, discovery runs automatically using that saved connection and existing host permission. Reading views offer inline Refresh/Cancel. Simultaneous views share one request. Cached lists do not trigger repeated reads; an error or empty list preserves the current model and requires an explicit retry for that worker session. A missing host grant directs you to Settings. No draft credentials from a reading view are accepted. Discovery has no extension deadline; cancel loading at any time.
 
 Each settings section folds independently, with **收起全部 / 展开全部** controls. Fold preferences stay locally in this browser. Navigation opens its target section without changing the saved API connection.
 
@@ -49,8 +53,8 @@ Search returned IDs, filter reported text/image capabilities, inspect metadata, 
 
 1. Open `edge://extensions` (Edge) or `chrome://extensions` (Chrome) and enable **Developer mode**.
 2. Choose **Load unpacked** and select this repository folder.
-3. Open the extension options, select your provider, enter the endpoint and API key, and save.
-4. Allow access to the API domain and use **Test connection**.
+3. Open the extension options. Default machine translation needs no API key. If you use another provider, choose it in **API 方案与模型**, enter its required settings, and save.
+4. Allow access to the provider API domain when prompted and use **测试连接** in the same section.
 5. Open a normal webpage and choose **沉浸式翻译当前网页** (immersive translation).
 6. For the nearby selection button, enable **在此网站启用划词翻译按钮** in the popup and approve access to that site. Select text, then click **翻译**. Press Esc to close. This opt-in persists for that site; selecting alone never sends text.
 
@@ -60,7 +64,7 @@ Browser-internal pages and restricted store pages cannot host the webpage transl
 
 ## Reading preferences (0.8.7)
 
-In Settings → **翻译偏好**, choose an immersive text color using the picker or a six-digit HEX value. Light/dark previews and **恢复默认** are available. The color applies immediately to existing webpage and in-place document translations, preserving originals, compare-mode colors and document geometry. Color is saved locally, independently of API configurations, and does not trigger translation or clear the translation cache.
+In Settings → **阅读外观**, choose an immersive text color using the picker or a six-digit HEX value. Light/dark previews and **恢复默认** are available. The color applies immediately to existing webpage and in-place document translations, preserving originals, compare-mode colors and document geometry. Color is saved locally, independently of API configurations, and does not trigger translation or clear the translation cache.
 
 **网页沉浸式快捷键** defaults to **Shift+A**. Type a combination and click **保存快捷键**, or use **录制快捷键**. Ctrl/Alt/Shift/Meta combinations, letters, digits, punctuation, navigation keys and F1–F12 are supported with validation; standalone function keys are also accepted. Esc, Tab, blur or the cancel button cancel recording. Reset or disable at any time. The old unversioned Ctrl+A default migrates to Shift+A; explicitly saved combinations remain. It works in already authorized HTTP/HTTPS page bodies and excludes inputs/editors. Browser-reserved combinations may be unavailable. The browser command **Alt+Shift+I** remains available.
 
@@ -142,7 +146,7 @@ Requires Node.js and PowerShell. Runtime libraries are checked into `vendor/`; n
 .\package.ps1 -OutputDirectory .\dist
 ```
 
-The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.8.7.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
+The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.0.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
 
 ## Verification
 

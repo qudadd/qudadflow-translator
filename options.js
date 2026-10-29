@@ -1,9 +1,11 @@
 /* global chrome */
 
 const DEFAULTS = {
-  apiStyle: "openai-compatible",
-  endpoint: "https://api.openai.com/v1/chat/completions",
+  apiStyle: "auto-machine",
+  endpoint: "https://api.mymemory.translated.net/get",
   apiKey: "",
+  mymemoryEmail: "",
+  chatgptAccount: "",
   model: "",
   providerRegion: "",
   sourceLanguage: "auto",
@@ -23,7 +25,9 @@ const DEFAULTS = {
 const $ = (id) => document.getElementById(id);
 
 const PROVIDER_HINTS = {
-  mymemory: "免 Key 基础试用：默认 English → 简体中文。需手动选择源语言；匿名额度通常为 5000 字符/天，服务商可能保留查询文字。",
+  'auto-machine': '默认免 Key：优先使用浏览器已支持的本地翻译；不可用时使用 MyMemory。自动检测源语言，短文本无法确定时按 English 处理。MyMemory 匿名额度可能按出口 IP 共享。',
+  'chatgpt-plan':'获得官方计划授权后，所选用户使用自己的额度，不共用管理员账号或 API Key。Team / Business 成员额度能否用于此开源接入尚无官方确认；组织策略拒绝时请保留 Request ID，由管理员向 OpenAI 核查。目前开源文档明确列出符合资格的 Plus / Pro。默认机器翻译无需安装或登录。',
+  mymemory: "免 Key 基础试用：默认 English → 简体中文。需手动选择源语言；匿名额度通常为 5000 字符/天，填写自己的有效邮箱可按服务商说明提高至 50000 字符/天。",
   "openai-compatible": "支持 Chat Completions 和 Responses。请使用服务商实际提供的模型名称；翻译长网页时优先选择响应较快的模型。",
   "google-translate-v2": "机器翻译直连：填写 Google Cloud Translation v2 地址，API Key 会作为 key 参数发送。默认地址：https://translation.googleapis.com/language/translate/v2。",
   "microsoft-translator": "机器翻译直连：填写 Azure Translator 地址，默认地址：https://api.cognitive.microsofttranslator.com/translate；API Key 放入 Ocp-Apim-Subscription-Key。",
@@ -32,6 +36,7 @@ const PROVIDER_HINTS = {
 };
 
 const ENDPOINT_HINTS = {
+  'auto-machine': '本地翻译不可用时，固定使用 MyMemory 官方 HTTPS 查询接口。',
   mymemory: "使用 MyMemory 官方 HTTPS 查询接口，自动按单段、500 UTF-8 字节以内拆分；不调用上传翻译记忆的接口。",
   "openai-compatible": "可填 /v1/chat/completions 或 /v1/responses 完整地址；只填域名或 /v1 时使用 Chat Completions。",
   "google-translate-v2": "请填写 Google Cloud Translation v2 的 POST 地址；扩展会把 API Key 作为 key 参数加入请求。",
@@ -40,16 +45,18 @@ const ENDPOINT_HINTS = {
   "custom-json": "请填写自定义服务实际接收 POST 请求的地址。"
 };
 
-const DIRECT_STYLES = new Set(["mymemory", "google-translate-v2", "microsoft-translator", "deepl"]);
+const DIRECT_STYLES = new Set(["auto-machine", "mymemory", "google-translate-v2", "microsoft-translator", "deepl"]);
 const PROVIDER_ENDPOINTS = {
+  'auto-machine': 'https://api.mymemory.translated.net/get',
+  'chatgpt-plan':'https://api.openai.com/v1/responses',
   mymemory: "https://api.mymemory.translated.net/get",
-  "openai-compatible": DEFAULTS.endpoint,
+  "openai-compatible": "https://api.openai.com/v1/chat/completions",
   "google-translate-v2": "https://translation.googleapis.com/language/translate/v2",
   "microsoft-translator": "https://api.cognitive.microsofttranslator.com/translate",
   deepl: "https://api-free.deepl.com/v2/translate",
   "custom-json": ""
 };
-const CONNECTION_FIELDS = ["endpoint", "apiKey", "model", "providerRegion", "customHeaders", "requestTemplate", "responsePath"];
+const CONNECTION_FIELDS = ["chatgptAccount", "endpoint", "apiKey", "mymemoryEmail", "model", "providerRegion", "customHeaders", "requestTemplate", "responsePath"];
 const providerDrafts = new Map();
 let renderedStyle;
 let testing = false;
@@ -57,7 +64,8 @@ let testRequestId = '', testCancelled = false;
 let savedProfiles = [], selectedProfileId = '', profileRevision = 0;
 let savedEditorState = '', draftTestState = '', draftTestResult = '';
 let modelList = [], modelConnection = '', modelRequestId = '';
-const MODEL_CONNECTION_FIELDS = ['apiStyle', 'endpoint', 'apiKey', 'customHeaders'];
+let localModelController;
+const MODEL_CONNECTION_FIELDS = ['apiStyle', 'endpoint', 'apiKey', 'customHeaders', 'chatgptAccount'];
 // Reading appearance is global, independent of connection profiles and API validation.
 let colorWrite = Promise.resolve(), colorEdit = 0, savedImmersiveColor = '';
 function normalizeImmersiveColor(value) {
@@ -264,14 +272,15 @@ function renderModelList() {
   const visible = modelList.filter(model => {
     if (query && ![model.id, model.name, model.owner].join(' ').toLocaleLowerCase().includes(query)) return false;
     if (filter === 'vision') return model.inputModalities.includes('image');
-    if (filter === 'text') return model.inputModalities.includes('text') && model.outputModalities.includes('text');
+    if (filter === 'text') return model.inputModalities.includes('text') && (!model.outputModalities.length || model.outputModalities.includes('text'));
     if (filter === 'unknown') return !model.inputModalities.length || !model.outputModalities.length;
     return true;
   });
-  $('modelCandidates').replaceChildren(...visible.map(model => new Option(model.id, model.id)));
-  // A listbox may select its first option implicitly. An explicit choice is required.
-  $('modelCandidates').selectedIndex = visible.some(model => model.id === previous) ? visible.findIndex(model => model.id === previous) : -1;
-  $('modelCount').textContent = `${visible.length} / ${modelList.length} 个模型${visible.length ? ' · 选择后查看详情' : ' · 无匹配结果，可调整筛选'}`;
+  $('modelCandidates').replaceChildren(...visible.map(model => new Option($('apiStyle').value==='chatgpt-plan'?(model.name||model.id):model.id, model.id)));
+  // Keep an existing or manually selected model visible, but never choose a new one for the user.
+  const selected=visible.findIndex(model=>model.id===previous),current=visible.findIndex(model=>model.id===$('model').value.trim());
+  $('modelCandidates').selectedIndex = selected>=0?selected:current>=0?current:-1;
+  $('modelCount').textContent = `${visible.length} / ${modelList.length} 个模型${!visible.length ? ' · 无匹配结果，可调整筛选' : $('modelCandidates').selectedIndex>=0 ? ' · 已预览所选模型；点击其他项切换，确认后点“填入此模型”' : ' · 请选择模型并点击“填入此模型”'}`;
   showModelDetail();
 }
 
@@ -284,6 +293,18 @@ function lockEditor() {
 function setStatus(message, error = false) {
   $("status").textContent = message || "";
   $("status").classList.toggle("error", error);
+}
+
+function connectionError(response, fallback) {
+  const code = response?.code || '';
+  const requestId = /^[a-zA-Z0-9_.-]{1,160}$/.test(response?.upstreamRequestId || '') ? response.upstreamRequestId : '';
+  let guidance = '';
+  if ($('apiStyle').value === 'chatgpt-plan') {
+    if (code === '3p_delegated_access_policy_denied') guidance = '官方组织策略拒绝；若管理台未列出 QudadFlow，请停止重复授权，由管理员凭请求 ID 向 OpenAI 核查。';
+    if (code === 'subscription_sharing_user_not_eligible') guidance = '所选账号或工作区的个人额度无法用于此接入；请勿重复授权，默认机器翻译仍可免配置使用。';
+    if (guidance) $('chatgptWorkspaceHelp').open = true;
+  }
+  return new Error(`${code ? `[${code}] ` : ''}${response?.error || fallback}${requestId ? ` 请求 ID：${requestId}。` : ''}${guidance ? ` ${guidance}` : ''}`);
 }
 
 function permissionRequest(origins) {
@@ -326,7 +347,7 @@ $('revokeAllWebsites').onclick=async()=>{
   websitePermissionBusy=true;
   try{
     const permissions=await chrome.permissions.getAll();
-    const origins=(permissions.origins||[]).filter(origin=>/^(?:https?|\*):\/\//.test(origin)||origin==='<all_urls>');
+    const origins=(permissions.origins||[]).filter(origin=>(/^(?:https?|\*):\/\//.test(origin)||origin==='<all_urls>')&&origin!=='https://api.mymemory.translated.net/*');
     if(origins.length&&!await chrome.permissions.remove({origins}))throw new Error('网站授权未能清除，请在浏览器扩展详情中管理网站访问权限。');
     await refreshWebsitePermission();await askForEndpointPermission(false);
   }catch(error){$('websitePermissionStatus').textContent=error.message;}
@@ -346,6 +367,12 @@ function endpointPattern() {
 }
 
 async function askForEndpointPermission(showMessage = true) {
+  if($('apiStyle').value==='chatgpt-plan'){$('permissionStatus').textContent='ChatGPT 通过本机连接程序访问官方服务。网页读取权限仍按需授予。';return true;}
+  if($('apiStyle').value==='auto-machine' || $('apiStyle').value==='mymemory' && $('endpoint').value.trim()==='https://api.mymemory.translated.net/get') {
+    const granted=await permissionContains(['https://api.mymemory.translated.net/*']);
+    $('permissionStatus').textContent=granted?'已允许访问 MyMemory 免费翻译接口；浏览器本地翻译不使用网络接口。':'MyMemory 域名权限不可用，请检查扩展安装权限。';
+    return granted;
+  }
   const pattern = endpointPattern();
   if (!pattern) {
     $("permissionStatus").textContent = "请输入有效的 http/https API 端点后再请求权限。";
@@ -372,8 +399,10 @@ async function askForEndpointPermission(showMessage = true) {
 function formValues() {
   return {
     apiStyle: $("apiStyle").value,
+    chatgptAccount: $("chatgptAccount").value,
     endpoint: $("endpoint").value.trim(),
     apiKey: $("apiKey").value,
+    mymemoryEmail: $("mymemoryEmail").value.trim(),
     model: $("model").value.trim(),
     providerRegion: $("providerRegion").value.trim(),
     sourceLanguage: $("sourceLanguage").value,
@@ -391,6 +420,8 @@ function templateForValidation(template) {
 }
 
 function validate(values) {
+  if(values.apiStyle==='chatgpt-plan') {if(!values.chatgptAccount)throw new Error('请登录并选择 ChatGPT 账号。');if(!values.model)throw new Error('请读取并选择模型。');return;}
+  if (['auto-machine','mymemory'].includes(values.apiStyle) && values.mymemoryEmail && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.mymemoryEmail) || values.mymemoryEmail.length > 254)) throw new Error('请填写有效的 MyMemory 联系邮箱，或留空使用匿名额度。');
   try {
     const url = new URL(values.endpoint);
     if (!["http:", "https:"].includes(url.protocol)) throw new Error("端点必须使用 http 或 https。");
@@ -398,7 +429,7 @@ function validate(values) {
     throw new Error("请输入有效的 API 端点。");
   }
   if (!values.model && values.apiStyle === "openai-compatible") throw new Error("请填写模型名称。");
-  if (!values.apiKey && !['custom-json','mymemory'].includes(values.apiStyle)) throw new Error("请填写 API Key。");
+  if (!values.apiKey && !['custom-json','mymemory','auto-machine'].includes(values.apiStyle)) throw new Error("请填写 API Key。");
   if(values.apiStyle==='mymemory' && values.sourceLanguage==='auto')throw new Error('MyMemory 试用需手动选择源语言。');
   let headers;
   try { headers = JSON.parse(values.customHeaders); } catch { throw new Error("自定义请求头必须是有效 JSON。"); }
@@ -410,17 +441,26 @@ function validate(values) {
 }
 
 function renderApiStyle() {
-  const style = $("apiStyle").value;
+  const style = $("apiStyle").value,plan=style==='chatgpt-plan',automatic=style==='auto-machine',ai=plan||style==='openai-compatible';
+  $('chatgptConnection').hidden=!plan;$('endpointWrap').classList.toggle('field-hidden',plan||automatic);
+  $('localModelWrap').hidden=!automatic;
+  const browserModelSupported=Boolean(globalThis.Translator?.create);
+  $('prepareLocalModel').disabled=!browserModelSupported;
+  if(automatic&&!browserModelSupported)$('localModelStatus').textContent='当前浏览器未开放本地 Translator 模型，将直接使用 MyMemory。';
+  if(automatic)$('endpoint').value=PROVIDER_ENDPOINTS['auto-machine'];
+  $('temperature').disabled=plan;
+  if(plan){$('endpoint').value='https://api.openai.com/v1/responses';$('apiKey').value='';$('customHeaders').value='{}';$('temperature').value='';$('streamOpenAi').checked=true;}
   $("customSection").classList.toggle("visible", style === "custom-json");
   $("modelWrap").classList.toggle("field-hidden", DIRECT_STYLES.has(style));
   $("regionWrap").classList.toggle("visible", style === "microsoft-translator");
   $("streamWrap").classList.toggle("field-hidden", style !== "openai-compatible");
-  $('fetchModels').hidden = style !== 'openai-compatible';
-  $('modelStatus').hidden = style !== 'openai-compatible';
-  $('modelBrowser').hidden = style !== 'openai-compatible' || !modelConnection;
-  $('modelVerification').hidden = style !== 'openai-compatible';
-  $("apiKeyWrap").classList.toggle("field-hidden",style==='mymemory');
-  $("customHeadersWrap").classList.toggle("field-hidden",style==='mymemory');
+  $('fetchModels').hidden = !ai;
+  $('modelStatus').hidden = !ai;
+  $('modelBrowser').hidden = !ai || !modelConnection;
+  $('modelVerification').hidden = !ai;
+  $("apiKeyWrap").classList.toggle("field-hidden",style==='mymemory'||automatic||plan);
+  $("mymemoryEmailWrap").classList.toggle("field-hidden",style!=='mymemory'&&!automatic);
+  $("customHeadersWrap").classList.toggle("field-hidden",style==='mymemory'||automatic||plan);
   $("sourceLanguage").querySelector('option[value="auto"]').disabled=style==='mymemory';
   $("providerHint").textContent = PROVIDER_HINTS[style] || PROVIDER_HINTS["openai-compatible"];
   $("endpointHint").textContent = ENDPOINT_HINTS[style] || ENDPOINT_HINTS["openai-compatible"];
@@ -436,6 +476,7 @@ function renderApiStyle() {
 
 function switchProvider() {
   const style = $("apiStyle").value;
+  if(style!=='auto-machine')localModelController?.abort();
   if (renderedStyle) providerDrafts.set(renderedStyle, formValues());
   const draft = providerDrafts.get(style) || { ...DEFAULTS, endpoint: PROVIDER_ENDPOINTS[style] || "", apiKey: "" };
   for (const key of CONNECTION_FIELDS) $(key).value = draft[key] ?? "";
@@ -449,6 +490,9 @@ function switchProvider() {
 }
 
 function showValues(values) {
+  values={...DEFAULTS,...values};
+  $('chatgptAccount').dataset.saved=values.chatgptAccount||'';
+  if(values.chatgptAccount&&!Array.from($('chatgptAccount').options).some(o=>o.value===values.chatgptAccount))$('chatgptAccount').add(new Option('已保存账号 · 请检测连接',values.chatgptAccount));
   $('apiKey').type='password';$('toggleKey').textContent='显示';
   providerDrafts.clear();
   for (const [key, value] of Object.entries(values)) {
@@ -493,6 +537,13 @@ async function load() {
   await askForEndpointPermission(false);
   savedEditorState = editorState(); updateSaveState();
   document.body.dataset.ready='true';
+  document.dispatchEvent(new Event('qf-settings-ready'));
+  if(new URLSearchParams(location.search).get('preview')==='chatgpt'){
+    $('apiStyle').value='chatgpt-plan';
+    $('apiStyle').dispatchEvent(new Event('change'));
+    $('connectionSettings').open=true;
+    history.replaceState(null,'',location.pathname+location.hash);
+  }
 }
 
 $("settingsForm").addEventListener("submit", async (event) => {
@@ -531,12 +582,45 @@ $('deleteProfile').addEventListener('click',async()=>{
 $('useTrial').addEventListener('click',async()=>{
   if(testing)return;
   stopModelRequest();
-  const permission=permissionRequest(['https://api.mymemory.translated.net/*']),unlock=lockEditor();
+  const permission=permissionContains(['https://api.mymemory.translated.net/*']),unlock=lockEditor();
   try{await profileMessage({type:'PROFILE_TRIAL'});await load();const granted=await permission;setStatus(granted?'MyMemory 基础试用已启用：English → 简体中文。可测试连接或返回网页翻译。':'基础试用已保存；请允许 MyMemory 域名访问。',!granted);}catch(error){setStatus(error.message,true);}finally{unlock();}
 });
 
 $("requestPermission").addEventListener("click", () => askForEndpointPermission());
 $("apiStyle").addEventListener("change", switchProvider);
+$('prepareLocalModel').addEventListener('click', async () => {
+  const api=globalThis.Translator;
+  if(!api?.create||localModelController)return;
+  const tag=language=>/^zh-(tw|hk|hant)$/i.test(language)?'zh-Hant':/^zh(?:-|$)/i.test(language)?'zh':String(language).split('-')[0].toLowerCase();
+  const targetLanguage=tag($('targetLanguage').value);
+  let sourceLanguage=tag($('sourceLanguage').value==='auto'?'en':$('sourceLanguage').value);
+  if(sourceLanguage===targetLanguage)sourceLanguage=targetLanguage==='en'?'zh':'en';
+  const controller=new AbortController();
+  localModelController=controller;
+  $('prepareLocalModel').disabled=true;
+  $('cancelLocalModel').hidden=false;
+  $('localModelStatus').textContent='正在准备 '+sourceLanguage+' → '+targetLanguage+' 本地模型…';
+  let session;
+  try{
+    // create() is called in the button gesture so the browser may download its model.
+    session=await api.create({sourceLanguage,targetLanguage,signal:controller.signal,monitor(m){
+      m.addEventListener('downloadprogress',event=>{
+        if(!controller.signal.aborted&&Number.isFinite(event.loaded))$('localModelStatus').textContent='正在下载本地模型：'+Math.round(event.loaded*100)+'%';
+      });
+    }});
+    if(controller.signal.aborted){$('localModelStatus').textContent='已取消本地模型下载。';return;}
+    $('localModelStatus').textContent='本地模型已准备好。此语言方向会优先在设备上翻译。';
+  }catch(error){
+    $('localModelStatus').textContent=controller.signal.aborted?'已取消本地模型下载。':'本地模型暂不可用：'+(error?.message||'浏览器不支持此语言方向')+'。仍可使用 MyMemory。';
+  }finally{
+    try{session?.destroy();}catch{}
+    if(localModelController===controller)localModelController=undefined;
+    $('cancelLocalModel').hidden=true;
+    $('prepareLocalModel').disabled=!globalThis.Translator?.create;
+  }
+});
+$('cancelLocalModel').addEventListener('click',()=>localModelController?.abort());
+window.addEventListener('pagehide',()=>localModelController?.abort());
 $("endpoint").addEventListener("change", () => askForEndpointPermission(false));
 $("toggleKey").addEventListener("click", () => {
   const input = $("apiKey");
@@ -567,7 +651,7 @@ $("testApi").addEventListener("click", async () => {
       draftTestState = ''; updateVerification();
       setStatus('测试已停止。'); return;
     }
-    if (!response?.ok) throw new Error(`${response?.code ? `[${response.code}] ` : ""}${response?.error || "API 测试失败。"}`);
+    if (!response?.ok) throw connectionError(response, 'API 测试失败。');
     const seconds = ((response.elapsedMs || Date.now() - started) / 1000).toFixed(1);
     draftTestState = JSON.stringify(values);
     draftTestResult = `当前模型文本连接通过 · 本次 ${seconds} 秒。图片能力尚未测试；配置仅在点击保存后应用。`;
@@ -595,8 +679,8 @@ $('cancelTestApi').addEventListener('click', stopTestRequest);
 $('fetchModels').addEventListener('click', async () => {
   if (testing || modelRequestId) return;
   const values = formValues();
-  if (!endpointPattern() || !values.apiKey.trim()) {
-    $('modelStatus').textContent = '请先填写有效端点和 API Key，再读取模型列表。';
+  if (values.apiStyle==='chatgpt-plan'?!values.chatgptAccount:(!endpointPattern() || !values.apiKey.trim())) {
+    $('modelStatus').textContent = values.apiStyle==='chatgpt-plan'?'请先登录并选择 ChatGPT 账号，再读取模型列表。':'请先填写有效端点和 API Key，再读取模型列表。';
     $('modelStatus').classList.add('error'); return;
   }
   const permission = askForEndpointPermission();
@@ -613,14 +697,15 @@ $('fetchModels').addEventListener('click', async () => {
     if (!granted) throw new Error('未获得所填 API 域名权限，可授权后重试。');
     const response = await chrome.runtime.sendMessage({ type: 'FETCH_MODELS', requestId, values });
     if (modelRequestId !== requestId || connectionState() !== connection) return;
-    if (!response?.ok) throw new Error(response?.error || '未能读取模型，可手动填写准确 ID。');
+    if (!response?.ok) throw connectionError(response, '未能读取模型，可手动填写准确 ID。');
     modelList = response.models;
     modelConnection = connection;
     $('modelBrowser').hidden = false;
     $('modelSearch').value = ''; $('modelFilter').value = 'all';
     renderModelList();
     const currentMissing = values.model && !modelList.some(model => model.id === values.model);
-    $('modelStatus').textContent = `已从 ${response.source} 读取 ${modelList.length} 个模型，列表已在本地保存并按连接隔离。${currentMissing ? '当前模型未在列表中，已保留；可手动测试。' : '当前模型未更改，请选择并查看详情。'}${response.truncated ? '列表较大或上游还有分页，当前仅显示本批最多 1000 个。' : ''}${response.skipped ? '已忽略无效条目。' : ''}`;
+    $('modelStatus').textContent = `已从 ${response.source} 读取 ${modelList.length} 个模型，列表已在本地保存并按连接隔离。${currentMissing ? '当前模型未在列表中，已保留；可手动测试。' : '当前模型未更改；请在列表中选中模型并点击“填入此模型”。'}${response.truncated ? '列表较大或上游还有分页，当前仅显示本批最多 1000 个。' : ''}${response.skipped ? '已忽略无效条目。' : ''}`;
+    if(modelList.length)$('modelBrowser').scrollIntoView({block:'nearest'});
   } catch (error) {
     if (modelRequestId === requestId) {
       $('modelStatus').textContent = error.message;
@@ -654,12 +739,17 @@ window.addEventListener('pagehide', () => { stopModelRequest(); stopTestRequest(
 
 const navLinks = [...document.querySelectorAll('.settings-nav nav a')];
 const foldingSections=[...document.querySelectorAll('.settings-section')];
+const nestedSections=[...document.querySelectorAll('#customSection')];
 let folded={};try{const saved=JSON.parse(localStorage.getItem('qudadflow-settings-folds')||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))folded=saved;}catch{}
-for(const section of foldingSections){
+if(folded.profileSettings===true)folded.connectionSettings=true;
+delete folded.profileSettings;
+delete folded.trialSettings;
+delete folded.permissionSettings;
+for(const section of [...foldingSections,...nestedSections]){
   if(typeof folded[section.id]==='boolean')section.open=folded[section.id];
   section.addEventListener('toggle',()=>{folded[section.id]=section.open;try{localStorage.setItem('qudadflow-settings-folds',JSON.stringify(folded));}catch{}});
 }
-function revealSection(hash){const section=document.getElementById(hash.slice(1));if(section?.matches('.settings-section'))section.open=true;}
+function revealSection(hash){const target=document.getElementById(hash.slice(1)),section=target?.matches('.settings-section')?target:target?.closest('.settings-section');if(section)section.open=true;if(target instanceof HTMLDetailsElement&&target!==section)target.open=true;}
 $('collapseSettings').onclick=()=>foldingSections.forEach(section=>section.open=false);
 $('expandSettings').onclick=()=>foldingSections.forEach(section=>section.open=true);
 window.addEventListener('hashchange',()=>revealSection(location.hash));revealSection(location.hash);

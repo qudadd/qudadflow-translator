@@ -2,7 +2,12 @@
 const PROFILE_FIELDS = Object.keys(DEFAULTS);
 let profileQueue = Promise.resolve();
 function profileValues(input) {
-  return Object.fromEntries(PROFILE_FIELDS.map(key => [key, input[key] ?? DEFAULTS[key]]));
+  const values=Object.fromEntries(PROFILE_FIELDS.map(key => [key, input[key] ?? DEFAULTS[key]]));
+  if(values.apiStyle==='chatgpt-plan'){
+    if(!/^[a-f0-9-]{36}$/i.test(values.chatgptAccount))throw new Error('请选择已授权的 ChatGPT 账号。');
+    values.apiKey='';values.customHeaders='{}';values.endpoint='https://api.openai.com/v1/responses';values.temperature='';values.streamOpenAi=true;
+  }
+  return values;
 }
 function trialValues() {
   return {...DEFAULTS, apiStyle:'mymemory', endpoint:'https://api.mymemory.translated.net/get', apiKey:'', model:'', providerRegion:'', customHeaders:'{}', sourceLanguage:'en', targetLanguage:'zh-CN'};

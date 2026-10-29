@@ -1,0 +1,23 @@
+QudadFlow Translator keeps original webpage text in place and adds translations nearby. It also reads PDF, Word DOCX, TXT and Markdown, with optional paper Q&A, figure analysis and copyable tables. The extension interface is Simplified Chinese.
+
+NEW IN 0.9.0
+Translation works by default without an AI account or API key. The extension first tries a ready browser-provided on-device Translator model; otherwise it immediately uses MyMemory's public translation service. In supported browsers, a user may click a Settings button to download the local model for a language pair. MyMemory receives requested text, may retain it and has provider quotas: typically 5,000 characters/day anonymously, with usage potentially shared on a network. You can optionally provide your own contact email for the provider's stated higher allowance, or configure your own translation service. Independent per-person MyMemory quotas are not guaranteed.
+
+MyMemory requests now split long paragraphs into small segments and process a bounded number in parallel while preserving reading order. Repeated successful segments can reuse a short-lived memory cache. Immersive translations stay closer to text inside links and follow vertical writing direction. Actual speed and layout vary by page, browser and provider.
+
+Saved profiles, provider choice, model selection, connection test and Save settings share one section. Choose a returned model yourself and apply it; model discovery does not send page text. The same model workflow works for your API and the optional ChatGPT plan preview.
+
+OPTIONAL CHATGPT PLAN PREVIEW
+Eligible users may choose official Sign in with ChatGPT. This feature requires a separate Windows x64 local companion downloaded from the v0.9.0 GitHub release, extracted and installed by the user. It is not installed by the browser. The companion stores OAuth credentials under Windows DPAPI and sends only user-requested text/images directly to OpenAI's official Responses API. The extension does not read ChatGPT cookies, collect passwords or switch to paid API billing. Each person authorizes their own account. OpenAI's open-source plan-usage documentation currently explicitly lists eligible Plus and Pro users; Business/Team eligibility through this route is unconfirmed and an organization may deny access. Default machine translation and your own APIs do not require the companion. An optional, dismissible guide appears once after installing or updating.
+
+WEB, DOCUMENTS AND RESEARCH
+Immersive translation prioritizes visible content and follows scrolling or dynamically added text. A site-specific selection button translates only after a click; selection alone sends nothing. Shift+A is the default customizable webpage shortcut. The reader offers in-place, original-layout and paragraph comparisons, page-by-page or continuous PDF, and bilingual TXT export. It preserves PDF page proportions where possible; scanned pages need external OCR and layout-preserving PDF/DOCX export is not included.
+
+Caption-aware extraction finds webpage and PDF figures, native text tables and supported image tables. Native tables copy locally as Markdown/TSV. Image-table transcription, supplementary PDF recognition and paper Q&A require an explicitly selected compatible AI model and user action. The workbench can expand for larger previews and separate question/answer columns. Python/R reproduction drafts are downloadable text and are never executed; AI findings require verification.
+
+DATA AND PERMISSIONS
+The extension parses files and tables locally. Requested text and selected images go directly to the chosen provider; MyMemory is the fallback only in default machine mode. Settings and API keys stay in browser-local storage; ChatGPT OAuth tokens remain in the separate local companion. The offscreen permission hosts local browser translation in an extension window and caches only language-pair availability; nativeMessaging connects to the optional companion. Site and custom API permissions are requested as needed. No developer translation proxy, ads, analytics or remote executable extension code.
+
+Support: lcf1249288484@outlook.com · QQ: 1048123205
+Privacy: https://qudadd.github.io/qudadflow-translator/privacy.html
+Source, companion and guides: https://github.com/qudadd/qudadflow-translator

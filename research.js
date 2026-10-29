@@ -43,7 +43,7 @@ $('editMaterial').onclick=()=>{const read=!$('paperMaterial').hidden;$('paperMat
 $('resizeResearch').onclick=async()=>{try{const current=await chrome.windows.getCurrent(),maximized=current.state!=='maximized';await chrome.windows.update(current.id,{state:maximized?'maximized':'normal'});$('resizeResearch').textContent=maximized?'还原窗口':'展开窗口';}catch(error){$('captureStatus').textContent='窗口调整失败：'+error.message;}};
 const heartbeat=setInterval(()=>{if(pending.size)try{port?.postMessage({type:'PING'});}catch{}},20000);
 window.addEventListener('pagehide',()=>{clearInterval(heartbeat);cancel();});
-chrome.storage.onChanged.addListener((changes,area)=>{if(area!=='local'||!Object.keys(changes).some(k=>['apiStyle','endpoint','apiKey','model','sourceLanguage','targetLanguage','temperature','streamOpenAi','customHeaders','activeProfileId'].includes(k)))return;cancel();workflow.clearResults();workflow.research.notice('API 配置已改变，旧结果已清除，请重新分析。');});
+chrome.storage.onChanged.addListener((changes,area)=>{if(area!=='local'||!Object.keys(changes).some(k=>['apiStyle','chatgptAccount','endpoint','apiKey','model','sourceLanguage','targetLanguage','temperature','streamOpenAi','customHeaders','activeProfileId'].includes(k)))return;cancel();workflow.clearResults();workflow.research.notice('API 配置已改变，旧结果已清除，请重新分析。');});
 async function load(){
   captureId=new URLSearchParams(location.hash.slice(1)).get('capture')||'';if(!captureId)return;
   const capture=await researchMessage({type:'RESEARCH_GET_CAPTURE',id:captureId});source={title:capture.title,url:capture.url,page:'web'};

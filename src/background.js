@@ -1,9 +1,11 @@
 /* global chrome */
 
 const DEFAULTS = {
-  apiStyle: "openai-compatible",
-  endpoint: "https://api.openai.com/v1/chat/completions",
+  apiStyle: "auto-machine",
+  endpoint: "https://api.mymemory.translated.net/get",
   apiKey: "",
+  mymemoryEmail: "",
+  chatgptAccount: "",
   model: "",
   providerRegion: "",
   sourceLanguage: "auto",
@@ -20,7 +22,7 @@ const DEFAULTS = {
   responsePath: "choices[0].message.content"
 };
 
-if (typeof importScripts === "function") importScripts("profile-store.js", "my-memory.js", "research-store.js", "research-service.js", "model-catalog.js", "model-store.js", "immersive-shortcut.js");
+if (typeof importScripts === "function") importScripts("chatgpt-bridge.js", "profile-store.js", "my-memory.js", "machine-translation.js", "research-store.js", "research-service.js", "model-catalog.js", "model-store.js", "immersive-shortcut.js");
 
 const MAX_INPUT_CHARS = 12000;
 const activeRequests = new Map();
@@ -95,6 +97,14 @@ function selectionPattern(url) {
 
 function translationError(message, code) {
   return Object.assign(new Error(message), { code });
+}
+function upstreamDiagnostic(error) {
+  const result={};
+  if(Number.isInteger(error.httpStatus))result.httpStatus=error.httpStatus;
+  if(typeof error.upstreamRequestId==='string')result.upstreamRequestId=error.upstreamRequestId;
+  if(typeof error.param==='string')result.param=error.param;
+  if(Array.isArray(error.bodyShape)||typeof error.bodyShape==='string')result.bodyShape=error.bodyShape;
+  return result;
 }
 
 function storageGet(keys) {
@@ -417,6 +427,28 @@ async function translateText(request, controller = new AbortController(), onProg
   if (!text) throw new Error("没有可翻译的文本。");
   const inputLimit=analysisInstructions?Infinity:MAX_INPUT_CHARS;
   if (text.length > inputLimit) throw new Error(`单次请求最多支持 ${inputLimit} 个字符，请缩短材料后重试。`);
+  if (effectiveSettings.apiStyle === 'chatgpt-plan') {
+    if (!effectiveSettings.chatgptAccount) throw translationError('请在设置中登录并选择 ChatGPT 账号。', 'ACCOUNT_REQUIRED');
+    const {body} = buildRequest({...effectiveSettings, endpoint:'https://api.openai.com/v1/responses', apiKey:'', customHeaders:'{}', temperature:'', streamOpenAi:true},text,request.context||'web page',imageData,analysisInstructions);
+    const result = await QFChatGPT.request('generate',{accountRef:effectiveSettings.chatgptAccount,model:effectiveSettings.model,text,instructions:body.instructions,images:Array.isArray(imageData)?imageData:imageData?[imageData]:[]},controller,onProgress);
+    return result.translation;
+  }
+  if (effectiveSettings.apiStyle === 'auto-machine') {
+    if (controller.signal.aborted) throw translationError('翻译已取消。', 'CANCELLED');
+    const context = request.context || 'web page';
+    const cacheable = !request.skipCache && !imageData && !analysisInstructions;
+    const cached = cacheable ? cachedTranslation(effectiveSettings, text, context) : {};
+    if (!request.skipCache && cached.translation) {
+      metadata.cached = true;
+      onProgress(cached.translation);
+      return cached.translation;
+    }
+    const stopKeepAlive = keepApiAlive(controller);
+    try {
+      const translation = await translateAutomaticMachine(effectiveSettings, text, controller, onProgress, cacheable);
+      return cacheable ? rememberTranslation(cached.key, translation, effectiveSettings) : translation;
+    } finally { stopKeepAlive(); }
+  }
   if (!effectiveSettings.endpoint.trim()) throw new Error("请先在设置中填写 API 端点。");
   if (!effectiveSettings.apiKey && !["custom-json", "mymemory"].includes(effectiveSettings.apiStyle)) throw new Error("请先在设置中填写 API Key。");
   if (effectiveSettings.apiStyle === "openai-compatible" && !effectiveSettings.model.trim()) throw new Error("请先在设置中填写模型名称。");
@@ -444,7 +476,7 @@ async function translateText(request, controller = new AbortController(), onProg
   const { endpoint, headers, body } = effectiveSettings.apiStyle==='mymemory'?{}:buildRequest(effectiveSettings, text, context,imageData,analysisInstructions);
   const stopKeepAlive = keepApiAlive(controller);
   try {
-    if(effectiveSettings.apiStyle==='mymemory')return remember(await translateMyMemory(effectiveSettings,text,controller,onProgress));
+    if(effectiveSettings.apiStyle==='mymemory')return remember(await translateMyMemory(effectiveSettings,text,controller,onProgress,{cacheSettings:effectiveSettings,cacheAllowed:cacheable}));
     const response = await fetch(endpoint, {
       method: "POST", headers,
       body: typeof body === "string" ? body : JSON.stringify(body),
@@ -519,10 +551,18 @@ function createContextMenu() {
 }
 
 chrome.runtime.onInstalled.addListener(createContextMenu);
+chrome.runtime.onInstalled.addListener(details => {
+  // An update cannot install a native host. Offer its optional setup once in
+  // the popup and leave the active translation configuration untouched.
+  if (details.reason === 'install' || details.reason === 'update' &&
+      /^0\.(?:[0-8]|9\.0)(?:\.|$)/.test(details.previousVersion || '')) {
+    chrome.storage.local.set({qfChatgptInstallOffer:'0.9.0'}).catch(() => {});
+  }
+});
 chrome.runtime.onStartup.addListener(createContextMenu);
 chrome.storage.onChanged?.addListener((changes, area) => {
   if (area === "local" && Object.keys(changes).some(key => !['immersiveTranslationColor', 'immersiveShortcut', 'immersiveShortcutVersion', 'modelCatalogs'].includes(key))) clearTranslationCache();
-  if(area==='local'&&['apiStyle','endpoint','apiKey','customHeaders','model'].some(key=>key in changes))void QFModels.connectionChanged().catch(()=>{});
+  if(area==='local'&&['apiStyle','chatgptAccount','endpoint','apiKey','customHeaders','model'].some(key=>key in changes))void QFModels.connectionChanged().catch(()=>{});
 });
 
 // Register only a small keyboard listener, using host access the user already granted.
@@ -618,7 +658,7 @@ chrome.runtime.onConnect?.addListener((port) => {
       try {
         const translation = await (message.type==='TRANSLATE'?translateText:message.type==='PDF_FIGURE_DETECT'?detectPdfResearchFigures:analyzeResearch)(message, controller, progress, metadata);
         result = { ok: true, translation, cached: Boolean(metadata.cached), memoryCount:metadata.memoryCount, memoryWarning:metadata.memoryWarning };
-      } catch (error) { result = { ok: false, error: error.message, code: error.code || "TRANSLATION_FAILED" }; }
+      } catch (error) { result = { ok: false, error: error.message, code: error.code || "TRANSLATION_FAILED", ...upstreamDiagnostic(error) }; }
       finally { requests.delete(requestId); }
       post({ type: "RESULT", requestId, ...result, elapsedMs: Date.now() - started });
     })();
@@ -635,6 +675,10 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type?.startsWith('CHATGPT_')) {
+    if (sender.id !== chrome.runtime.id || sender.url?.split(/[?#]/)[0] !== chrome.runtime.getURL('options.html')) { sendResponse({ok:false,error:'账号操作仅限扩展设置页。'}); return false; }
+    QFChatGPT.settings(message,sender).then(result=>sendResponse({ok:true,...result})).catch(error=>sendResponse({ok:false,code:error.code||'HOST_ERROR',error:error.message,...upstreamDiagnostic(error)}));return true;
+  }
   if (['GET_IMMERSIVE_SHORTCUT', 'TRIGGER_IMMERSIVE_SHORTCUT'].includes(message?.type)) {
     (async () => {
       let pattern;
@@ -669,7 +713,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       activeModelRequests.set(owner, active);
       QFModelCatalog.fetchModels(message.values, active.controller)
         .then(async result => {await QFModels.remember(message.values,result,active.controller.signal);sendResponse({ ok: true, ...result });})
-        .catch(error => sendResponse({ ok: false, code: error.code || 'MODEL_LIST_FAILED', error: QFModelCatalog.errorText(error, message.values) }))
+        .catch(error => sendResponse({ ok: false, code: error.code || 'MODEL_LIST_FAILED', error: QFModelCatalog.errorText(error, message.values), ...upstreamDiagnostic(error) }))
         .finally(() => { if (activeModelRequests.get(owner) === active) activeModelRequests.delete(owner); });
       return true;
     }
@@ -682,7 +726,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (!message.values || typeof message.values !== 'object' || Array.isArray(message.values) || JSON.stringify(message.values).length > 80000) throw new Error('连接配置无效或过大。');
       return translateText({ text: 'This is a connection test.', context: 'API connection test', skipCache: true }, active.controller, () => {}, {}, normalizeSettings(message.values));
     }).then(translation => sendResponse({ ok: true, translation: QFModelCatalog.errorText({ message: translation }, message.values), elapsedMs: Date.now() - started }))
-      .catch(error => sendResponse({ ok: false, code: error.code || 'TRANSLATION_FAILED', error: QFModelCatalog.errorText(error, message.values), elapsedMs: Date.now() - started }))
+      .catch(error => sendResponse({ ok: false, code: error.code || 'TRANSLATION_FAILED', error: QFModelCatalog.errorText(error, message.values), elapsedMs: Date.now() - started, ...upstreamDiagnostic(error) }))
       .finally(() => { if (activeDraftRequests.get(owner) === active) activeDraftRequests.delete(owner); });
     return true;
   }
@@ -737,7 +781,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   };
   translateText(request, controller, progress, metadata)
     .then((translation) => sendResponse({ ok: true, translation, cached: Boolean(metadata.cached), elapsedMs: Date.now() - started }))
-    .catch((error) => sendResponse({ ok: false, code: error.code || "TRANSLATION_FAILED", error: error.message, elapsedMs: Date.now() - started }))
+    .catch((error) => sendResponse({ ok: false, code: error.code || "TRANSLATION_FAILED", error: error.message, elapsedMs: Date.now() - started, ...upstreamDiagnostic(error) }))
     .finally(() => { if (activeRequests.get(requestKey) === controller) activeRequests.delete(requestKey); });
   return true;
 });

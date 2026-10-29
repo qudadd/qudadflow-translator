@@ -87,6 +87,10 @@ try {
 } finally {
   $resolvedStaging = [IO.Path]::GetFullPath($staging)
   if ($resolvedStaging.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $resolvedStaging)) {
-    Remove-Item -LiteralPath $resolvedStaging -Recurse -Force
+    for ($cleanupAttempt = 0; $cleanupAttempt -lt 5; $cleanupAttempt++) {
+      try { Remove-Item -LiteralPath $resolvedStaging -Recurse -Force -ErrorAction Stop; break }
+      catch { if ($cleanupAttempt -eq 4) { throw }; Start-Sleep -Milliseconds 250 }
+      if (-not (Test-Path -LiteralPath $resolvedStaging)) { break }
+    }
   }
 }

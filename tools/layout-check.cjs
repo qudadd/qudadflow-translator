@@ -35,7 +35,7 @@ const server=http.createServer(async(req,res)=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));origin='http://127.0.0.1:'+server.address().port;
   try{
     const extension=path.join(scratch,'extension');fs.mkdirSync(extension);
-    for(const name of ['manifest.json','research.html','research.css','research.js','reader.html','reader.css','reader.js','options.html','options.css','options.js','src','vendor','assets','_locales'])fs.cpSync(path.join(root,name),path.join(extension,name),{recursive:true});
+    for(const name of ['manifest.json','offscreen-translation.html','research.html','research.css','research.js','reader.html','reader.css','reader.js','options.html','options.css','options.js','src','vendor','assets','_locales'])fs.cpSync(path.join(root,name),path.join(extension,name),{recursive:true});
     const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json')));version=manifest.version;manifest.host_permissions=['http://127.0.0.1/*'];fs.writeFileSync(path.join(extension,'manifest.json'),JSON.stringify(manifest));
     context=await chromium.launchPersistentContext(path.join(scratch,'profile'),{channel:'msedge',headless:true,viewport:{width:1440,height:1100},args:['--disable-extensions-except='+extension,'--load-extension='+extension]});
     const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'),base='chrome-extension://'+new URL(worker.url()).host+'/';const page=await context.newPage();page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));context.on('request',r=>{if(/^https?:/.test(r.url())&&!r.url().startsWith(origin))unexpected.push(r.url().split('?')[0]);});

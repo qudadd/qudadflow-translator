@@ -12,55 +12,71 @@
   <a class="skip-link" href="#connectionSettings">跳至 API 连接</a>
   <div class="settings-shell">
   <aside class="settings-nav">
-    <a class="nav-brand" href="#profileSettings"><img src="assets/icon48.png" width="40" height="40" alt=""><span>QudadFlow<small>TRANSLATOR</small></span></a>
+    <a class="nav-brand" href="#connectionSettings"><img src="assets/icon48.png" width="40" height="40" alt=""><span>QudadFlow<small>TRANSLATOR</small></span></a>
     <p class="nav-label">设置中心</p>
     <nav aria-label="设置导航">
-      <a href="#profileSettings"><span aria-hidden="true">01</span>配置方案</a>
-      <a href="#connectionSettings"><span aria-hidden="true">02</span>连接与模型</a>
-      <a href="#translationSettings"><span aria-hidden="true">03</span>翻译偏好</a>
-      <a href="#researchSettings"><span aria-hidden="true">04</span>论文与记忆</a>
-      <a href="#communitySupport"><span aria-hidden="true">05</span>交流与支持</a>
+      <a href="#connectionSettings"><span aria-hidden="true">01</span>API 方案与模型</a>
+      <a href="#translationSettings"><span aria-hidden="true">02</span>阅读外观</a>
+      <a href="#researchSettings"><span aria-hidden="true">03</span>论文与记忆</a>
+      <a href="#communitySupport"><span aria-hidden="true">04</span>交流与支持</a>
     </nav>
     <p class="nav-note">你的服务，你的选择。<br>配置保存在此浏览器。</p>
   </aside>
   <main class="page">
     <header class="header"><p class="eyebrow">QudadFlow Translator</p><h1>让翻译，顺着你的习惯。</h1><p>连接翻译服务，选择模型，再调整阅读与研究偏好。</p><div class="settings-fold-actions"><button type="button" id="collapseSettings" class="secondary">收起全部</button><button type="button" id="expandSettings" class="secondary">展开全部</button><span>点击分区标题展开，折叠状态会保留。</span></div></header>
     <form id="settingsForm" novalidate>
-      <details class="card settings-section" id="profileSettings" aria-labelledby="profilesTitle">
-        <summary class="section-heading"><h2 id="profilesTitle">保存的配置方案</h2><span class="badge">仅本地保存</span></summary>
-        <div class="grid"><div><label for="savedProfile">选择方案</label><select id="savedProfile"><option value="">新建方案</option></select></div>
-        <div><label for="profileName">方案名称</label><input id="profileName" maxlength="60" placeholder="例如：日常阅读 / 论文图表"></div></div>
-        <div class="profile-actions"><button type="button" class="secondary" id="saveAsProfile">新增 API 配置并使用</button><button type="button" class="secondary" id="deleteProfile" disabled>删除选中方案</button></div>
-        <p class="hint" id="profileStatus">API 仅在本设置页切换。最多 20 个方案，包含各自的 API Key；载入后点击“保存设置”应用。翻译页只切换当前 API 的模型。</p>
-      </details>
       <details class="card settings-section" id="connectionSettings" aria-labelledby="connectionTitle" open>
-        <summary class="section-heading"><h2 id="connectionTitle">API 连接与模型</h2><span class="badge">直连所选服务</span></summary>
-        <p class="section-intro">填写服务商提供的端点和密钥。AI 模型可从上游读取，也可手动输入准确 ID。</p>
-        <label for="apiStyle">接口类型</label>
-        <select id="apiStyle">
+        <summary class="section-heading"><h2 id="connectionTitle">API 方案与模型</h2><span class="badge">配置仅本地保存</span></summary>
+        <p class="section-intro">默认机器翻译无需配置或安装本地程序。只有主动选择 ChatGPT 计划时，才需要一次性连接程序和官方账号授权。</p>
+        <div class="grid connection-choice"><div><label for="savedProfile">已保存方案</label><select id="savedProfile"><option value="">新建方案</option></select></div>
+        <div><label for="apiStyle">接口类型</label><select id="apiStyle">
+          <option value="auto-machine">自动机器翻译（默认免 Key）</option>
           <option value="mymemory">MyMemory（免 Key 基础试用）</option>
+          <option value="chatgpt-plan">ChatGPT 计划（官方授权，预览）</option>
           <option value="openai-compatible">OpenAI 兼容（Chat Completions / Responses）</option>
           <option value="google-translate-v2">Google Cloud Translation v2（机器翻译）</option>
           <option value="microsoft-translator">Microsoft Translator（Azure 机器翻译）</option>
           <option value="deepl">DeepL API（机器翻译）</option>
           <option value="custom-json">自定义 JSON 接口</option>
-        </select>
+        </select></div></div>
         <p class="hint" id="providerHint">可填写 OpenAI、DeepSeek、智谱、通义、Moonshot、硅基流动、Ollama 等兼容接口的完整地址。</p>
+        <div class="profile-management" id="profileSettings"><div><label for="profileName">方案名称</label><input id="profileName" maxlength="60" placeholder="例如：日常阅读 / 论文图表"></div>
+          <div class="profile-actions"><button type="button" class="secondary" id="saveAsProfile">另存为新方案</button><button type="button" class="secondary" id="deleteProfile" disabled>删除选中方案</button></div></div>
+        <p class="hint" id="profileStatus">最多保存 20 个方案，每个方案保留自己的 API Key。选择方案后，点击下方“保存设置”才会应用。</p>
 
-        <label for="endpoint">API 端点</label>
+        <section id="chatgptConnection" class="chatgpt-connection" hidden aria-label="ChatGPT 官方账号">
+          <p>获得官方计划授权后，QudadFlow 使用所选账号自己的额度，不共用管理员账号或 API Key。默认机器翻译无需登录或额外设置；只有主动选择 ChatGPT 计划才需要本地连接程序保护登录凭据。</p>
+          <label for="chatgptAccount">ChatGPT 账号</label><select id="chatgptAccount"><option value="">添加账号或工作区并授权…</option></select>
+          <p id="chatgptEligibilityNotice" class="chatgpt-eligibility-notice" role="note"><strong>Team / Business 授权前请先了解：</strong><a href="https://developers.openai.com/siwc/quickstart" target="_blank" rel="noreferrer">OpenAI 开源接入说明</a>目前只明确列出符合资格的 Plus / Pro 可使用计划额度。Team / Business 成员的个人 ChatGPT Work / Codex 额度能否用于本扩展，尚无官方确认；组织策略拒绝也无法单独判定套餐资格。若官方提示“组织尚未启用此应用”，请保留错误码和 Request ID，停止重复授权。默认机器翻译可直接使用。</p>
+          <div class="profile-actions"><button type="button" id="chatgptLogin">Continue with ChatGPT</button><button type="button" id="chatgptCancel" hidden>取消登录</button><button type="button" id="chatgptRefresh" class="secondary">重新检测</button><button type="button" id="chatgptLogout" class="secondary">退出所选账号</button><button type="button" id="chatgptResume" class="secondary">管理用量后继续</button></div>
+          <p id="chatgptStatus" role="status">正在检查本地连接程序…</p>
+          <details id="chatgptWorkspaceHelp" class="chatgpt-workspace-help"><summary>Team / Business 授权失败怎么办？</summary><p><strong>普通成员：</strong>若官方页面显示“组织尚未启用此应用”，请停止重复授权，将错误码和 Request ID 交给组织管理员；页面没有自动返回时，可在此取消登录。默认机器翻译仍可使用。</p><p><strong>管理员：</strong>先查看 OpenAI Admin Console 的 External access。若 QudadFlow 不在应用列表，当前页面没有可直接针对本应用放行的项目；即使“身份”和“已连接的应用”默认允许，也不能据此确认计划额度权限。请勿为此直接放宽全组织默认设置。凭诊断信息向 OpenAI 支持确认 Business 成员额度是否支持此开源授权，以及未列出应用时的审批办法。只有官方确认可用并给出配置方式后，才按最小范围配置；成员仍需各自授权。</p><p><strong>额度资格：</strong>若连接测试返回 <code>subscription_sharing_user_not_eligible</code>，所选账号、工作区或策略无法使用此接入，请勿反复重试。切换账号或工作区时，请选择“添加账号或工作区并授权”，不要复用原工作区的注册。</p></details>
+          <p class="hint"><a href="https://chatgpt.com/settings/usage" target="_blank" rel="noreferrer">管理 ChatGPT 用量与应用访问</a>。达到限额时会暂停，不会自动切换付费 API。</p>
+          <details id="chatgptSetup" hidden><summary>本地连接程序未就绪（仅 ChatGPT 计划）</summary><p>默认机器翻译无需此程序。Windows x64 商店版请<a href="https://github.com/qudadd/qudadflow-translator/releases/download/v0.9.0/qudadflow-chatgpt-bridge-win-x64-v0.9.0.zip" target="_blank" rel="noreferrer">下载本地连接程序</a>，解压后双击 <code>Install-Bridge.cmd</code>，再返回此页点击“重新检测”。安装仅针对当前 Windows 用户，支持 Edge 和 Chrome。</p><details><summary>侧载开发版安装命令</summary><p>从源码加载的扩展 ID 不同；请在源码文件夹运行以下命令。</p><pre id="chatgptInstallCommand"></pre></details><p class="hint">安装后会在官方网页授权。无需向扩展提供密码、Cookie 或 API Key。</p></details>
+        </section>
+        <div id="endpointWrap"><label for="endpoint">API 端点</label>
         <input id="endpoint" type="url" required placeholder="https://api.openai.com/v1/chat/completions" autocomplete="url">
-        <p class="hint" id="endpointHint">OpenAI 兼容接口可填完整地址，或填到 /v1；自定义 JSON 接口请填实际 POST 地址。</p>
+        <p class="hint" id="endpointHint">OpenAI 兼容接口可填完整地址，或填到 /v1；自定义 JSON 接口请填实际 POST 地址。</p></div>
 
         <div id="apiKeyWrap"><label for="apiKey">API Key</label>
         <div class="secret"><input id="apiKey" type="password" autocomplete="off" placeholder="sk-…"><button type="button" id="toggleKey">显示</button></div>
         <p class="hint" id="apiKeyHint">扩展只会按接口类型把密钥发送到指定端点，不会上传到本项目服务器。</p></div>
+
+        <div id="mymemoryEmailWrap"><label for="mymemoryEmail">MyMemory 联系邮箱（可选）</label>
+          <input id="mymemoryEmail" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com">
+          <p class="hint">仅在使用 MyMemory 时随翻译文字发送。服务商说明：匿名 5000 字符/天，提供有效邮箱为 50000 字符/天；不保证共享网络下的额度完全独立。浏览器本地翻译不消耗此额度。需要按个人订阅分别计量时，可为每位用户配置自己的 Microsoft Translator 密钥；<a href="https://azure.microsoft.com/en-us/pricing/details/translator/" target="_blank" rel="noreferrer">免费额度见 Azure 官方说明</a>。</p></div>
+        <div id="localModelWrap" class="local-model-wrap" hidden>
+          <p><strong>可选：浏览器本地翻译模型</strong>。首次下载需你主动点击；准备好后会优先在设备上翻译。未准备好时立即使用 MyMemory。</p>
+          <div class="profile-actions"><button type="button" class="secondary" id="prepareLocalModel">下载并准备本地模型</button><button type="button" class="secondary" id="cancelLocalModel" hidden>取消下载</button></div>
+          <p class="hint" id="localModelStatus" role="status"></p>
+        </div>
 
         <div id="modelWrap">
           <label for="model">当前模型 ID</label>
           <div class="model-input"><input id="model" type="text" placeholder="读取列表后选择，或手动填写准确 ID" autocomplete="off" maxlength="256"><button type="button" class="secondary" id="fetchModels">读取上游模型</button><button type="button" class="secondary" id="cancelModels" hidden>取消读取</button></div>
           <p class="hint" id="modelStatus" role="status">读取后在本地保存此 API 的模型列表，供所有翻译页切换；不自动更改当前模型。</p>
           <div class="model-browser" id="modelBrowser" hidden>
-            <div class="model-filters"><div><label for="modelSearch">搜索上游模型</label><input type="search" id="modelSearch" placeholder="模型 ID、名称或提供方" maxlength="200"></div><div><label for="modelFilter">按上游声明筛选</label><select id="modelFilter"><option value="all">全部模型</option><option value="text">明确声明文本输入与输出</option><option value="vision">明确声明图片输入</option><option value="unknown">能力信息不完整</option></select></div></div>
+            <div class="model-filters"><div><label for="modelSearch">搜索上游模型</label><input type="search" id="modelSearch" placeholder="模型 ID、名称或提供方" maxlength="200"></div><div><label for="modelFilter">按上游声明筛选</label><select id="modelFilter"><option value="all">全部模型</option><option value="text">文本输入（含未声明输出）</option><option value="vision">明确声明图片输入</option><option value="unknown">能力信息不完整</option></select></div></div>
             <div class="model-picker"><div><label for="modelCandidates">返回的模型</label><select id="modelCandidates" size="7" aria-describedby="modelCount"></select><p class="hint" id="modelCount"></p></div><section class="model-detail" aria-label="上游模型信息"><p id="modelDetailEmpty">先选择一个模型查看信息，再决定是否填入。</p><dl id="modelMetadata" hidden></dl><button type="button" class="secondary" id="applyModel" disabled>填入此模型</button></section></div>
             <p class="hint">以上为上游返回的信息；未提供的能力显示“未知”，不按模型名称推断速度、价格或读图能力。</p>
           </div>
@@ -73,10 +89,6 @@
         <details id="customHeadersWrap" class="advanced"><summary>自定义请求头 <span>按服务商要求填写</span></summary><label for="customHeaders">请求头 JSON（可选）</label>
         <textarea id="customHeaders" rows="3" spellcheck="false">{}</textarea>
         <p class="hint">可用占位符：<code>{{apiKey}}</code>、<code>{{model}}</code>。例如 <code>{"X-API-Key":"{{apiKey}}"}</code>。读取模型列表也使用这些请求头。</p></details>
-      </details>
-
-      <details class="card settings-section" id="translationSettings">
-        <summary><h2>翻译偏好</h2></summary>
         <div class="grid">
           <div><label for="sourceLanguage">源语言</label><select id="sourceLanguage"><option value="auto">自动检测</option><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="es">Español</option><option value="ru">Русский</option></select></div>
           <div><label for="targetLanguage">目标语言</label><select id="targetLanguage"><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="es">Español</option><option value="ru">Русский</option></select></div>
@@ -85,6 +97,30 @@
         <input id="temperature" type="number" min="0" max="1" step="0.1">
         <p class="hint">留空由服务商决定；服务商不支持此参数时请留空。</p></div>
         <div><p class="hint">API 调用不设固定超时。长文本会持续等待；接口或网络报错时停止，也可手动停止。网页翻译优先处理当前视区。</p></div></div>
+        <details class="advanced custom-only" id="customSection" open>
+          <summary>自定义 JSON 映射</summary>
+          <label for="requestTemplate">请求体模板</label>
+          <textarea id="requestTemplate" rows="9" spellcheck="false"></textarea>
+          <p class="hint">替换占位符后必须是 JSON。占位符要作为 JSON 值使用，例如 <code>"prompt": {{text}}</code>，可用 text、model、sourceLanguage、targetLanguage、context、apiKey。</p>
+          <label for="responsePath">译文响应路径</label>
+          <input id="responsePath" type="text" placeholder="choices[0].message.content">
+          <p class="hint">使用点号和数组下标，例如 <code>data.translation</code> 或 <code>choices[0].message.content</code>。</p>
+        </details>
+        <section class="advanced trial-inline" id="trialSettings"><h3>MyMemory 快速试用</h3><p>默认 English → 简体中文。匿名额度通常为 5000 字符/天，适合非私密短文；其他源语言需手动选择。</p><button type="button" class="secondary" id="useTrial">启用 MyMemory 基础试用</button><p class="hint">文字通过 HTTPS 查询发送给 MyMemory，服务商可能长期保留。<a href="https://mymemory.translated.net/terms-and-conditions" target="_blank" rel="noreferrer">服务与隐私条款</a> · <a href="https://mymemory.translated.net/doc/usagelimits.php" target="_blank" rel="noreferrer">额度说明</a></p></section>
+        <section class="advanced permission-inline" id="permissionSettings">
+          <h3>网站与 API 访问权限</h3>
+          <p id="permissionStatus">保存时会请求访问你填写的 API 域名。扩展只会向该域名发送翻译请求。</p>
+          <button type="button" class="secondary" id="requestPermission">请求/检查 API 域名权限</button>
+          <p class="hint">默认按需授权，浏览器会记住已授权的站点。也可一次允许所有 HTTP/HTTPS 网站，减少切换论文、载入原图和 API 时的确认。此权限允许扩展读取这些网站；只有你操作翻译或分析时才发送相应内容，不会自动启用全站划词。</p>
+          <p id="websitePermissionStatus" role="status">正在检查网站权限…</p>
+          <div class="permission-actions"><button type="button" class="secondary" id="grantAllWebsites">一次授权所有网站</button><button type="button" class="secondary" id="revokeAllWebsites" hidden>恢复按站点授权</button></div>
+          <p class="hint">恢复按站点授权会清除可选网站授权，使用时可重新授予。浏览器内置页面与商店页面仍受浏览器限制；本地文件访问需在扩展详情单独开启。</p>
+        </section>
+        <div class="connection-actions"><div class="save-info"><span id="saveState">正在读取本地配置…</span><span id="status" role="status"></span></div><div class="save-buttons"><button type="button" class="secondary" id="testApi">测试连接</button><button type="button" class="secondary" id="cancelTestApi" hidden>停止测试</button><button type="submit" class="primary">保存设置</button></div></div>
+      </details>
+
+      <details class="card settings-section" id="translationSettings">
+        <summary><h2>阅读外观与快捷键</h2></summary>
         <fieldset class="immersive-appearance" aria-describedby="immersiveColorHint">
           <legend>沉浸式译文颜色 <span class="badge">自动保存</span></legend>
           <div class="immersive-color-controls">
@@ -113,28 +149,6 @@
         </fieldset>
       </details>
 
-      <details class="card settings-section custom-only" id="customSection" open>
-        <summary><h2>自定义 JSON 映射</h2></summary>
-        <label for="requestTemplate">请求体模板</label>
-        <textarea id="requestTemplate" rows="9" spellcheck="false"></textarea>
-        <p class="hint">替换占位符后必须是 JSON。占位符要作为 JSON 值使用，例如 <code>"prompt": {{text}}</code>，可用 text、model、sourceLanguage、targetLanguage、context、apiKey。</p>
-        <label for="responsePath">译文响应路径</label>
-        <input id="responsePath" type="text" placeholder="choices[0].message.content">
-        <p class="hint">使用点号和数组下标，例如 <code>data.translation</code> 或 <code>choices[0].message.content</code>。</p>
-      </details>
-
-      <details class="card settings-section trial-card" id="trialSettings"><summary class="section-heading"><h2>快速试用 · 无需 API Key</h2><span class="badge">MyMemory</span></summary><p>默认 English → 简体中文。匿名额度通常为 5000 字符/天，适合非私密短文；其他源语言需手动选择。</p><button type="button" class="secondary" id="useTrial">启用 MyMemory 基础试用</button><p class="hint">文字通过 HTTPS 查询发送给 MyMemory，服务商可能长期保留。<a href="https://mymemory.translated.net/terms-and-conditions" target="_blank" rel="noreferrer">服务与隐私条款</a> · <a href="https://mymemory.translated.net/doc/usagelimits.php" target="_blank" rel="noreferrer">额度说明</a></p></details>
-      <details class="card settings-section permission-card" id="permissionSettings">
-        <summary><h2>网站与 API 访问权限</h2></summary>
-        <p id="permissionStatus">保存时会请求访问你填写的 API 域名。扩展只会向该域名发送翻译请求。</p>
-        <button type="button" class="secondary" id="requestPermission">请求/检查 API 域名权限</button>
-        <p class="hint">默认按需授权，浏览器会记住已授权的站点。也可一次允许所有 HTTP/HTTPS 网站，减少切换论文、载入原图和 API 时的确认。此权限允许扩展读取这些网站；只有你操作翻译或分析时才发送相应内容，不会自动启用全站划词。</p>
-        <p id="websitePermissionStatus" role="status">正在检查网站权限…</p>
-        <div class="permission-actions"><button type="button" class="secondary" id="grantAllWebsites">一次授权所有网站</button><button type="button" class="secondary" id="revokeAllWebsites" hidden>恢复按站点授权</button></div>
-        <p class="hint">恢复按站点授权会清除可选网站授权，使用时可重新授予。浏览器内置页面与商店页面仍受浏览器限制；本地文件访问需在扩展详情单独开启。</p>
-      </details>
-
-      <div class="actions"><div class="save-info"><span id="saveState">正在读取本地配置…</span><span id="status" role="status"></span></div><div class="save-buttons"><button type="button" class="secondary" id="testApi">测试连接</button><button type="button" class="secondary" id="cancelTestApi" hidden>停止测试</button><button type="submit" class="primary">保存设置</button></div></div>
     </form>
     <details class="card settings-section research-manager" id="researchSettings"></details>
     <details class="card settings-section community-support" id="communitySupport" aria-labelledby="communityTitle">
@@ -148,6 +162,7 @@
   </div>
   <script src="src/immersive-shortcut.js"></script>
   <script src="options.js"></script>
+  <script src="src/chatgpt-options.js"></script>
   <script type="module" src="src/research-settings.mjs"></script>
   <script src="src/version.js"></script>
 </body>

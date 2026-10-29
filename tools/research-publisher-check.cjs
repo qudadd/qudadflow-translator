@@ -38,7 +38,7 @@ async function fetchOriginal(src,extra={}){return worker.evaluate(async({src,ext
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));origin='http://127.0.0.1:'+server.address().port;fs.mkdirSync(path.dirname(reportPath),{recursive:true});
   try{
     const extension=path.join(scratch,'extension');fs.mkdirSync(extension);
-    for(const name of ['manifest.json','popup.html','popup.css','popup.js','reader.html','reader.css','reader.js','research.html','research.css','research.js','options.html','options.css','options.js','privacy.html','src','vendor','assets','_locales'])fs.cpSync(path.join(root,name),path.join(extension,name),{recursive:true});
+    for(const name of ['manifest.json','offscreen-translation.html','popup.html','popup.css','popup.js','reader.html','reader.css','reader.js','research.html','research.css','research.js','options.html','options.css','options.js','privacy.html','src','vendor','assets','_locales'])fs.cpSync(path.join(root,name),path.join(extension,name),{recursive:true});
     const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json')));manifest.host_permissions=['<all_urls>'];fs.writeFileSync(path.join(extension,'manifest.json'),JSON.stringify(manifest));
     context=await chromium.launchPersistentContext(path.join(scratch,'profile'),{channel:'msedge',headless:true,viewport:{width:1440,height:1100},args:['--disable-extensions-except='+extension,'--load-extension='+extension]});
     context.on('page',page=>page.on('pageerror',error=>errors.push(error.message)));
@@ -72,7 +72,14 @@ async function fetchOriginal(src,extra={}){return worker.evaluate(async({src,ext
       await companion.waitForFunction(()=>document.querySelectorAll('.figure-tile').length===3);assert.equal(await companion.locator('.figure-tile img').count(),3);assert.equal(await companion.locator('.figure-card').count(),0);
       assert.match(await companion.locator('#captureStatus').textContent(),/2 张图片表格/);assert.match(await companion.locator('#tableCount').textContent(),/1 张文字表格 · 2 张图片表格/);assert.match(await companion.locator('.figure-tile-state').first().textContent(),/缩略预览 · 原图待载入/);
       await companion.locator('#selectImageTables').click();assert.deepEqual(await companion.locator('.figure-tile:has(input:checked)').evaluateAll(nodes=>nodes.map(node=>node.dataset.key)),['web-1','web-2']);
+      // The current workbench collapses analysis options by default. Open its
+      // visible summary before interacting, just as a user does.
+      const analysisTab=companion.locator('#figure-tab-analysis');
+      if(await analysisTab.getAttribute('aria-selected')!=='true')await analysisTab.click();
+      const analysisDetails=companion.locator('details.research-controls');
+      if(await analysisDetails.count()&&!(await analysisDetails.evaluate(e=>e.open)))await analysisDetails.locator(':scope > summary').click();
       await companion.locator('#analyzePaper').click();assert.match(await companion.locator('#paperStatus').textContent(),/2 项尚未载入/);assert.equal(calls.length,0);assert.equal(imageRequests.filter(url=>url.startsWith('/original-')).length,0);
+      await companion.locator('#figure-tab-gallery').click();
     });
     await check('Batch loading fetches full-size linked originals with generic MIME, keeps selection/order and preserves 2500-pixel detail',async()=>{
       await companion.locator('#loadSelectedFigures').click();await companion.waitForFunction(()=>document.querySelectorAll('.figure-card').length===2&&!document.querySelector('#figureSearch').disabled);
@@ -82,10 +89,11 @@ async function fetchOriginal(src,extra={}){return worker.evaluate(async({src,ext
     });
     await check('Missing MIME originals load too; explicit Q&A transmits selected full-resolution images, numbered captions and native table text',async()=>{
       await companion.locator('#selectAllFigures').click();await companion.locator('#loadSelectedFigures').click();await companion.waitForFunction(()=>document.querySelectorAll('.figure-card').length===3&&!document.querySelector('#figureSearch').disabled);
-      assert.ok(imageRequests.includes('/original-0.jpg'));await companion.locator('#selectImageTables').click();await companion.locator('#researchQuestion').fill('Compare Table 1 and Table 2 with the native data.');await companion.locator('#analyzePaper').click();await companion.waitForFunction(()=>document.querySelector('#paperStatus').textContent.startsWith('分析完成'));
+      assert.ok(imageRequests.includes('/original-0.jpg'));await companion.locator('#selectImageTables').click();await companion.locator('#figure-tab-analysis').click();await companion.locator('#researchQuestion').fill('Compare Table 1 and Table 2 with the native data.');await companion.locator('#analyzePaper').click();await companion.waitForFunction(()=>document.querySelector('#paperStatus').textContent.startsWith('分析完成'));
       assert.equal(calls.length,1);const parts=calls[0].messages.at(-1).content,images=parts.filter(part=>part.type==='image_url'),prompt=parts.find(part=>part.type==='text').text;assert.equal(images.length,2);
       for(const image of images)assert.equal((await dimensions(image.image_url.url)).width,2500);
       assert.match(prompt,/INPUT IMAGE 1: Table 1/);assert.match(prompt,/INPUT IMAGE 2: Table 2/);assert.match(prompt,/Outcomes and uncertainty/);assert.match(prompt,/\| Treatment \| 42\.5 \|/);assert.match(prompt,/END_OF_PAPER/);
+      await companion.locator('#figure-tab-gallery').click();
     });
     await check('Original resize limit differs from screenshot limit without upscaling',async()=>{
       const data='data:image/jpeg;base64,'+jpeg.toString('base64');const limited=await worker.evaluate(async data=>researchImage(await(await fetch(data)).arrayBuffer()),data);assert.equal((await dimensions(limited)).width,1600);

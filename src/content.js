@@ -480,6 +480,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       const visible = new WeakMap();
       const owners = new WeakMap();
       const validity = new WeakMap();
+      const shadowHostOf = (node) => node.parentNode?.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? node.parentNode.host : null;
       session.roots = new Set([document]);
       const pushChildren = (node) => { for (let index = node.childNodes.length - 1; index >= 0; index -= 1) stack.push(node.childNodes[index]); };
       const styleOf = (element) => {
@@ -501,7 +502,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         const display = styleOf(element).display;
         const parent = element.parentElement;
         const layoutItem = parent && /flex|grid/.test(styleOf(parent).display);
-        const owner = display !== "contents" && (element.matches(IMMERSIVE_BLOCK_SELECTOR) || element === body || layoutItem || element.parentNode?.host || /flex|grid/.test(display) || ["block", "inline-block", "list-item"].includes(display)) ? element
+        const owner = display !== "contents" && (element.matches(IMMERSIVE_BLOCK_SELECTOR) || element === body || layoutItem || shadowHostOf(element) || /flex|grid/.test(display) || ["block", "inline-block", "list-item"].includes(display)) ? element
             : ownerOf(element.parentElement);
         owners.set(element, owner);
         return owner;
@@ -543,7 +544,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         const previous = session.seen.get(node);
         if (previous && !validity.has(previous.record)) validity.set(previous.record, originalStillMatches(previous.record));
         if (previous && previous.original === node.textContent && validity.get(previous.record)) { current = undefined; continue; }
-        const element = ownerOf(node.parentElement) || node.parentNode?.host;
+        const element = ownerOf(node.parentElement) || shadowHostOf(node);
         if (!element) { current = undefined; continue; }
         if (!node.textContent.trim() && (!current || current.element !== element)) continue;
         const directLayout = node.parentElement === element && /flex|grid/.test(styleOf(element).display);
@@ -592,7 +593,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
 
     function immersiveStyleText() {
       return `
-        [data-edge-wt-immersive-translation="1"] { all:initial !important; display:block !important; position:static !important; float:none !important; box-sizing:border-box !important; width:auto !important; min-width:0 !important; max-width:100% !important; margin:.4em 0 0 !important; padding:0 !important; color:${immersiveColor || '#315bc7'} !important; font:inherit !important; line-height:1.6 !important; text-align:inherit !important; text-indent:0 !important; text-transform:none !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; }
+        [data-edge-wt-immersive-translation="1"] { all:initial !important; display:block !important; position:static !important; float:none !important; box-sizing:border-box !important; width:auto !important; min-width:0 !important; max-width:100% !important; margin:.4em 0 0 !important; padding:0 !important; color:${immersiveColor || '#315bc7'} !important; font:inherit !important; line-height:1.6 !important; text-align:inherit !important; writing-mode:inherit !important; text-indent:0 !important; text-transform:none !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; }
         @media (prefers-color-scheme:dark) { [data-edge-wt-immersive-translation="1"] { color:${immersiveColor || '#9abaff'} !important; } }
         [data-edge-wt-pending="1"] { opacity:.7 !important; }
       `;
@@ -1105,7 +1106,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
     chrome.storage?.onChanged?.addListener((changes,area)=>{
       if(area!=='local')return;
       if('immersiveTranslationColor' in changes){immersiveColorRevision+=1;setImmersiveColor(changes.immersiveTranslationColor.newValue);}
-      const fields=['apiStyle','endpoint','apiKey','model','providerRegion','sourceLanguage','targetLanguage','temperature','streamOpenAi','customHeaders','requestTemplate','responsePath'];
+      const fields=['apiStyle','chatgptAccount','endpoint','apiKey','mymemoryEmail','model','providerRegion','sourceLanguage','targetLanguage','temperature','streamOpenAi','customHeaders','requestTemplate','responsePath'];
       if(!fields.some(key=>key in changes))return;
       const running=pendingRequests.size>0||Boolean(immersiveSession);
       if(!running)return;

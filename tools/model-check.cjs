@@ -49,7 +49,7 @@ const server=http.createServer(async(req,res)=>{
       const many=catalog.normalize({data:Array.from({length:1005},(_,i)=>({id:'m'+i}))});assert.equal(many.models.length,1000);assert.equal(many.truncated,true);
     });
     const extension=path.join(scratch,'extension');fs.mkdirSync(extension);
-    for(const file of ['manifest.json','options.html','options.css','options.js','popup.html','popup.css','popup.js','research.html','research.js','research.css','privacy.html','src','assets','_locales'])fs.cpSync(path.join(root,file),path.join(extension,file),{recursive:true});
+    for(const file of ['manifest.json','offscreen-translation.html','options.html','options.css','options.js','popup.html','popup.css','popup.js','research.html','research.js','research.css','privacy.html','src','assets','_locales'])fs.cpSync(path.join(root,file),path.join(extension,file),{recursive:true});
     const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json')));manifest.host_permissions=['http://127.0.0.1/*'];fs.writeFileSync(path.join(extension,'manifest.json'),JSON.stringify(manifest));
     context=await chromium.launchPersistentContext(path.join(scratch,'profile'),{channel:process.env.QF_BROWSER_CHANNEL||'msedge',headless:true,viewport:{width:1440,height:1050},args:['--disable-extensions-except='+extension,'--load-extension='+extension]});browserVersion=context.browser().version();
     const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'),base='chrome-extension://'+new URL(worker.url()).host+'/';

@@ -307,7 +307,7 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
 
     const extension = path.join(scratch,'extension');
     fs.mkdirSync(extension);
-    for(const name of ['manifest.json','research.html','research.css','research.js','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales']) fs.cpSync(path.join(root,name),path.join(extension,name),{recursive:true});
+    for(const name of ['manifest.json','offscreen-translation.html','research.html','research.css','research.js','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales']) fs.cpSync(path.join(root,name),path.join(extension,name),{recursive:true});
     const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json'),'utf8'));
     // Local API + fixture only. Production manifest retains optional permissions.
     manifest.host_permissions=['http://127.0.0.1/*'];
@@ -328,6 +328,7 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
     await options.goto(extensionOrigin+'/options.html');
     await options.waitForFunction(()=>document.querySelector('#endpoint').value);await options.locator('#expandSettings').click();
     await check('Provider switch resets endpoint and isolates credentials',async()=>{
+      await options.locator('#apiStyle').selectOption('openai-compatible');
       await options.locator('#apiKey').fill('PREVIOUS-PROVIDER-KEY');
       await options.locator('#apiStyle').selectOption('deepl');
       assert.equal(await options.locator('#endpoint').inputValue(),'https://api-free.deepl.com/v2/translate');

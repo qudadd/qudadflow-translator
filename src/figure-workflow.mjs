@@ -48,7 +48,7 @@ export class FigureWorkflow {
     const questionArea=document.createElement('div');questionArea.className='workbench-question';
     questionArea.append(this.research.container.querySelector('.question-label'),questionTools,this.research.$('researchQuestion'),this.research.$('questionPresets'),this.research.container.querySelector('.research-actions'));
     this.research.$('researchOptions').after(questionArea);
-    this.modelPicker=new ModelPicker($('figureModel'),{onState:state=>{this.hasAI=state.apiStyle==='openai-compatible'&&Boolean(state.model);this.controls();},onNotice:(text,error)=>this.notice(text,error),onPending:()=>this.controls()});
+    this.modelPicker=new ModelPicker($('figureModel'),{onState:state=>{this.hasAI=['openai-compatible','chatgpt-plan'].includes(state.apiStyle)&&Boolean(state.model);this.controls();},onNotice:(text,error)=>this.notice(text,error),onPending:()=>this.controls()});
   }
   notice(text,error=false){$('figureStatus').textContent=text;$('figureStatus').title=text;$('figureStatus').classList.toggle('error',error);}
   async analyzeRequest(...args){const result=await this.request(...args);this.memoryWarning=result?.memoryWarning||'';return typeof result==='string'?result:result.translation;}

@@ -11,7 +11,7 @@ export class ModelPicker {
     select.setAttribute('aria-describedby',[select.getAttribute('aria-describedby'),this.note.id].filter(Boolean).join(' '));
     select.onchange=()=>this.change();
     this.readButton.onclick=()=>this.state?.discovering?this.cancel():this.discover(true);
-    this.listener=(changes,area)=>{if(area==='local'&&['model','modelCatalogs','savedProfiles','activeProfileId','apiStyle','endpoint','apiKey','customHeaders'].some(k=>k in changes))void this.refresh();};
+    this.listener=(changes,area)=>{if(area==='local'&&['model','modelCatalogs','savedProfiles','activeProfileId','apiStyle','endpoint','apiKey','customHeaders','chatgptAccount'].some(k=>k in changes))void this.refresh();};
     this.messageListener=message=>{if(message?.type==='MODEL_CATALOG_STATUS')void this.refresh();};
     chrome.storage.onChanged.addListener(this.listener);chrome.runtime.onMessage.addListener(this.messageListener);
     window.addEventListener('pagehide',()=>{this.closed=true;chrome.storage.onChanged.removeListener(this.listener);chrome.runtime.onMessage.removeListener(this.messageListener);},{once:true});
@@ -19,7 +19,7 @@ export class ModelPicker {
   }
   setLocked(locked){
     this.locked=Boolean(locked);
-    this.select.disabled=this.locked||this.pending||!this.state||this.state.apiStyle!=='openai-compatible'||!this.state.models.length;
+    this.select.disabled=this.locked||this.pending||!this.state||!['openai-compatible','chatgpt-plan'].includes(this.state.apiStyle)||!this.state.models.length;
     this.readButton.disabled=this.pending||!this.state?.canDiscover||this.reading&&!this.state.discovering;
   }
   async refresh(){
@@ -27,8 +27,8 @@ export class ModelPicker {
     try{
       const state=await chrome.runtime.sendMessage({type:'MODEL_STATE'});if(this.closed||revision!==this.revision)return;
       if(!state?.ok)throw new Error(state?.error||'模型列表读取失败');this.state=state;
-      const ai=state.apiStyle==='openai-compatible';
-      const options=state.models.map(m=>new Option(m.id,m.id));
+      const ai=['openai-compatible','chatgpt-plan'].includes(state.apiStyle);
+      const options=state.models.map(m=>new Option(state.apiStyle==='chatgpt-plan'?(m.name||m.id):m.id,m.id));
       if(ai&&state.model&&!options.some(o=>o.value===state.model))options.unshift(new Option(state.model,state.model));
       if(!options.length){const placeholder=new Option(ai?(state.discovering?'正在读取上游模型…':'尚无上游模型列表'):'当前为传统翻译 API','');placeholder.disabled=true;options.push(placeholder);}
       this.select.replaceChildren(...options);this.select.value=ai?state.model||'':'';
@@ -39,6 +39,7 @@ export class ModelPicker {
       this.field.setAttribute('aria-busy',String(state.discovering));
       this.note.classList.toggle('error',Boolean(state.discoveryError&&state.discoveryCode!=='CANCELLED'));
       this.note.textContent=!ai?'':state.discovering?'正在读取上游模型…可继续使用当前模型。':state.discoveryError?state.discoveryError+(state.models.length?' 已保留上次列表。':''):!state.canDiscover?'请在 API 设置中新增或完善连接。':state.fetchedAt&&!state.models.length?'上游返回空列表，可刷新或在设置中手填模型。':state.fetchedAt?`${state.models.length} 个上游模型${state.truncated?' · 部分列表':''}`:'';
+      if(state.apiStyle==='chatgpt-plan')this.note.textContent='正在使用 ChatGPT 计划 · '+this.note.textContent;
       this.note.hidden=!this.note.textContent;this.note.title=this.note.textContent;
       this.onState(state);this.setLocked(this.locked);
       if(state.canDiscover&&!state.fetchedAt&&!state.discoveryAttempted&&!this.reading)void this.discover(false);

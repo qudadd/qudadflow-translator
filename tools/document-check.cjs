@@ -65,19 +65,19 @@ const server=http.createServer(async(req,res)=>{
     await check('Batch markers: missing/duplicate rejected; split stream marker hidden',()=>{
       const batch=format.translationBatches([{text:'one'},{text:'two'}])[0];assert.deepEqual(format.markedTranslations('__QF_DOC_0__\n一\n__QF_DOC_1__\n二',batch),['一','二']);assert.equal(format.markedTranslations('__QF_DOC_0__\n一',batch),null);assert.equal(format.markedTranslations('__QF_DOC_0__\n__QF_DOC_0__\n一\n__QF_DOC_1__\n二',batch),null);assert.deepEqual(format.markedTranslations('__QF_DOC_0__\n一\n__QF_DO',batch,true),['一']);
     });
-    // First load the UNCHANGED production manifest, with no API credentials or added permissions.
+    // First load the unchanged production manifest, with no API credentials or added permissions.
     smoke=await chromium.launchPersistentContext(path.join(scratch,'production-profile'),{channel:'msedge',headless:true,viewport:{width:1440,height:1000},args:['--disable-extensions-except='+root,'--load-extension='+root]});
     const smokeWorker=smoke.serviceWorkers()[0]||await smoke.waitForEvent('serviceworker');const smokeId=new URL(smokeWorker.url()).host;
-    await check('Production manifest: real PDF canvas + text layer with no host grants',async()=>{
+    await check('Production manifest: real PDF canvas + text layer with only the MyMemory host grant',async()=>{
       const page=await smoke.newPage();page.on('pageerror',e=>browserErrors.push(e.message));await page.goto('chrome-extension://'+smokeId+'/reader.html');
       await page.locator('#file').setInputFiles({name:'production.pdf',mimeType:'application/pdf',buffer:pdf});
       await page.waitForFunction(()=>document.querySelector('.textLayer')?.textContent.includes('Hello world'));
       assert.equal(await page.locator('#pageCount').textContent(),'3');assert.equal(await page.locator('#status').evaluate(e=>e.classList.contains('error')),false);
-      const permissions=await smokeWorker.evaluate(()=>chrome.permissions.getAll());assert.ok(!permissions.origins?.length);assert.equal(await page.locator('#sourceContent .pdf-sheet > canvas').count(),1);
+      const permissions=await smokeWorker.evaluate(()=>chrome.permissions.getAll());assert.deepEqual(permissions.origins,['https://api.mymemory.translated.net/*']);assert.equal(await page.locator('#sourceContent .pdf-sheet > canvas').count(),1);
     });
     await smoke.close();smoke=undefined;
     const extension=path.join(scratch,'extension');fs.mkdirSync(extension);
-    for(const file of ['manifest.json','research.html','research.css','research.js','reader.html','reader.css','reader.js','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales','vendor'])fs.cpSync(path.join(root,file),path.join(extension,file),{recursive:true});
+    for(const file of ['manifest.json','offscreen-translation.html','research.html','research.css','research.js','reader.html','reader.css','reader.js','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales','vendor'])fs.cpSync(path.join(root,file),path.join(extension,file),{recursive:true});
     const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json'),'utf8'));version=manifest.version;manifest.host_permissions=['http://127.0.0.1/*'];fs.writeFileSync(path.join(extension,'manifest.json'),JSON.stringify(manifest));
     context=await chromium.launchPersistentContext(path.join(scratch,'test-profile'),{channel:'msedge',headless:true,acceptDownloads:true,viewport:{width:1440,height:1000},args:['--disable-extensions-except='+extension,'--load-extension='+extension]});
     const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'),id=new URL(worker.url()).host,base='chrome-extension://'+id+'/';

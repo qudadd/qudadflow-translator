@@ -199,8 +199,17 @@ async function restoreImmersive() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const stored = await chrome.storage.local.get({ targetLanguage: DEFAULT_TARGET });
+  const stored = await chrome.storage.local.get({ targetLanguage: DEFAULT_TARGET, apiStyle:'auto-machine', chatgptAccount:'', qfChatgptInstallOffer:'' });
   $("targetLanguage").value = stored.targetLanguage || DEFAULT_TARGET;
+  const offer=$('chatgptInstallOffer');
+  const platform=await chrome.runtime.getPlatformInfo().catch(()=>({}));
+  offer.hidden=stored.qfChatgptInstallOffer!=='0.9.0'||stored.apiStyle==='chatgpt-plan'||Boolean(stored.chatgptAccount)||platform.os!=='win'||platform.arch!=='x86-64';
+  $('chatgptInstallLater').addEventListener('click',async()=>{await chrome.storage.local.remove('qfChatgptInstallOffer');offer.hidden=true;});
+  $('chatgptInstallGuide').addEventListener('click',async()=>{
+    await chrome.tabs.create({url:chrome.runtime.getURL('options.html?preview=chatgpt#connectionSettings')});
+    await chrome.storage.local.remove('qfChatgptInstallOffer');
+    window.close();
+  });
   $("targetLanguage").addEventListener("change", () => chrome.storage.local.set({ targetLanguage: $("targetLanguage").value }));
   $("translateSelection").addEventListener("click", () => run("TRANSLATE_SELECTION"));
   $("translatePage").addEventListener("click", () => run("TRANSLATE_PAGE"));

@@ -66,6 +66,7 @@ const QFModelCatalog = (() => {
 
   async function fetchModels(values, controller) {
     if (!values || typeof values !== 'object' || Array.isArray(values) || JSON.stringify(values).length > 80000) throw fail('连接配置无效或过大。', 'INVALID_SETTINGS');
+    if (values.apiStyle === 'chatgpt-plan') return QFChatGPT.request('models',{accountRef:values.chatgptAccount},controller);
     if (values.apiStyle !== 'openai-compatible') throw fail('仅 OpenAI 兼容接口支持读取此模型列表。', 'UNSUPPORTED_PROVIDER');
     const url = endpoint(values.endpoint);
     if (typeof values.apiKey !== 'string' || !values.apiKey.trim()) throw fail('请先填写此服务商的 API Key。', 'API_KEY_REQUIRED');
