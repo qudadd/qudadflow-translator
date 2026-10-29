@@ -41,24 +41,26 @@ chrome.tabs.onUpdated?.addListener((tabId, change) => {
 const translationCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const CACHE_MAX_CHARS = 250000;
-let cacheConfiguration = "";
+let cacheGeneration = 0;
 let cacheChars = 0;
+let settingsRevision = 0;
+let settingsSnapshot;
+const pendingTranslations = new Map();
 
 function clearTranslationCache() {
   translationCache.clear();
-  cacheConfiguration = "";
+  cacheGeneration++;
   cacheChars = 0;
 }
 
 function cachedTranslation(settings, text, context) {
-  // Memory only: a provider, credential or preference change invalidates previous results.
-  const configuration = JSON.stringify(settings);
-  if (configuration !== cacheConfiguration) { clearTranslationCache(); cacheConfiguration = configuration; }
+  // Memory only. Separate providers, accounts, languages and prompts can coexist
+  // in this bounded cache; changing saved connection settings clears all entries.
   const now = Date.now();
   for (const [expiredKey, entry] of translationCache) {
     if (now - entry.created >= CACHE_TTL_MS) { cacheChars -= entry.chars; translationCache.delete(expiredKey); }
   }
-  const key = JSON.stringify([context, text]);
+  const key = cacheGeneration + '\0' + JSON.stringify([settings, context, text]);
   const entry = translationCache.get(key);
   if (entry) {
     translationCache.delete(key);
@@ -69,7 +71,7 @@ function cachedTranslation(settings, text, context) {
 }
 
 function rememberTranslation(key, translation, configuration) {
-  if (JSON.stringify(configuration) !== cacheConfiguration) return translation;
+  if (typeof key !== 'string' || !key.startsWith(cacheGeneration + '\0')) return translation;
   const chars = key.length + translation.length;
   if (chars > CACHE_MAX_CHARS) return translation;
   const old = translationCache.get(key);
@@ -83,6 +85,49 @@ function rememberTranslation(key, translation, configuration) {
     translationCache.delete(first);
   }
   return translation;
+}
+
+// One upstream operation may serve several readers. A reader cancels only its
+// own subscription; the upstream request is aborted when the last reader leaves.
+function sharedTranslation(key, controller, onProgress, start, metadata = {}) {
+  if (controller.signal.aborted) return Promise.reject(translationError('翻译已取消。', 'CANCELLED'));
+  let job = pendingTranslations.get(key);
+  if (job) metadata.shared = true;
+  else {
+    job = {controller: new AbortController(), readers: new Set(), progress: ''};
+    pendingTranslations.set(key, job);
+    const settle = (error, result) => {
+      if (pendingTranslations.get(key) === job) pendingTranslations.delete(key);
+      for (const reader of job.readers) {
+        reader.signal.removeEventListener('abort', reader.abort);
+        if (error) reader.reject(error); else reader.resolve(result);
+      }
+      job.readers.clear();
+    };
+    const progress = value => {
+      job.progress = value;
+      for (const reader of job.readers) try { reader.progress(value); } catch {}
+    };
+    Promise.resolve().then(() => {
+      if (job.controller.signal.aborted) throw translationError('翻译已取消。', 'CANCELLED');
+      return start(job.controller, progress);
+    }).then(value => settle(null, value), error => settle(error));
+  }
+  return new Promise((resolve, reject) => {
+    const reader = {resolve, reject, signal: controller.signal, progress: onProgress};
+    reader.abort = () => {
+      reader.signal.removeEventListener('abort', reader.abort);
+      job.readers.delete(reader);
+      reject(translationError('翻译已取消。', 'CANCELLED'));
+      if (!job.readers.size) {
+        if (pendingTranslations.get(key) === job) pendingTranslations.delete(key);
+        job.controller.abort();
+      }
+    };
+    job.readers.add(reader);
+    reader.signal.addEventListener('abort', reader.abort, {once: true});
+    if (job.progress) try { onProgress(job.progress); } catch {}
+  });
 }
 
 function selectionScriptId(pattern) {
@@ -130,6 +175,19 @@ function normalizeSettings(settings) {
   // Legacy saved profiles must not reinstate a deadline or split the cache.
   delete normalized.requestTimeoutSeconds;
   return normalized;
+}
+
+async function savedTranslationSettings() {
+  if (!settingsSnapshot) {
+    const revision = settingsRevision;
+    const read = storageGet(DEFAULTS).then(value => revision === settingsRevision
+      ? normalizeSettings(value) : savedTranslationSettings()).catch(error => {
+        if (settingsSnapshot === read) settingsSnapshot = undefined;
+        throw error;
+      });
+    settingsSnapshot = read;
+  }
+  return {...await settingsSnapshot};
 }
 
 function keepApiAlive(controller) {
@@ -415,7 +473,8 @@ async function readEventStream(response, settings, onProgress) {
 }
 
 async function translateText(request, controller = new AbortController(), onProgress = () => {}, metadata = {}, figureSettings, analysisInstructions) {
-  const settings = normalizeSettings(figureSettings || await storageGet(DEFAULTS));
+  const settings = figureSettings ? normalizeSettings(figureSettings) : await savedTranslationSettings();
+  if (controller.signal.aborted) throw translationError('翻译已取消。', 'CANCELLED');
   // Image payloads are accepted only by analyzeFigure after checking the reader-owned port.
   const imageData=figureSettings?request.imageData:undefined;
   const effectiveSettings = {
@@ -443,11 +502,15 @@ async function translateText(request, controller = new AbortController(), onProg
       onProgress(cached.translation);
       return cached.translation;
     }
-    const stopKeepAlive = keepApiAlive(controller);
-    try {
-      const translation = await translateAutomaticMachine(effectiveSettings, text, controller, onProgress, cacheable);
-      return cacheable ? rememberTranslation(cached.key, translation, effectiveSettings) : translation;
-    } finally { stopKeepAlive(); }
+    const perform = async (controller, onProgress) => {
+      const stopKeepAlive = keepApiAlive(controller);
+      try {
+        const translation = await translateAutomaticMachine(effectiveSettings, text, controller, onProgress, cacheable);
+        if (controller.signal.aborted) throw translationError('翻译已取消。', 'CANCELLED');
+        return cacheable ? rememberTranslation(cached.key, translation, effectiveSettings) : translation;
+      } finally { stopKeepAlive(); }
+    };
+    return cacheable ? sharedTranslation(cached.key, controller, onProgress, perform, metadata) : perform(controller, onProgress);
   }
   if (!effectiveSettings.endpoint.trim()) throw new Error("请先在设置中填写 API 端点。");
   if (!effectiveSettings.apiKey && !["custom-json", "mymemory"].includes(effectiveSettings.apiStyle)) throw new Error("请先在设置中填写 API Key。");
@@ -473,9 +536,10 @@ async function translateText(request, controller = new AbortController(), onProg
     return cached.translation;
   }
 
-  const { endpoint, headers, body } = effectiveSettings.apiStyle==='mymemory'?{}:buildRequest(effectiveSettings, text, context,imageData,analysisInstructions);
-  const stopKeepAlive = keepApiAlive(controller);
-  try {
+  const perform = async (controller, onProgress) => {
+    const { endpoint, headers, body } = effectiveSettings.apiStyle==='mymemory'?{}:buildRequest(effectiveSettings, text, context,imageData,analysisInstructions);
+    const stopKeepAlive = keepApiAlive(controller);
+    try {
     if(effectiveSettings.apiStyle==='mymemory')return remember(await translateMyMemory(effectiveSettings,text,controller,onProgress,{cacheSettings:effectiveSettings,cacheAllowed:cacheable}));
     const response = await fetch(endpoint, {
       method: "POST", headers,
@@ -496,13 +560,15 @@ async function translateText(request, controller = new AbortController(), onProg
       throw translationError("API 返回的内容不是 JSON，请确认填写的是 API 地址而非网站首页。", "INVALID_RESPONSE");
     }
     return remember(readTranslation(parsed, effectiveSettings));
-  } catch (error) {
+    } catch (error) {
     if (controller.signal.aborted) throw translationError("翻译已取消。", "CANCELLED");
     if (error.code) throw error;
     throw translationError(`API 请求失败：${error.message}。请检查 API 地址、网络及域名访问权限。`, "NETWORK_ERROR");
-  } finally {
-    stopKeepAlive();
-  }
+    } finally {
+      stopKeepAlive();
+    }
+  };
+  return cacheable ? sharedTranslation(cached.key, controller, onProgress, perform, metadata) : perform(controller, onProgress);
 }
 
 async function boundedJsonText(response) {
@@ -551,33 +617,31 @@ function createContextMenu() {
 }
 
 chrome.runtime.onInstalled.addListener(createContextMenu);
-chrome.runtime.onInstalled.addListener(details => {
-  // An update cannot install a native host. Offer its optional setup once in
-  // the popup and leave the active translation configuration untouched.
-  if (details.reason === 'install' || details.reason === 'update' &&
-      /^0\.(?:[0-8]|9\.0)(?:\.|$)/.test(details.previousVersion || '')) {
-    chrome.storage.local.set({qfChatgptInstallOffer:'0.9.1'}).catch(() => {});
-  }
-});
 chrome.runtime.onStartup.addListener(createContextMenu);
 chrome.storage.onChanged?.addListener((changes, area) => {
-  if (area === "local" && Object.keys(changes).some(key => !['immersiveTranslationColor', 'immersiveShortcut', 'immersiveShortcutVersion', 'modelCatalogs'].includes(key))) clearTranslationCache();
+  if (area === 'local' && Object.keys(DEFAULTS).some(key => key in changes)) {
+    settingsRevision++;
+    settingsSnapshot = undefined;
+    clearTranslationCache();
+  }
   if(area==='local'&&['apiStyle','chatgptAccount','endpoint','apiKey','customHeaders','model'].some(key=>key in changes))void QFModels.connectionChanged().catch(()=>{});
 });
 
 // Register only a small keyboard listener, using host access the user already granted.
 // The page-reading script is loaded only when translation is explicitly requested.
 let shortcutSync = Promise.resolve();
-async function syncImmersiveShortcut() {
+async function syncImmersiveShortcut(refreshTabs = false) {
   const origins = [...new Set(((await chrome.permissions.getAll()).origins || []).flatMap(origin => origin === '<all_urls>' ? ['http://*/*', 'https://*/*'] : /^https?:\/\//.test(origin) ? [origin] : []))];
   const id = 'qf-immersive-shortcut';
   const existing = await chrome.scripting.getRegisteredContentScripts({ ids: [id] });
   if (!origins.length) { if (existing.length) await chrome.scripting.unregisterContentScripts({ ids: [id] }); }
   else {
     const script = { id, matches: origins, js: ['src/immersive-shortcut.js'], runAt: 'document_start', allFrames: true, persistAcrossSessions: true };
-    if (existing.length) await chrome.scripting.updateContentScripts([script]);
+    if (existing.length && (JSON.stringify([...existing[0].matches].sort()) !== JSON.stringify([...origins].sort()) || existing[0].js?.join() !== script.js.join() || existing[0].runAt !== script.runAt || !existing[0].allFrames || !existing[0].persistAcrossSessions)) await chrome.scripting.updateContentScripts([script]);
+    else if (existing.length) { /* Persistent registration already matches. */ }
     else await chrome.scripting.registerContentScripts([script]);
   }
+  if (!refreshTabs) return;
   const tabs = await chrome.tabs.query({});
   await Promise.allSettled(tabs.map(async tab => {
     if (typeof tab.id !== 'number') return;
@@ -587,14 +651,17 @@ async function syncImmersiveShortcut() {
     }
   }));
 }
-function scheduleImmersiveShortcutSync() {
-  shortcutSync = shortcutSync.catch(() => {}).then(syncImmersiveShortcut);
+function scheduleImmersiveShortcutSync(refreshTabs = false) {
+  shortcutSync = shortcutSync.catch(() => {}).then(() => syncImmersiveShortcut(refreshTabs));
   shortcutSync.catch(error => console.warn('Unable to update immersive shortcut access', error));
 }
 if (chrome.permissions.getAll && chrome.scripting.getRegisteredContentScripts) {
-  chrome.permissions.onAdded?.addListener(scheduleImmersiveShortcutSync);
-  chrome.permissions.onRemoved?.addListener(scheduleImmersiveShortcutSync);
-  scheduleImmersiveShortcutSync();
+  chrome.permissions.onAdded?.addListener(() => scheduleImmersiveShortcutSync(true));
+  chrome.permissions.onRemoved?.addListener(() => scheduleImmersiveShortcutSync(true));
+  chrome.runtime.onInstalled.addListener(() => scheduleImmersiveShortcutSync(true));
+  chrome.runtime.onStartup.addListener(() => scheduleImmersiveShortcutSync());
+  // Registrations survive MV3 suspension. A worker wake must not re-inject
+  // listeners into every tab; only installation or permissions need that work.
 }
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {

@@ -69,9 +69,10 @@ export class ChatGPTService {
     await this.store.transaction(s=>{cancelled(signal);const existing=s.accounts.find(a=>a.clientId===record.clientId&&a.subject===record.subject);if(existing)record.accountRef=existing.accountRef;else if(s.accounts.length>=20&&!s.accounts.some(a=>a.accountRef===record.accountRef))throw failure('ACCOUNT_LIMIT','最多保存 20 个账号注册，请选择已有账号重新授权。');s.accounts=s.accounts.filter(a=>a.accountRef!==record.accountRef);s.accounts.push(record);delete s.paused[record.accountRef];},signal);
     return {account:summary(record,false)};
   }
-  async access(accountRef,signal) {
+  async access(accountRef,signal,requireUnpaused=false) {
     let expiredGrant;
     const account=await this.store.transaction(async s=>{
+      if(requireUnpaused&&s.paused[accountRef])throw failure('PLAN_PAUSED','此账号因额度限制暂停。请管理用量后，在设置中手动继续。');
       let a=s.accounts.find(a=>a.accountRef===accountRef);
       if(!a||!a.access_token)throw failure('LOGIN_REQUIRED','请在设置中登录 ChatGPT。');
       if(!entitled(a))throw failure('PLAN_PERMISSION_REQUIRED','账号已登录，但尚未授权使用订阅额度；请重新授权。');
@@ -117,8 +118,7 @@ export class ChatGPTService {
   async generate(payload,onDelta,signal) {
     const body=buildPlanRequest(payload),accountRef=payload.accountRef;
     return this.store.requestLock(accountRef,async()=>{
-      if((await this.store.read()).paused[accountRef])throw failure('PLAN_PAUSED','此账号因额度限制暂停。请管理用量后，在设置中手动继续。');
-      const a=await this.access(accountRef,signal),controller=new AbortController(),id=randomUUID();
+      const a=await this.access(accountRef,signal,true),controller=new AbortController(),id=randomUUID();
       const combined=AbortSignal.any([signal||new AbortController().signal,controller.signal]);this.active.set(id,{accountRef,controller});
       // Also stop a running request when another browser signs this registration out.
       let checking=false,checkAgain=false,watchTimer;

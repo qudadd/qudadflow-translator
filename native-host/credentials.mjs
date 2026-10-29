@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {spawn} from 'node:child_process';
@@ -36,7 +37,9 @@ export function dpapi(mode, value) {
   if(process.platform!=='win32')throw failure('UNSUPPORTED_OS','本地连接程序当前仅支持 Windows。');
   return new Promise((resolve,reject)=>{
     const script=fileURLToPath(new URL('./credential-crypto.ps1',import.meta.url));
-    const child=spawn(path.join(process.env.SystemRoot||'C:\\Windows','System32','WindowsPowerShell','v1.0','powershell.exe'),['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',script,'-Mode',mode],{windowsHide:true,stdio:['pipe','pipe','pipe']});
+    const launcher=fileURLToPath(new URL('./QudadFlowBridge.exe',import.meta.url));
+    const compiled=existsSync(launcher);
+    const child=spawn(compiled?launcher:path.join(process.env.SystemRoot||'C:\\Windows','System32','WindowsPowerShell','v1.0','powershell.exe'),compiled?['--credential-crypto',mode]:['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',script,'-Mode',mode],{windowsHide:true,stdio:['pipe','pipe','pipe']});
     let output='',size=0;const timer=setTimeout(()=>child.kill(),15000);
     child.stdout.on('data',chunk=>{size+=chunk.length;if(size>2*1024*1024)child.kill();else output+=chunk;});
     child.stderr.resume(); // Never print crypto inputs or PowerShell exception text.
@@ -47,10 +50,19 @@ export function dpapi(mode, value) {
 }
 
 export class CredentialStore {
-  constructor(directory, crypt=dpapi) {this.directory=directory;this.crypt=crypt;this.file=path.join(directory,'accounts.dpapi');}
+  constructor(directory, crypt=dpapi) {this.directory=directory;this.crypt=crypt;this.file=path.join(directory,'accounts.dpapi');this.encrypted='';this.snapshot=null;}
   async read() {
-    try { return JSON.parse(Buffer.from(await this.crypt('unprotect',await fs.readFile(this.file,'utf8')),'base64').toString('utf8')); }
-    catch(e){if(e.code==='ENOENT')return {version:1,hostId:'urn:uuid:'+randomUUID(),accounts:[],paused:{}};throw e;}
+    try {
+      // Check the encrypted file on every read so another browser's logout or
+      // refresh is immediately observed. Never cache mutable account objects.
+      const encrypted=await fs.readFile(this.file,'utf8');
+      if(encrypted!==this.encrypted||!this.snapshot){
+        const snapshot=JSON.parse(Buffer.from(await this.crypt('unprotect',encrypted),'base64').toString('utf8'));
+        this.encrypted=encrypted;this.snapshot=snapshot;
+      }
+      return structuredClone(this.snapshot);
+    }
+    catch(e){this.encrypted='';this.snapshot=null;if(e.code==='ENOENT')return {version:1,hostId:'urn:uuid:'+randomUUID(),accounts:[],paused:{}};throw e;}
   }
   async write(state) {
     await fs.mkdir(this.directory,{recursive:true});
@@ -62,6 +74,7 @@ export class CredentialStore {
       // old encrypted record intact until the atomic replacement succeeds.
       for(let attempt=0;;attempt++)try{await fs.rename(temp,this.file);break;}
       catch(error){if(attempt>=12||!['EPERM','EBUSY','EACCES'].includes(error.code))throw error;await delay(25*(attempt+1));}
+      this.encrypted=encrypted;this.snapshot=structuredClone(state);
     }
     finally{await fs.unlink(temp).catch(()=>{});}
   }

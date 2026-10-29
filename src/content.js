@@ -448,11 +448,19 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       return false;
     }
 
-    function originalStillMatches(record) {
+    function originalStillMatches(record, checkedElements = new Map()) {
       if (!record.nodes.every((node, index) => node.isConnected && node.textContent === record.originals[index])) return false;
       for (const node of record.nodes) {
         for (let element = node.parentElement || node.getRootNode()?.host; element; element = composedParent(element)) {
-          if (element.matches(EXCLUDED_SELECTOR) || !isCssVisible(element)) return false;
+          // Check each ancestor's own style once. Calling isCssVisible here
+          // walked the entire ancestor chain again at every level.
+          if (!checkedElements.has(element)) {
+            const view = element.ownerDocument.defaultView;
+            if (!view) return false; // A reloaded iframe can leave connected nodes in its old Document.
+            const style = view.getComputedStyle(element);
+            checkedElements.set(element, !element.matches(EXCLUDED_SELECTOR) && style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse' && Number(style.opacity) !== 0 && style.contentVisibility !== 'hidden');
+          }
+          if (!checkedElements.get(element)) return false;
         }
       }
       let doc = record.element.ownerDocument;
@@ -630,8 +638,9 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
 
     function nextImmersiveBatch(session) {
       const pending = [];
+      const checkedElements = new Map();
       for (const record of session.pending) {
-        if (!originalStillMatches(record)) { session.pending.delete(record); continue; }
+        if (!originalStillMatches(record, checkedElements)) { session.pending.delete(record); continue; }
         record.distance = viewportDistance(record);
         pending.push(record);
       }

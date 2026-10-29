@@ -5,6 +5,8 @@ const BROWSER_TRANSLATION_DOCUMENT = 'offscreen-translation.html';
 const pendingBrowserModelRequests = new Map();
 let creatingBrowserTranslationDocument;
 let browserModelRetryAfter = 0;
+let browserTranslationDocumentReady = false;
+const unavailableBrowserPairs = new Map();
 
 function machineLanguageTag(language) {
   if (/^zh-(tw|hk|hant)$/i.test(language)) return 'zh-Hant';
@@ -40,21 +42,32 @@ function browserModelChunks(text) {
 
 async function ensureBrowserTranslationDocument() {
   if (!chrome.offscreen?.createDocument || !chrome.runtime?.getContexts) return false;
-  const documentUrl = chrome.runtime.getURL(BROWSER_TRANSLATION_DOCUMENT);
-  const contexts = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'], documentUrls: [documentUrl] });
-  if (contexts.length) return true;
+  if (browserTranslationDocumentReady) return true;
   if (!creatingBrowserTranslationDocument) {
-    creatingBrowserTranslationDocument = chrome.offscreen.createDocument({
-      url: BROWSER_TRANSLATION_DOCUMENT,
-      reasons: ['LOCAL_STORAGE'],
-      justification: 'Use the browser Translator API in a window and cache language-pair availability locally for fast fallback.'
-    }).finally(() => { creatingBrowserTranslationDocument = undefined; });
+    creatingBrowserTranslationDocument = (async () => {
+      const documentUrl = chrome.runtime.getURL(BROWSER_TRANSLATION_DOCUMENT);
+      const contexts = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'], documentUrls: [documentUrl] });
+      if (!contexts.length) await chrome.offscreen.createDocument({
+        url: BROWSER_TRANSLATION_DOCUMENT,
+        reasons: ['LOCAL_STORAGE'],
+        justification: 'Use the browser Translator API in a window and cache language-pair availability locally for fast fallback.'
+      });
+      browserTranslationDocumentReady = true;
+    })().finally(() => { creatingBrowserTranslationDocument = undefined; });
   }
   await creatingBrowserTranslationDocument;
   return true;
 }
 
-chrome.runtime.onMessage.addListener((message, sender) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === 'QF_BROWSER_TRANSLATOR_READY') {
+    if (sender.id === chrome.runtime.id && sender.url?.split(/[?#]/)[0] === chrome.runtime.getURL('options.html')) {
+      unavailableBrowserPairs.delete(message.sourceLanguage + ':' + message.targetLanguage);
+      browserModelRetryAfter = 0;
+      sendResponse({ok: true});
+    }
+    return false;
+  }
   if (message?.type !== 'QF_BROWSER_TRANSLATOR_PROGRESS') return;
   if (sender.id !== chrome.runtime.id || sender.url !== chrome.runtime.getURL(BROWSER_TRANSLATION_DOCUMENT)) return;
   const onProgress = pendingBrowserModelRequests.get(message.requestId);
@@ -62,7 +75,8 @@ chrome.runtime.onMessage.addListener((message, sender) => {
 });
 
 async function requestBrowserTranslator(chunks, pair, controller, onProgress) {
-  if (Date.now() < browserModelRetryAfter) return null;
+  const pairKey = pair.sourceLanguage + ':' + pair.targetLanguage;
+  if (Date.now() < browserModelRetryAfter || Date.now() < (unavailableBrowserPairs.get(pairKey) || 0)) return null;
   try {
     if (!(await ensureBrowserTranslationDocument())) return null;
   } catch {
@@ -78,10 +92,14 @@ async function requestBrowserTranslator(chunks, pair, controller, onProgress) {
     const result = await chrome.runtime.sendMessage({ target: 'QF_BROWSER_TRANSLATOR', action: 'translate', requestId, pair, chunks });
     if (controller.signal.aborted) throw translationError('翻译已取消。', 'CANCELLED');
     if (result?.status === 'ok' && typeof result.translation === 'string' && result.translation.trim()) return result.translation;
-    if (result?.status === 'unavailable') browserModelRetryAfter = Date.now() + 120_000;
+    if (result?.status === 'unavailable') {
+      unavailableBrowserPairs.set(pairKey, Date.now() + 120_000);
+      if (unavailableBrowserPairs.size > 32) unavailableBrowserPairs.delete(unavailableBrowserPairs.keys().next().value);
+    }
     return null;
   } catch {
     if (controller.signal.aborted) throw translationError('翻译已取消。', 'CANCELLED');
+    browserTranslationDocumentReady = false;
     browserModelRetryAfter = Date.now() + 30_000;
     return null;
   } finally {

@@ -6,12 +6,6 @@ body { margin: 0; width: 320px; color: #172033; background: #fff; }
 .brand img { width: 32px; height: 32px; }
 h1 { margin: 0; font-size: 16px; }
 .brand p { margin: 3px 0 0; color: #6c7890; font-size: 12px; }
-.chatgpt-install-offer { padding:11px; margin:0 0 12px; border:1px solid #cbd9f3; border-radius:10px; background:#f3f7ff; }
-.chatgpt-install-offer[hidden] { display:none; }
-.chatgpt-install-offer h2 { margin:0; color:#273f70; font-size:12px; }
-.chatgpt-install-offer p { margin:5px 0 0; color:#596780; font-size:11px; line-height:1.5; }
-.chatgpt-install-actions { display:flex; gap:7px; margin-top:8px; }
-.chatgpt-install-actions button { width:auto; flex:1; margin:0; padding:7px 5px; font-size:11px; }
 .site-authorization { padding:10px; margin:0 0 12px; border:1px solid #cbd9f3; border-radius:10px; background:#f3f7ff; }
 .site-authorization[hidden] { display:none; }
 .site-authorization-row { display:flex; align-items:center; gap:8px; }

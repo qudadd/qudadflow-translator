@@ -1,7 +1,7 @@
 # QudadFlow Translator
 
-**Version 0.9.1:** key-free machine translation is the default. The extension first tries a ready browser-local Translator model, then MyMemory when unavailable. A first model download requires a click in Settings; default translation works without that step. MyMemory sends requested segments to its service and may share anonymous quota across a network. Bounded parallel requests and short-lived caching improve responsiveness; linked text and vertical-writing placements are improved. Saved profiles, provider choice, model selection, connection test and Save settings share one section.
-Optional official ChatGPT plan sign-in is a preview. On Windows x64, the first-open offer in the store version asks before downloading a separate [v0.9.1 installer](https://github.com/qudadd/qudadflow-translator/releases/tag/v0.9.1). The user must open the downloaded file; it then verifies and installs the companion for the current Windows user. A sideloaded development copy shows the command for its own extension ID. The browser cannot run a downloaded program automatically. The installer is not code-signed, and a ZIP/manual fallback remains available. Default translation and existing API settings are unchanged by the offer. OpenAI currently explicitly lists eligible Plus/Pro for open-source plan usage; Business/Team access through this route is unconfirmed. One personal Pro account read eight real models and completed a fixed short inference. See [setup and limits](docs/CHATGPT_LOGIN.md), [release notes](docs/RELEASE_NOTES_0.9.1.md) and [three-platform status](docs/STORE_SUBMISSION_0.9.1.md).
+**Version 0.9.2:** faster popup startup, shared duplicate translation requests, reusable browser translation models and reduced native credential overhead. Saved profiles, provider choice, models, connection tests and Save settings stay in one section. Key-free machine translation remains the default: a ready browser model first, then MyMemory. MyMemory may share anonymous quota across a network. Measurements and their limits are in the [performance report](docs/PERFORMANCE_0.9.2.md).
+Optional ChatGPT plan sign-in appears only when selected in Settings. A working companion is reused. If missing, Windows x64 store users can choose Download and continue authorization; optional download permission enables progress/error monitoring for that file only. Open the downloaded file and confirm installation once, then return to Settings for automatic detection and continuation. No unpacking, command line or separate Node.js installation is needed for the store version. The extension never executes the download; the installer is currently unsigned. Sideloaded copies retain setup for their own extension ID. OpenAI currently explicitly lists eligible Plus/Pro for open-source plan usage; Business/Team access through this route is unconfirmed. See [setup and limits](docs/CHATGPT_LOGIN.md), [release notes](docs/RELEASE_NOTES_0.9.2.md) and [three-platform status](docs/STORE_SUBMISSION_0.9.2.md).
 
 **Version 0.8.16:** paper and PDF/Word/TXT/Markdown figure workbenches can expand into a dedicated viewport with larger previews, accessible bulk controls and separate question/answer columns. Layout changes retain selections, drafts and pending analyses. See [release notes](docs/RELEASE_NOTES_0.8.16.md) and [publication status](docs/STORE_SUBMISSION_0.8.16.md).
 
@@ -13,11 +13,11 @@ A Manifest V3 extension for Microsoft Edge and Google Chrome, with immersive bil
 
 **QQ community: 1048123205** — search for this group number in QQ to join, share feedback and discuss the extension. You can also find it in the extension popup and Settings → 交流与支持.
 
-[![Webpage reading, selection translation, documents, paper research, default translation and optional ChatGPT preview](branding/store-0.9.1/preview.jpg)](docs/STORE_PRESENTATION_0.9.1.md)
+[![Webpage reading, selection translation, documents, paper research, default translation and optional ChatGPT preview](branding/store-0.9.2/preview.jpg)](docs/STORE_PRESENTATION_0.9.2.md)
 
-The [store presentation](docs/STORE_PRESENTATION_0.9.1.md) includes current English/Chinese descriptions and seven versioned screenshots. Generated fixtures, simulated API responses and capture versions are labeled; provider quality and speed vary.
+The [store presentation](docs/STORE_PRESENTATION_0.9.2.md) includes current English/Chinese descriptions and seven versioned screenshots. Generated fixtures, simulated API responses and capture versions are labeled; provider quality and speed vary.
 
-GitHub and store submission states are recorded separately in the [0.9.1 publication record](docs/STORE_SUBMISSION_0.9.1.md). Store submission does not establish approval.
+GitHub and store submission states are recorded separately in the [0.9.2 publication record](docs/STORE_SUBMISSION_0.9.2.md). Store submission does not establish approval.
 
 ## Translation providers
 
@@ -146,7 +146,7 @@ Requires Node.js and PowerShell. Runtime libraries are checked into `vendor/`; n
 .\package.ps1 -OutputDirectory .\dist
 ```
 
-The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.1.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
+The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.2.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
 
 ## Verification
 

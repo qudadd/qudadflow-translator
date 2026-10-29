@@ -4,13 +4,33 @@ using System.Diagnostics;
 using System.Threading;
 using System.Web.Script.Serialization;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 class Launcher {
+  static int CredentialCrypto(string mode) {
+    if(mode!="protect" && mode!="unprotect")return 1;
+    var input=new StringBuilder();var buffer=new char[4096];int count;
+    while((count=Console.In.Read(buffer,0,buffer.Length))>0){
+      if(input.Length+count>2097152)return 1;
+      input.Append(buffer,0,count);
+    }
+    byte[] bytes=Convert.FromBase64String(input.ToString().Trim());
+    byte[] entropy=Encoding.UTF8.GetBytes("QudadFlow.ChatGPT.Credentials.v1");
+    byte[] result=null;
+    try {
+      result=mode=="protect"?ProtectedData.Protect(bytes,entropy,DataProtectionScope.CurrentUser):ProtectedData.Unprotect(bytes,entropy,DataProtectionScope.CurrentUser);
+      Console.Out.Write(Convert.ToBase64String(result));return 0;
+    } finally {Array.Clear(bytes,0,bytes.Length);if(result!=null)Array.Clear(result,0,result.Length);}
+  }
   static void Pump(Stream source, Stream destination) {
     byte[] bytes=new byte[65536];int count;
     while((count=source.Read(bytes,0,bytes.Length))>0){destination.Write(bytes,0,count);destination.Flush();}
   }
   static int Main(string[] args) {
     try {
+      // Same Windows DPAPI format as the source-only PowerShell helper, without
+      // paying PowerShell startup cost for each credential read/write.
+      if(args.Length==2 && args[0]=="--credential-crypto")return CredentialCrypto(args[1]);
       if(args.Length<1)return 1;
       string root=AppDomain.CurrentDomain.BaseDirectory;
       var config=new JavaScriptSerializer().Deserialize<Dictionary<string,object>>(File.ReadAllText(Path.Combine(root,"host-config.json")));

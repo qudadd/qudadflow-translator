@@ -85,7 +85,14 @@ async function check(name,fn){try{await fn();results.push({name,passed:true});co
         await worker.evaluate(id=>chrome.scripting.executeScript({target:{tabId:id},files:['src/content.js']}),tabId);
         const response=await worker.evaluate(id=>chrome.tabs.sendMessage(id,{type:'TRANSLATE_IMMERSIVE'}),tabId);assert.equal(response.ok,true,response.error);
         const count=await page.evaluate(kind=>kind==='shadow'?document.querySelector('#component').shadowRoot.querySelectorAll('#inner [data-edge-wt-immersive-translation]').length:document.querySelector('#frame').contentDocument.querySelectorAll('#inner [data-edge-wt-immersive-translation]').length,kind);
-        assert.equal(count,1);await worker.evaluate(id=>chrome.tabs.sendMessage(id,{type:'RESTORE_IMMERSIVE'}),tabId);
+        assert.equal(count,1);
+        if(kind==='frame'){
+          // Old frame Documents can still contain connected text nodes while
+          // defaultView has become null. They must be pruned without stopping scans.
+          await page.locator('#frame').evaluate(frame=>frame.srcdoc='<p id="inner">Hello world after reload.</p>');
+          await page.waitForFunction(()=>document.querySelector('#frame').contentDocument?.querySelector('#inner [data-edge-wt-immersive-translation]')?.textContent==='你好，世界 after reload.');
+        }
+        await worker.evaluate(id=>chrome.tabs.sendMessage(id,{type:'RESTORE_IMMERSIVE'}),tabId);
         const restored=await page.evaluate(kind=>kind==='shadow'?document.querySelector('#component').shadowRoot.querySelectorAll('[data-edge-wt-immersive-translation]').length:document.querySelector('#frame').contentDocument.querySelectorAll('[data-edge-wt-immersive-translation]').length,kind);
         assert.equal(restored,0);
       }finally{await page.close();}

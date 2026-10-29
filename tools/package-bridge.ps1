@@ -44,7 +44,7 @@ try {
     $compiler = Join-Path $env:SystemRoot 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
     if (-not (Test-Path -LiteralPath $compiler)) { throw 'Windows .NET Framework compiler is required to build the bridge launcher.' }
     $launcher = Join-Path $stage 'QudadFlowBridge.exe'
-    & $compiler /nologo /target:exe /reference:System.Web.Extensions.dll "/out:$launcher" (Join-Path $source 'Launcher.cs')
+    & $compiler /nologo /target:exe /reference:System.Web.Extensions.dll /reference:System.Security.dll "/out:$launcher" (Join-Path $source 'Launcher.cs')
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $launcher)) { throw 'Bridge launcher compilation failed.' }
     $included = @('Install-Bridge.ps1','Install-Bridge.cmd','Uninstall-Bridge.ps1','Uninstall-Bridge.cmd',
         'Launcher.cs','README-BRIDGE.md','main.mjs','openai.mjs','service.mjs','credentials.mjs','credential-crypto.ps1')

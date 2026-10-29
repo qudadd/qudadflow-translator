@@ -588,9 +588,13 @@ function updateAiFigureScope(){
 $('enhancePdfFigures').addEventListener('click',enhancePdfFigures);
 $('cropFigure').addEventListener('click',()=>{if(layoutMode()==='immersive'){$('workspace').classList.add('show-original');$('showOriginal').setAttribute('aria-pressed','true');$('showOriginal').textContent='返回译文';}},{capture:true});
 for(const id of ['sourcePane','translationPane'])$(id).addEventListener('scroll',()=>{
-  if(syncing)return;const source=$(id),target=$(id==='sourcePane'?'translationPane':'sourcePane');
-  pageStack?.scroll(source);if(!$('syncScroll').checked)return;
-  syncing=true;if(pageStack)pageStack.restore(target,pageStack.anchor(source));else target.scrollTop=source.scrollTop/Math.max(1,source.scrollHeight-source.clientHeight)*Math.max(0,target.scrollHeight-target.clientHeight);requestAnimationFrame(()=>{syncing=false;});
+  const source=$(id),target=$(id==='sourcePane'?'translationPane':'sourcePane');
+  if(pageStack){
+    if(pageStack.consumeRestoredScroll(source))return;
+    pageStack.scroll(source);if($('syncScroll').checked)pageStack.restore(target,pageStack.anchor(source));return;
+  }
+  if(syncing||!$('syncScroll').checked)return;
+  syncing=true;target.scrollTop=source.scrollTop/Math.max(1,source.scrollHeight-source.clientHeight)*Math.max(0,target.scrollHeight-target.clientHeight);requestAnimationFrame(()=>{syncing=false;});
 });
 let previousWidth=0;new ResizeObserver(()=>{const width=$('sourcePane').clientWidth;if(Math.abs(width-previousWidth)<1)return;const changed=previousWidth>0;previousWidth=width;clearTimeout(resizeTimer);if((documentState?.kind==='PDF'||documentState?.wordLayout)&&changed)resizeTimer=setTimeout(()=>showPage(currentPage,true,true),150);else scheduleAlignment();}).observe($('sourcePane'));
 for(const type of ['dragenter','dragover'])document.addEventListener(type,event=>{if(event.dataTransfer?.types.includes('Files')){event.preventDefault();document.body.classList.add('dragging');}});

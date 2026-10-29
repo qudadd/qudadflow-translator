@@ -609,6 +609,8 @@ $('prepareLocalModel').addEventListener('click', async () => {
       });
     }});
     if(controller.signal.aborted){$('localModelStatus').textContent='已取消本地模型下载。';return;}
+    localStorage.removeItem('qfLocalTranslationAvailability:'+sourceLanguage+':'+targetLanguage);
+    await chrome.runtime.sendMessage({type:'QF_BROWSER_TRANSLATOR_READY',sourceLanguage,targetLanguage});
     $('localModelStatus').textContent='本地模型已准备好。此语言方向会优先在设备上翻译。';
   }catch(error){
     $('localModelStatus').textContent=controller.signal.aborted?'已取消本地模型下载。':'本地模型暂不可用：'+(error?.message||'浏览器不支持此语言方向')+'。仍可使用 MyMemory。';

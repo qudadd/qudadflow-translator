@@ -1,7 +1,7 @@
 // Lightweight page placeholders keep scroll positions stable; only nearby pages keep canvases.
 export class ReaderPageStack {
   constructor({source,translation,render,dispose,onActive,onError}){
-    Object.assign(this,{source,translation,render,dispose,onActive,onError});this.slots=new Map();this.queue=[];
+    Object.assign(this,{source,translation,render,dispose,onActive,onError});this.slots=new Map();this.queue=[];this.restoredPositions=new WeakMap();
   }
   placeholder(slot){
     for(const node of [slot.source,slot.translation]){
@@ -71,7 +71,13 @@ export class ReaderPageStack {
     return {number:slot?.number||1,fraction:slot?Math.max(0,Math.min(1,(pane.scrollTop-slot[side].offsetTop)/Math.max(1,slot[side].offsetHeight))):0};
   }
   restore(pane,{number,fraction=0}){
-    const slot=this.slots.get(number),node=slot?.[pane.firstElementChild===this.source?'source':'translation'];if(node)pane.scrollTop=node.offsetTop+fraction*node.offsetHeight;
+    const slot=this.slots.get(number),node=slot?.[pane.firstElementChild===this.source?'source':'translation'];
+    if(node){pane.scrollTop=node.offsetTop+fraction*node.offsetHeight;this.restoredPositions.set(pane,pane.scrollTop);}
+  }
+  consumeRestoredScroll(pane){
+    const expected=this.restoredPositions.get(pane);this.restoredPositions.delete(pane);
+    // A queued render/layout scroll must not overwrite a newer scroll in the other pane.
+    return expected!==undefined&&Math.abs(pane.scrollTop-expected)<1;
   }
   scroll(pane){
     if(this.closed)return;const {number}=this.anchor(pane);

@@ -37,6 +37,17 @@ const server=http.createServer(async(req,res)=>{let raw='';for await(const chunk
   await check('Paged mode remains default; local open makes no API request',async()=>{assert.equal(await page.locator('#pageMode').inputValue(),'paged');assert.equal(calls.length,0);assert.equal(await page.locator('#translationContent .pdf-sheet').count(),1);});
   await check('Continuous mode mounts all placeholders and renders only neighboring pages',async()=>{await page.locator('#pageMode').selectOption('continuous');await page.waitForFunction(()=>document.querySelector('#translationContent .reader-page-slot[data-ready]'));await delay(700);assert.equal(await page.locator('#translationContent .reader-page-slot').count(),8);assert.ok(await page.locator('#workspace canvas').count()<=6);});
   await check('Continuous navigation, current-page tracking and paired pane anchors',async()=>{await page.locator('#figureWorkflow').evaluate(e=>e.open=false);await page.locator('#layoutMode').selectOption('compare');await jump(5);await page.locator('#translationPane').evaluate(e=>{const n=e.querySelector('[data-page="5"]');e.scrollTop=n.offsetTop+n.offsetHeight*.25;});await delay(250);const a=await page.evaluate(()=>['sourcePane','translationPane'].map(id=>{const p=document.getElementById(id),n=p.querySelector('[data-page="5"]');return (p.scrollTop-n.offsetTop)/n.offsetHeight;}));assert.ok(Math.abs(a[0]-.25)<.03&&Math.abs(a[1]-.25)<.03,JSON.stringify(a));assert.equal(await page.locator('#pageNumber').inputValue(),'5');await page.locator('#next').click();await page.waitForFunction(()=>document.getElementById('pageNumber').value==='6');});
+  await check('Queued layout scroll events preserve a newer user scroll in either reading pane',async()=>{
+   await page.evaluate(async()=>{const {ReaderPageStack}=await import('./src/reader-pages.mjs');window.testRestore=ReaderPageStack.prototype.restore;ReaderPageStack.prototype.restore=function(...args){window.testStack=this;return window.testRestore.apply(this,args);};});
+   try{
+    await jump(5);
+    for(const active of ['translationPane','sourcePane']){
+     await page.evaluate(active=>{const stack=window.testStack;for(const id of ['sourcePane','translationPane'])stack.restore(document.getElementById(id),{number:5,fraction:.1});const pane=document.getElementById(active),slot=pane.querySelector('[data-page="5"]');pane.scrollTop=slot.offsetTop+slot.offsetHeight*.45;},active);
+     await page.waitForFunction(()=>['sourcePane','translationPane'].every(id=>{const p=document.getElementById(id),n=p.querySelector('[data-page="5"]');return Math.abs((p.scrollTop-n.offsetTop)/n.offsetHeight-.45)<.03;}));
+     assert.equal(await page.locator('#pageNumber').inputValue(),'5');
+    }
+   }finally{await page.evaluate(async()=>{const {ReaderPageStack}=await import('./src/reader-pages.mjs');ReaderPageStack.prototype.restore=window.testRestore;delete window.testRestore;delete window.testStack;});}
+  });
   await check('A pending layout rebuild preserves a later user scroll instead of restoring its old anchor',async()=>{
    await jump(5);
    await page.evaluate(async()=>{const {TextLayer}=await import('./vendor/pdfjs/legacy/build/pdf.mjs');window.testTextRender=TextLayer.prototype.render;TextLayer.prototype.render=async function(...args){await new Promise(resolve=>setTimeout(resolve,450));return window.testTextRender.apply(this,args);};});

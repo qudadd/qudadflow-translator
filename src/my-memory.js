@@ -69,14 +69,14 @@ async function translateMyMemory(settings,text,controller,onProgress,{cacheSetti
     if(translated===undefined){
       let pending=inFlight.get(source);
       if(!pending){
-        pending=Promise.resolve().then(async()=>{
-          const release=await myMemorySlot(requestController.signal);
+        const requestChunk=async controller=>{
+          const release=await myMemorySlot(controller.signal);
           try{
             const url=new URL(settings.endpoint);url.search='';url.hash='';
             url.searchParams.set('q',source);url.searchParams.set('langpair',settings.sourceLanguage+'|'+settings.targetLanguage);url.searchParams.set('mt','1');
             if(settings.mymemoryEmail)url.searchParams.set('de',settings.mymemoryEmail);
-            const response=await fetch(url.href,{method:'GET',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',signal:requestController.signal});
-            if(!response.ok)throw httpError(response.status,'MyMemory 基础试用暂不可用或额度已用完，请稍后重试或切换配置方案。');
+            const response=await fetch(url.href,{method:'GET',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',signal:controller.signal});
+            if(!response.ok){response.body?.cancel().catch(()=>{});throw httpError(response.status,'MyMemory 基础试用暂不可用或额度已用完，请稍后重试或切换配置方案。');}
             const data=await response.json();
             if(Number(data.responseStatus)!==200 || data.quotaFinished===true || data.quotaFinished==='true')throw translationError('MyMemory 未完成翻译，可能达到当日额度或不支持该语言。请切换配置方案。','TRIAL_UNAVAILABLE');
             const output=data.responseData?.translatedText;
@@ -84,7 +84,8 @@ async function translateMyMemory(settings,text,controller,onProgress,{cacheSetti
             const result=decodeTranslationEntities(output);
             return cacheAllowed?rememberTranslation(cached.key,result,cacheSettings):result;
           }finally{release();}
-        }).finally(()=>inFlight.delete(source));
+        };
+        pending=(cacheAllowed?sharedTranslation(cached.key,requestController,()=>{},requestChunk):requestChunk(requestController)).finally(()=>inFlight.delete(source));
         inFlight.set(source,pending);
       }
       translated=await pending;

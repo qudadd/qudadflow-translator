@@ -8,7 +8,8 @@ async function check(name,fn){try{await fn();results.push({name,passed:true});co
 (async()=>{try{
   context=await chromium.launchPersistentContext(path.join(scratch,'profile'),{channel:'msedge',headless:true,viewport:{width:1280,height:1150},args:['--disable-extensions-except='+root,'--load-extension='+root]});
   const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'),base='chrome-extension://'+new URL(worker.url()).host+'/';
-  const installerUrl='https://github.com/qudadd/qudadflow-translator/releases/download/v0.9.1/qudadflow-chatgpt-bridge-installer-win-x64-v0.9.1.exe';
+  const version=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'))).version;
+  const installerUrl='https://github.com/qudadd/qudadflow-translator/releases/download/v'+version+'/qudadflow-chatgpt-bridge-installer-win-x64-v'+version+'.exe';
   await context.route(installerUrl,route=>route.fulfill({status:200,contentType:'text/plain',body:'Synthetic installer download fixture.'}));
   await worker.evaluate(()=>{
     const account={accountRef:'11111111-2222-4333-8444-555555555555',label:'team-member@example.invalid',registration:'TEST1234',planType:'business',signedIn:true,planEnabled:true};
@@ -40,58 +41,75 @@ async function check(name,fn){try{await fn();results.push({name,passed:true});co
     };
     return chrome.storage.local.set({apiStyle:'openai-compatible',apiKey:'SYNTHETIC_OLD_API_KEY',endpoint:'https://example.invalid/v1',model:'old-api-model',customHeaders:'{}',qfChatgptInstallOffer:'0.9.1'});
   });
-  const storeCalls=[],storeInvite=await context.newPage();
-  await storeInvite.exposeFunction('qfRecordTab',url=>storeCalls.push(url));
-  await storeInvite.addInitScript(()=>{
-    const native=window.chrome;
-    const runtime=new Proxy(native.runtime,{get(target,key){return key==='id'?'nichpjndbjbcfkcbanfcfogpkdhblghh':Reflect.get(target,key);}});
-    const tabs=new Proxy(native.tabs,{get(target,key){return key==='create'?async options=>{await window.qfRecordTab(options.url);return {id:1};}:Reflect.get(target,key);}});
-    Object.defineProperty(window,'chrome',{value:new Proxy(native,{get(target,key){return key==='runtime'?runtime:key==='tabs'?tabs:Reflect.get(target,key);}})});
-  });
-  await storeInvite.goto(base+'popup.html');
-  await check('Simulated store-ID offer downloads only after consent and preserves the active API',async()=>{
-    await storeInvite.locator('#chatgptInstallOffer').waitFor({state:'visible'});
-    assert.equal(await storeInvite.locator('#chatgptInstallGuide').textContent(),'同意并下载');
-    assert.match(await storeInvite.locator('#chatgptInstallOffer p').textContent(),/下载完成后还需你打开文件/);
-    assert.deepEqual(storeCalls,[]);
-    await storeInvite.locator('#chatgptInstallGuide').click();
-    await storeInvite.waitForEvent('close');
-    assert.deepEqual(storeCalls,[base+'options.html?preview=chatgpt#connectionSettings',installerUrl]);
-    assert.equal((await worker.evaluate(()=>chrome.storage.local.get('apiStyle'))).apiStyle,'openai-compatible');
-  });
-  await worker.evaluate(()=>chrome.storage.local.set({qfChatgptInstallOffer:'0.9.1'}));
   const invite=await context.newPage();await invite.goto(base+'popup.html');
-  await check('Sideloaded first-open offer shows the matching development setup and preserves the active API',async()=>{
-    await invite.locator('#chatgptInstallOffer').waitFor({state:'visible'});
-    assert.match(await invite.locator('#chatgptInstallOffer').textContent(),/默认机器翻译无需/);
-    assert.match(await invite.locator('#chatgptInstallOffer').textContent(),/当前是侧载开发版/);
-    assert.equal(await invite.locator('#chatgptInstallGuide').textContent(),'查看开发版安装');
-    assert.equal((await worker.evaluate(()=>chrome.storage.local.get('qfChatgptInstallOffer'))).qfChatgptInstallOffer,'0.9.1');
-    const opened=context.waitForEvent('page');
-    await invite.locator('#chatgptInstallGuide').click();
-    const setup=await opened;
-    assert.match(setup.url(),/preview=chatgpt/);
-    await setup.waitForFunction(()=>document.body.dataset.ready==='true');
-    assert.equal(await setup.locator('#apiStyle').inputValue(),'chatgpt-plan');
+  await check('Opening the updated extension does not offer or download a connector',async()=>{
+    assert.equal(await invite.locator('#chatgptInstallOffer').count(),0);
     assert.equal((await worker.evaluate(()=>chrome.storage.local.get('apiStyle'))).apiStyle,'openai-compatible');
-    assert.equal(invite.isClosed(),true);
-    assert.ok(fs.readFileSync(path.join(root,'popup.js'),'utf8').includes(installerUrl));
-    assert.equal((await worker.evaluate(()=>chrome.storage.local.get('qfChatgptInstallOffer'))).qfChatgptInstallOffer,undefined);
-    await setup.close();
+    assert.equal(await worker.evaluate(()=>chatgptHarness.requests.length),0);
   });
-  await worker.evaluate(()=>chrome.storage.local.set({qfChatgptInstallOffer:'0.9.1'}));
-  const later=await context.newPage();await later.goto(base+'popup.html');
-  await check('Declining the bridge offer closes it without changing translation settings',async()=>{
-    await later.locator('#chatgptInstallOffer').waitFor({state:'visible'});
-    await later.locator('#chatgptInstallLater').click();
-    assert.equal(await later.locator('#chatgptInstallOffer').isVisible(),false);
+  await invite.close();
+  const setup=await context.newPage();setup.setDefaultTimeout(9000);
+  await setup.addInitScript(()=>{
+    const native=window.chrome;
+    const h=window.setupHarness={allowed:true,calls:[],state:'in_progress',listeners:[]};
+    const runtime=new Proxy(native.runtime,{get(target,key){return key==='id'?'nichpjndbjbcfkcbanfcfogpkdhblghh':key==='getPlatformInfo'?async()=>({os:'win',arch:'x86-64'}):Reflect.get(target,key);}});
+    const permissions=new Proxy(native.permissions,{get(target,key){return key==='request'?async request=>request.permissions?.includes('downloads')?h.allowed:target.request(request):Reflect.get(target,key);}});
+    const downloads={download:async options=>{h.calls.push(options);return 7;},search:async()=>[{id:7,state:h.state}],show:async()=>{},onChanged:{addListener:fn=>h.listeners.push(fn),removeListener:fn=>{h.listeners=h.listeners.filter(item=>item!==fn);}}};
+    h.changed=state=>{h.state=state;h.listeners.forEach(fn=>fn({id:7,state:{current:state}}));};
+    Object.defineProperty(window,'chrome',{value:new Proxy(native,{get(target,key){return key==='runtime'?runtime:key==='permissions'?permissions:key==='downloads'?downloads:Reflect.get(target,key);}})});
+  });
+  await setup.goto(base+'options.html');await setup.waitForFunction(()=>document.body.dataset.ready==='true');
+  await check('Only selecting ChatGPT offers setup and keeps login disabled until the host is ready',async()=>{
+    assert.equal(await setup.locator('#chatgptConnection').isVisible(),false);
+    await worker.evaluate(()=>chatgptHarness.mode='unavailable');await setup.locator('#apiStyle').selectOption('chatgpt-plan');
+    await setup.waitForFunction(()=>!document.querySelector('#chatgptStoreSetup').hidden&&!document.querySelector('#chatgptInstall').disabled);
+    assert.equal(await setup.locator('#chatgptLogin').isDisabled(),true);
+    assert.equal(await setup.evaluate(()=>setupHarness.calls.length),0);
+    await setup.locator('#chatgptLogin').evaluate(button=>button.click());
+    assert.equal(await worker.evaluate(()=>chatgptHarness.requests.filter(r=>r.method==='login').length),0);
+    fs.mkdirSync(path.dirname(out),{recursive:true});
+    await setup.locator('#chatgptSetup').scrollIntoViewIfNeeded();
+    await setup.screenshot({path:path.join(path.dirname(out),'connector-setup-desktop.png')});
+    await setup.setViewportSize({width:420,height:960});
+    assert.ok(await setup.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+    await setup.locator('#chatgptSetup').scrollIntoViewIfNeeded();
+    await setup.screenshot({path:path.join(path.dirname(out),'connector-setup-narrow.png')});
+    await setup.setViewportSize({width:1280,height:1150});
+  });
+  await check('Declining optional download permission leaves manual setup and translation available',async()=>{
+    await setup.evaluate(()=>setupHarness.allowed=false);await setup.locator('#chatgptInstall').click();
+    await setup.waitForFunction(()=>document.querySelector('#chatgptInstallStatus').textContent.includes('未授予'));
+    assert.equal(await setup.evaluate(()=>setupHarness.calls.length),0);assert.equal(await setup.locator('#chatgptLogin').isDisabled(),true);
+  });
+  await check('An interrupted download never enables or opens OAuth',async()=>{
+    await setup.evaluate(()=>{setupHarness.allowed=true;setupHarness.state='in_progress';});await setup.locator('#chatgptInstall').click();
+    await setup.waitForFunction(()=>setupHarness.calls.length===1);await setup.evaluate(()=>setupHarness.changed('interrupted'));
+    await setup.waitForFunction(()=>document.querySelector('#chatgptInstallStatus').textContent.includes('下载未完成'));
+    assert.equal(await setup.locator('#chatgptLogin').isDisabled(),true);assert.equal(await worker.evaluate(()=>chatgptHarness.requests.filter(r=>r.method==='login').length),0);
+  });
+  await check('Stopping setup prevents automatic authorization even if the connector becomes available',async()=>{
+    await setup.evaluate(()=>setupHarness.state='in_progress');await setup.locator('#chatgptInstall').click();await setup.waitForFunction(()=>setupHarness.calls.length===2);
+    await setup.evaluate(()=>setupHarness.changed('complete'));await setup.locator('#chatgptInstallStop').click();
+    await worker.evaluate(()=>chatgptHarness.mode='normal');await setup.locator('#chatgptRefresh').click();await setup.waitForFunction(()=>!document.querySelector('#chatgptLogin').disabled);
+    assert.equal(await worker.evaluate(()=>chatgptHarness.requests.filter(r=>r.method==='login').length),0);
+    assert.equal(await setup.locator('#chatgptSetup').isVisible(),false);
+  });
+  await check('Completed installation is detected and resumes the requested official authorization once',async()=>{
+    await worker.evaluate(()=>chatgptHarness.mode='unavailable');await setup.locator('#chatgptRefresh').click();await setup.locator('#chatgptInstall').waitFor({state:'visible'});
+    await setup.evaluate(()=>setupHarness.state='in_progress');await setup.locator('#chatgptInstall').click();await setup.waitForFunction(()=>setupHarness.calls.length===3);
+    await setup.evaluate(()=>setupHarness.changed('complete'));assert.equal(await setup.locator('#chatgptLogin').isDisabled(),true);
+    assert.equal(await setup.locator('#chatgptInstallShow').isVisible(),true);
+    assert.equal(await setup.evaluate(()=>setupHarness.calls.at(-1).url),installerUrl);
+    await worker.evaluate(()=>chatgptHarness.mode='normal');await setup.locator('#chatgptRefresh').click();
+    await setup.waitForFunction(()=>document.querySelector('#chatgptStatus').textContent.includes('官方授权完成'));
+    assert.equal(await worker.evaluate(()=>chatgptHarness.requests.filter(r=>r.method==='login').length),1);
     assert.equal((await worker.evaluate(()=>chrome.storage.local.get('apiStyle'))).apiStyle,'openai-compatible');
   });
-  await later.close();
+  await setup.close();await worker.evaluate(()=>{chatgptHarness.accounts=[];chatgptHarness.requests=[];});
   const page=await context.newPage();page.setDefaultTimeout(9000);await page.goto(base+'options.html');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.locator('#expandSettings').click();
   const invoke=m=>page.evaluate(m=>chrome.runtime.sendMessage(m),m),get=()=>worker.evaluate(()=>chrome.storage.local.get(null));
   await check('Selecting subscription mode detects the bridge without an extra click',async()=>{await page.locator('#apiStyle').selectOption('chatgpt-plan');await page.waitForFunction(()=>document.querySelector('#chatgptStatus').textContent.includes('已连接'));assert.equal(await page.locator('#chatgptSetup').isVisible(),false);assert.equal(await page.locator('#apiKeyWrap').isVisible(),false);assert.equal(await page.locator('#endpointWrap').isVisible(),false);assert.equal(await page.locator('#temperature').isDisabled(),true);await page.locator('#fetchModels').click();assert.match(await page.locator('#modelStatus').textContent(),/请先登录/);});
-  await check('Missing bridge shows the matching sideload command until automatic recheck succeeds',async()=>{await worker.evaluate(()=>chatgptHarness.mode='unavailable');await page.locator('#chatgptRefresh').click();await page.locator('#chatgptSetup:not([hidden])').waitFor();assert.equal(await page.locator('#chatgptSetup').evaluate(node=>node.open),true);assert.equal(await page.locator('#chatgptSetup > p').first().isVisible(),false);assert.match(await page.locator('#chatgptSetup > p a').first().getAttribute('href'),/qudadflow-chatgpt-bridge-installer-win-x64-v0\.9\.1\.exe$/);assert.equal(await page.locator('#chatgptSetup > details').evaluate(node=>node.open),true);assert.match(await page.locator('#chatgptSetup > details').textContent(),/商店版安装器不注册此侧载 ID/);assert.match(await page.locator('#chatgptInstallCommand').textContent(),new RegExp(new URL(base).host));await worker.evaluate(()=>chatgptHarness.mode='normal');await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.locator('#chatgptSetup').waitFor({state:'hidden'});});
+  await check('Missing bridge shows the matching sideload command until automatic recheck succeeds',async()=>{await worker.evaluate(()=>chatgptHarness.mode='unavailable');await page.locator('#chatgptRefresh').click();await page.locator('#chatgptSetup:not([hidden])').waitFor();assert.equal(await page.locator('#chatgptSetup').evaluate(node=>node.open),true);assert.equal(await page.locator('#chatgptStoreSetup').isVisible(),false);assert.equal(await page.locator('#chatgptManualDownload').getAttribute('href'),installerUrl);assert.equal(await page.locator('#chatgptDevelopmentSetup').evaluate(node=>node.open),true);assert.match(await page.locator('#chatgptPlatformHint').textContent(),/侧载开发版/);assert.equal(await page.locator('#chatgptLogin').isDisabled(),true);assert.match(await page.locator('#chatgptInstallCommand').textContent(),new RegExp(new URL(base).host));await worker.evaluate(()=>chatgptHarness.mode='normal');await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.locator('#chatgptSetup').waitFor({state:'hidden'});});
   await check('Team eligibility warning is visible before authorization',async()=>{const notice=page.locator('#chatgptEligibilityNotice');assert.equal(await notice.isVisible(),true);assert.match(await notice.textContent(),/Plus \/ Pro/);assert.match(await notice.textContent(),/Team \/ Business/);assert.match(await notice.textContent(),/默认机器翻译/);const bounds=await Promise.all([notice.boundingBox(),page.locator('#chatgptLogin').boundingBox()]);assert.ok(bounds[0].y+bounds[0].height<=bounds[1].y);});
   await check('Workspace policy denial guides non-admin members without changing the active translator',async()=>{await worker.evaluate(()=>chatgptHarness.mode='workspace-policy');await page.locator('#chatgptLogin').click();await page.waitForFunction(()=>document.querySelector('#chatgptStatus').textContent.includes('3p_delegated_access_policy_denied'));const message=await page.locator('#chatgptStatus').textContent();assert.match(message,/req_synthetic_policy/);assert.match(message,/停止重复授权/);assert.equal(await page.locator('#chatgptWorkspaceHelp').evaluate(node=>node.open),true);assert.match(await page.locator('#chatgptWorkspaceHelp').textContent(),/若 QudadFlow 不在应用列表/);assert.equal((await get()).apiStyle,'openai-compatible');assert.equal(await worker.evaluate(()=>chatgptHarness.accounts.length),0);await worker.evaluate(()=>chatgptHarness.mode='normal');});
   await check('Invalid grant selects the pending registration and survives automatic refresh',async()=>{await worker.evaluate(()=>chatgptHarness.mode='login-error');await page.locator('#chatgptLogin').click();await page.waitForFunction(()=>document.querySelector('#chatgptStatus').textContent.includes('invalid_grant'));await page.evaluate(()=>document.dispatchEvent(new Event('qf-settings-ready')));await page.waitForTimeout(100);const message=await page.locator('#chatgptStatus').textContent();assert.match(message,/invalid_grant/);assert.match(message,/req_synthetic_login/);assert.equal(await page.locator('#chatgptAccount').inputValue(),'11111111-2222-4333-8444-555555555555');assert.match(await page.locator('#chatgptAccount option:checked').textContent(),/待完成授权/);await worker.evaluate(()=>chatgptHarness.mode='normal');});

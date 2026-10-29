@@ -20,6 +20,17 @@ const token=()=>({access_token:'SYNTHETIC_ACCESS',refresh_token:'SYNTHETIC_REFRE
 const frames=items=>new Response(items.map(x=>'data: '+JSON.stringify(x)+'\n\n').join(''),{headers:{'Content-Type':'text/event-stream'}});
 const complete=()=>[{type:'response.output_text.delta',delta:'测试译文'}, {type:'response.completed',response:{status:'completed'}}];
 async function fixture(t,fetcher){const directory=await fs.mkdtemp(path.join(scratchRoot,'case-'));t.after(async()=>{if(!directory.startsWith(scratchRoot+path.sep))throw new Error('Unsafe cleanup');await fs.rm(directory,{recursive:true,force:true});});const store=new CredentialStore(directory,async(_mode,v)=>v);const accountRef=randomUUID();await store.transaction(s=>{s.accounts=[{accountRef,clientId:'oaiapp_synthetic',subject:'synthetic-user',email:'synthetic@example.invalid',session:'synthetic-session',...token(),scopes:SCOPES.split(' '),expiresAt:Date.now()+3600000}];});return {directory,store,accountRef,service:new ChatGPTService(store,new OpenAIClient(fetcher))};}
+
+test('Credential cache observes encrypted-file changes and never shares mutable token records',async t=>{
+  const f=await fixture(t,async()=>{throw new Error('Unexpected network');});let decrypts=0;
+  const reader=new CredentialStore(f.directory,async(mode,value)=>{if(mode==='unprotect')decrypts++;return value;});
+  const first=await reader.read();first.accounts[0].access_token='MUTATED_COPY';
+  assert.equal((await reader.read()).accounts[0].access_token,'SYNTHETIC_ACCESS');assert.equal(decrypts,1);
+  await f.store.transaction(state=>{delete state.accounts[0].access_token;});
+  assert.equal((await reader.read()).accounts[0].access_token,undefined);assert.equal(decrypts,2);
+  await fs.writeFile(reader.file,'invalid encrypted record');await assert.rejects(reader.read());
+  await fs.unlink(reader.file);assert.equal((await reader.read()).accounts.length,0);
+});
 const payload=accountRef=>({accountRef,model:'synthetic-model',text:'Translate this sentence.',instructions:'Translate only.'});
 function authFetch(extra){return async(url,options)=>{if(url===AUTH+'/.well-known/openid-configuration')return json({issuer:AUTH,jwks_uri:AUTH+'/jwks',revocation_endpoint:AUTH+'/revoke'});if(url===AUTH+'/jwks')return json({keys:[jwk]});return extra(url,options);};}
 

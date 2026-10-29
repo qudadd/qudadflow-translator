@@ -35,7 +35,7 @@ $qfExe = Join-Path $qfRoot 'QudadFlowBridge.exe'
 if (Test-Path -LiteralPath $qfBundledLauncher) {
     if ([IO.Path]::GetFullPath($qfBundledLauncher) -ne [IO.Path]::GetFullPath($qfExe)) { Copy-Item -LiteralPath $qfBundledLauncher -Destination $qfExe -Force }
 } else {
-    & $qfCompiler /nologo /target:exe /reference:System.Web.Extensions.dll "/out:$qfExe" (Join-Path $PSScriptRoot 'Launcher.cs')
+    & $qfCompiler /nologo /target:exe /reference:System.Web.Extensions.dll /reference:System.Security.dll "/out:$qfExe" (Join-Path $PSScriptRoot 'Launcher.cs')
     if ($LASTEXITCODE -ne 0) { throw 'Native launcher compilation failed' }
 }
 $qfManifest = Join-Path $qfRoot 'com.qudadflow.chatgpt.json'

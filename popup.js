@@ -97,12 +97,17 @@ async function authorizeCurrentSite() {
 
 async function loadSelection() {
   try {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    activeTab = tabs[0];
+    if (!activeTab) activeTab = (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
     if (!activeTab?.id) throw new Error("找不到当前标签页。");
-    await ensureContentScript(activeTab.id);
-    const response = await sendTabMessage(activeTab.id, { type: "GET_SELECTION" });
-    const selection = response?.selection?.trim();
+    let selection;
+    try {
+      selection = (await sendTabMessage(activeTab.id, {type: 'GET_SELECTION'}))?.selection?.trim();
+    } catch {
+      // Opening the popup needs only selected text, not the complete page UI,
+      // selection observers and translation engine. Load those on the action.
+      const result = await chrome.scripting.executeScript({target: {tabId: activeTab.id}, func: () => window.getSelection()?.toString() || ''});
+      selection = result[0]?.result?.trim();
+    }
     $("selection").textContent = selection || "未检测到选中文本。可启用本站划词按钮，或直接翻译当前网页。";
   } catch (error) {
     $("selection").textContent = "PDF 或浏览器保护页面请使用“PDF / 文档左右对照”；普通网页可使用沉浸式翻译。";
@@ -117,11 +122,13 @@ async function loadSelectionSite() {
     if (!/^https?:$/.test(url.protocol)) return;
     selectionSitePattern = `${url.protocol}//${url.hostname}/*`;
     selectionSiteId = `qf-selection-${encodeURIComponent(selectionSitePattern)}`;
-    const scripts = await chrome.scripting.getRegisteredContentScripts({ ids: [selectionSiteId] });
-    const allowed = await chrome.permissions.contains({ origins: [selectionSitePattern] });
+    const [scripts, allowed] = await Promise.all([
+      chrome.scripting.getRegisteredContentScripts({ ids: [selectionSiteId] }),
+      chrome.permissions.contains({ origins: [selectionSitePattern] })
+    ]);
     checkbox.checked = scripts.length > 0 && allowed;
     checkbox.disabled = false;
-    await sendTabMessage(activeTab.id, { type: "SET_SELECTION_ENABLED", enabled: checkbox.checked });
+    await sendTabMessage(activeTab.id, { type: "SET_SELECTION_ENABLED", enabled: checkbox.checked }).catch(() => {});
   } catch { checkbox.disabled = true; }
 }
 
@@ -199,30 +206,8 @@ async function restoreImmersive() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const stored = await chrome.storage.local.get({ targetLanguage: DEFAULT_TARGET, apiStyle:'auto-machine', chatgptAccount:'', qfChatgptInstallOffer:'' });
-  $("targetLanguage").value = stored.targetLanguage || DEFAULT_TARGET;
-  const offer=$('chatgptInstallOffer');
-  const platform=await chrome.runtime.getPlatformInfo().catch(()=>({}));
-  const storeInstall=new Set(['nichpjndbjbcfkcbanfcfogpkdhblghh','dfecnbleolbeddoflpfmailolehhnaih']).has(chrome.runtime.id);
-  offer.hidden=stored.qfChatgptInstallOffer!=='0.9.1'||stored.apiStyle==='chatgpt-plan'||Boolean(stored.chatgptAccount)||platform.os!=='win'||platform.arch!=='x86-64';
-  if(!storeInstall){
-    offer.querySelector('p').textContent='当前是侧载开发版，扩展 ID 与商店版不同。请在设置页查看针对当前 ID 的安装命令；默认机器翻译无需连接程序。';
-    $('chatgptInstallGuide').textContent='查看开发版安装';
-  }
-  $('chatgptInstallLater').addEventListener('click',async()=>{await chrome.storage.local.remove('qfChatgptInstallOffer');offer.hidden=true;});
-  $('chatgptInstallGuide').addEventListener('click',async()=>{
-    const button=$('chatgptInstallGuide');
-    button.disabled=true;
-    try{
-      await chrome.tabs.create({url:chrome.runtime.getURL('options.html?preview=chatgpt#connectionSettings')});
-      if(storeInstall)await chrome.tabs.create({url:'https://github.com/qudadd/qudadflow-translator/releases/download/v0.9.1/qudadflow-chatgpt-bridge-installer-win-x64-v0.9.1.exe'});
-      await chrome.storage.local.remove('qfChatgptInstallOffer');
-      window.close();
-    }catch(error){
-      setStatus('未能开始下载：'+error.message+'。可在设置页手动下载安装程序。',true);
-      button.disabled=false;
-    }
-  });
+  const stored = chrome.storage.local.get({targetLanguage: DEFAULT_TARGET});
+  const currentTab = chrome.tabs.query({active: true, currentWindow: true});
   $("targetLanguage").addEventListener("change", () => chrome.storage.local.set({ targetLanguage: $("targetLanguage").value }));
   $("translateSelection").addEventListener("click", () => run("TRANSLATE_SELECTION"));
   $("translatePage").addEventListener("click", () => run("TRANSLATE_PAGE"));
@@ -232,8 +217,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   $('authorizeCurrentSite').addEventListener('click', authorizeCurrentSite);
   for (const event of [chrome.permissions.onAdded, chrome.permissions.onRemoved]) event?.addListener(() => updateSiteAuthorization());
   $("openOptions").addEventListener("click", () => chrome.runtime.openOptionsPage());
-  const {ModelPicker}=await import('./src/model-picker.mjs');
-  modelPicker=new ModelPicker($('activeModel'),{onNotice:setStatus,onPending:pending=>{for(const id of ['translateSelection','translatePage','translateImmersive'])$(id).disabled=pending||busy;}});
+  void import('./src/model-picker.mjs').then(({ModelPicker}) => {
+    modelPicker=new ModelPicker($('activeModel'),{onNotice:setStatus,onPending:pending=>{for(const id of ['translateSelection','translatePage','translateImmersive'])$(id).disabled=pending||busy;}});
+  }).catch(error => setStatus('模型列表暂不可用：'+error.message,true));
   $("openDocument").addEventListener("click", async () => {
     const tab = activeTab || (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
     let fragment = "local=1";
@@ -248,7 +234,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     $('openResearch').disabled=true;setStatus('正在本地提取论文与图表…');
     try{const tab=activeTab||(await chrome.tabs.query({active:true,currentWindow:true}))[0];const result=await chrome.runtime.sendMessage({type:'RESEARCH_CAPTURE',tabId:tab?.id});if(!result?.ok)throw new Error(result?.error||'提取失败');window.close();}catch(error){setStatus(error.message,true);}finally{$('openResearch').disabled=false;}
   });
-  await loadSelection();
-  await updateSiteAuthorization();
-  await loadSelectionSite();
+  await Promise.all([
+    stored.then(value => { $("targetLanguage").value = value.targetLanguage || DEFAULT_TARGET; }),
+    currentTab.then(async tabs => {
+      activeTab=tabs[0];
+      await Promise.all([loadSelection(), updateSiteAuthorization(), loadSelectionSite()]);
+    })
+  ]).catch(error => setStatus('读取本地状态失败：'+error.message,true));
 });

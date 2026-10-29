@@ -1,6 +1,7 @@
 /* Credentials and OAuth exchanges stay in the local native host. */
 const QFChatGPT = (()=>{
-  let port,disconnectTimer;const pending=new Map();
+  let port,disconnectTimer,statusRequest;const pending=new Map();
+  const IDLE_DISCONNECT_MS=30000;
   const fail=(code,message,details={})=>Object.assign(new Error(message),{code,...details});
   function connect(){
     clearTimeout(disconnectTimer);if(port)return port;
@@ -19,7 +20,7 @@ const QFChatGPT = (()=>{
     current.onDisconnect.addListener(()=>{void chrome.runtime.lastError;if(port!==current)return;port=null;for(const [id,job]of pending){job.reject(fail('HOST_DISCONNECTED','本地连接程序未安装或已断开。请查看设置中的安装说明；返回设置页时会自动检测。'));finish(id);}});
     return current;
   }
-  function finish(id){const job=pending.get(id);if(!job)return;clearTimeout(job.timer);job.signal?.removeEventListener('abort',job.abort);pending.delete(id);if(!pending.size)disconnectTimer=setTimeout(()=>{const p=port;port=null;p?.disconnect();},3000);}
+  function finish(id){const job=pending.get(id);if(!job)return;clearTimeout(job.timer);job.signal?.removeEventListener('abort',job.abort);pending.delete(id);if(!pending.size)disconnectTimer=setTimeout(()=>{const p=port;port=null;p?.disconnect();},IDLE_DISCONNECT_MS);}
   function request(method,payload={},controller=new AbortController(),progress){
     const signal=controller.signal;if(signal.aborted)return Promise.reject(fail('CANCELLED','操作已取消。'));
     return new Promise((resolve,reject)=>{
@@ -36,7 +37,10 @@ const QFChatGPT = (()=>{
     if(message.type==='CHATGPT_CANCEL'){settingsJobs.get(owner)?.abort();return Promise.resolve({cancelled:true});}
     const methods={CHATGPT_STATUS:'status',CHATGPT_LOGIN:'login',CHATGPT_LOGOUT:'logout',CHATGPT_RESUME:'resume'};
     const method=methods[message.type];if(!method)return Promise.reject(fail('INVALID_METHOD','不支持的账号操作。'));
-    if(method==='status')return request(method);
+    if(method==='status'){
+      if(!statusRequest)statusRequest=request(method).finally(()=>{statusRequest=null;});
+      return statusRequest;
+    }
     settingsJobs.get(owner)?.abort();const controller=new AbortController();settingsJobs.set(owner,controller);
     return request(method,{accountRef:message.accountRef||''},controller).finally(()=>{if(settingsJobs.get(owner)===controller)settingsJobs.delete(owner);});
   }

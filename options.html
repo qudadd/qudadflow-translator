@@ -48,11 +48,21 @@
           <p>获得官方计划授权后，QudadFlow 使用所选账号自己的额度，不共用管理员账号或 API Key。默认机器翻译无需登录或额外设置；只有主动选择 ChatGPT 计划才需要本地连接程序保护登录凭据。</p>
           <label for="chatgptAccount">ChatGPT 账号</label><select id="chatgptAccount"><option value="">添加账号或工作区并授权…</option></select>
           <p id="chatgptEligibilityNotice" class="chatgpt-eligibility-notice" role="note"><strong>Team / Business 授权前请先了解：</strong><a href="https://developers.openai.com/siwc/quickstart" target="_blank" rel="noreferrer">OpenAI 开源接入说明</a>目前只明确列出符合资格的 Plus / Pro 可使用计划额度。Team / Business 成员的个人 ChatGPT Work / Codex 额度能否用于本扩展，尚无官方确认；组织策略拒绝也无法单独判定套餐资格。若官方提示“组织尚未启用此应用”，请保留错误码和 Request ID，停止重复授权。默认机器翻译可直接使用。</p>
-          <div class="profile-actions"><button type="button" id="chatgptLogin">Continue with ChatGPT</button><button type="button" id="chatgptCancel" hidden>取消登录</button><button type="button" id="chatgptRefresh" class="secondary">重新检测</button><button type="button" id="chatgptLogout" class="secondary">退出所选账号</button><button type="button" id="chatgptResume" class="secondary">管理用量后继续</button></div>
+          <div class="profile-actions"><button type="button" id="chatgptLogin" disabled>Continue with ChatGPT</button><button type="button" id="chatgptCancel" hidden>取消登录</button><button type="button" id="chatgptRefresh" class="secondary">重新检测</button><button type="button" id="chatgptLogout" class="secondary" disabled>退出所选账号</button><button type="button" id="chatgptResume" class="secondary" disabled>管理用量后继续</button></div>
           <p id="chatgptStatus" role="status">正在检查本地连接程序…</p>
           <details id="chatgptWorkspaceHelp" class="chatgpt-workspace-help"><summary>Team / Business 授权失败怎么办？</summary><p><strong>普通成员：</strong>若官方页面显示“组织尚未启用此应用”，请停止重复授权，将错误码和 Request ID 交给组织管理员；页面没有自动返回时，可在此取消登录。默认机器翻译仍可使用。</p><p><strong>管理员：</strong>先查看 OpenAI Admin Console 的 External access。若 QudadFlow 不在应用列表，当前页面没有可直接针对本应用放行的项目；即使“身份”和“已连接的应用”默认允许，也不能据此确认计划额度权限。请勿为此直接放宽全组织默认设置。凭诊断信息向 OpenAI 支持确认 Business 成员额度是否支持此开源授权，以及未列出应用时的审批办法。只有官方确认可用并给出配置方式后，才按最小范围配置；成员仍需各自授权。</p><p><strong>额度资格：</strong>若连接测试返回 <code>subscription_sharing_user_not_eligible</code>，所选账号、工作区或策略无法使用此接入，请勿反复重试。切换账号或工作区时，请选择“添加账号或工作区并授权”，不要复用原工作区的注册。</p></details>
           <p class="hint"><a href="https://chatgpt.com/settings/usage" target="_blank" rel="noreferrer">管理 ChatGPT 用量与应用访问</a>。达到限额时会暂停，不会自动切换付费 API。</p>
-          <details id="chatgptSetup" hidden><summary>本地连接程序未就绪（仅 ChatGPT 计划）</summary><p>默认机器翻译无需此程序。Windows x64 商店版可<a href="https://github.com/qudadd/qudadflow-translator/releases/download/v0.9.1/qudadflow-chatgpt-bridge-installer-win-x64-v0.9.1.exe" target="_blank" rel="noreferrer">下载安装程序</a>。下载完成后，请在浏览器下载列表打开文件；安装器会核对内置文件、自动解压并安装到当前 Windows 用户，注册 Edge 与 Chrome 正式扩展 ID。浏览器不能自行运行下载文件；安装器目前未签名，Windows 可能要求你确认。你也可以选择<a href="https://github.com/qudadd/qudadflow-translator/releases/download/v0.9.1/qudadflow-chatgpt-bridge-win-x64-v0.9.1.zip" target="_blank" rel="noreferrer">ZIP 手动安装</a>。请从<a href="https://github.com/qudadd/qudadflow-translator/releases/tag/v0.9.1" target="_blank" rel="noreferrer">官方发布页</a>核对文件及 SHA256，安装后返回此页点击“重新检测”。</p><details><summary>侧载开发版安装命令</summary><p>从源码加载的扩展 ID 不同；请在源码文件夹运行以下命令。</p><pre id="chatgptInstallCommand"></pre></details><p class="hint">安装后会在官方网页授权。无需向扩展提供密码、Cookie 或 API Key。</p></details>
+          <details id="chatgptSetup" hidden><summary>首次使用 ChatGPT：准备连接程序</summary>
+            <div id="chatgptStoreSetup">
+              <p>仅 Windows x64 的 ChatGPT 登录需要此程序。点击“下载并继续授权”后，浏览器会询问可选的下载权限，用于下载和显示本次文件的状态。下载完成后，请你打开文件并确认安装一次；无需解压、运行命令或另装 Node.js。安装到当前 Windows 用户后，返回此页会自动检测并继续官方授权。</p>
+              <div class="profile-actions"><button type="button" id="chatgptInstall">下载并继续授权</button><button type="button" id="chatgptInstallShow" class="secondary" hidden>显示下载文件</button><button type="button" id="chatgptInstallStop" class="secondary" hidden>停止等待</button></div>
+              <p id="chatgptInstallStatus" role="status">连接程序就绪前不会打开账号授权。已有可用版本会直接复用，无需随扩展更新重复安装。</p>
+              <p class="hint">浏览器不能静默运行下载文件。当前安装程序未签名，请从<a id="chatgptReleasePage" href="https://github.com/qudadd/qudadflow-translator/releases/tag/v0.9.2" target="_blank" rel="noreferrer">官方发布页</a>核对 SHA256。也可<a id="chatgptManualDownload" href="https://github.com/qudadd/qudadflow-translator/releases/download/v0.9.2/qudadflow-chatgpt-bridge-installer-win-x64-v0.9.2.exe" target="_blank" rel="noreferrer">手动下载</a>，安装后点击“重新检测”。默认机器翻译和自有 API 可直接使用。</p>
+            </div>
+            <p id="chatgptPlatformHint" class="hint" hidden></p>
+            <details id="chatgptDevelopmentSetup"><summary>侧载开发版安装命令</summary><p>从源码加载的扩展 ID 不同；请在源码文件夹运行以下命令。</p><pre id="chatgptInstallCommand"></pre></details>
+            <p class="hint">安装后会在官方网页授权。无需向扩展提供密码、Cookie 或 API Key。</p>
+          </details>
         </section>
         <div id="endpointWrap"><label for="endpoint">API 端点</label>
         <input id="endpoint" type="url" required placeholder="https://api.openai.com/v1/chat/completions" autocomplete="url">
@@ -162,6 +172,7 @@
   </div>
   <script src="src/immersive-shortcut.js"></script>
   <script src="options.js"></script>
+  <script src="src/connector-setup.js"></script>
   <script src="src/chatgpt-options.js"></script>
   <script type="module" src="src/research-settings.mjs"></script>
   <script src="src/version.js"></script>

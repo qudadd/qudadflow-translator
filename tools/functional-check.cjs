@@ -114,7 +114,7 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
   const deadlines = [];
   const storageChanges = [];
   const event = {addListener(){}};
-  const context = vm.createContext({ URL, URLSearchParams, AbortController, TextDecoder, console,
+  const context = vm.createContext({ URL, URLSearchParams, AbortController, TextDecoder, console, QFModels:{connectionChanged:async()=>{}},
     setTimeout:(fn, ms)=>{ deadlines.push(ms); return setTimeout(fn, ms >= 10000 && ms <= 180000 ? timeout : ms); }, clearTimeout, fetch,
     chrome:{
       runtime:{onInstalled:event,onStartup:event,onMessage:{addListener:fn=>listeners.push(fn)}},
@@ -126,7 +126,7 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
   });
   vm.runInContext(fs.readFileSync(path.join(root,'src/background.js'),'utf8'), context);
   return {context, progress, deadlines,
-    configure:extra=>{Object.assign(settings,extra);storageChanges.forEach(fn=>fn({},'local'));},
+    configure:extra=>{const changes={};for(const [key,newValue]of Object.entries(extra)){changes[key]={oldValue:settings[key],newValue};settings[key]=newValue;}storageChanges.forEach(fn=>fn(changes,'local'));},
     permission:value=>{permission=value;},
     send:(message,sender={})=>new Promise(resolve=>listeners[0](message,sender,resolve))};
 }
@@ -934,6 +934,24 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
       const sent=requests.slice(before); assert.equal(sent.length,4);
       assert.ok(sent.every(current=>sent.filter(other=>other.startedAt<=current.startedAt && other.endedAt>current.startedAt).length<=2));
       assert.ok(sent.filter(item=>item!==selectionRequest).every(item=>!item.aborted)); replyMode='normal';
+    });
+    await check('Popup previews selected text without loading the page translation engine',async()=>{
+      await configure();
+      const fresh=await browser.newPage(),popup=await browser.newPage();
+      try{
+        await worker.evaluate(async()=>{const scripts=await chrome.scripting.getRegisteredContentScripts();const ids=scripts.filter(script=>script.id.startsWith('qf-selection-')).map(script=>script.id);if(ids.length)await chrome.scripting.unregisterContentScripts({ids});});
+        await fresh.goto(origin+'/popup-lazy-start');
+        await fresh.locator('h1').evaluate(element=>{const range=document.createRange();range.selectNodeContents(element);getSelection().removeAllRanges();getSelection().addRange(range);});
+        const id=await worker.evaluate(async url=>(await chrome.tabs.query({})).find(tab=>tab.url===url).id,fresh.url());
+        const loaded=async()=>(await worker.evaluate(id=>chrome.scripting.executeScript({target:{tabId:id},func:()=>Boolean(globalThis.__edgeWebTranslatorLoaded)}),id))[0].result;
+        assert.equal(await loaded(),false);
+        await popup.goto(extensionOrigin+'/popup.html');await fresh.bringToFront();await popup.reload();
+        await popup.waitForFunction(()=>document.querySelector('#selection').textContent==='Hello world');
+        assert.equal(await loaded(),false);
+        await popup.locator('#translateSelection').click();
+        await popup.waitForFunction(()=>document.querySelector('#status').textContent.includes('译文已显示'));
+        assert.equal(await loaded(),true);
+      }finally{await popup.close();await fresh.close();}
     });
     await check('Popup buttons translate and restore the selected tab',async()=>{
       await resetSite('<p>Hello world</p><p>Good morning</p>');

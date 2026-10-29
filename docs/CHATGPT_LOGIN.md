@@ -1,12 +1,12 @@
-# ChatGPT 官方订阅登录 · 0.9.1 预览
+# ChatGPT 官方订阅登录 · 0.9.2 预览
 
-0.9.0 增加官方 Sign in with ChatGPT 接入，0.9.1 提供可直接运行的独立 Windows 安装器。流程是浏览器扩展 → 本机 Native Messaging 程序 → OpenAI 授权和 Responses API。每位用户通过自己的账号授权；只有获准使用此接入的计划额度时才会调用，不共用管理员账号或 API Key。原有 API 配置仍可在设置中选择。**默认机器翻译无需安装连接程序或登录 ChatGPT**；只有主动选择 ChatGPT 计划时才使用本机程序。
+0.9.2 改为选择 ChatGPT 后按需引导安装，并优化本机调用开销。流程是浏览器扩展 → 本机 Native Messaging 程序 → OpenAI 授权和 Responses API。每位用户通过自己的账号授权；只有获准使用此接入的计划额度时才会调用，不共用管理员账号或 API Key。原有 API 配置仍可在设置中选择。**默认机器翻译无需安装连接程序或登录 ChatGPT**；只有主动选择 ChatGPT 计划时才使用本机程序。
 
 ## 为什么需要本机连接程序
 
 官方开源应用授权流程使用 `127.0.0.1` 回调、PKCE 和受保护的本地凭据；访问与刷新令牌不能放在浏览器存储中。Edge 不替扩展安装或管理 Native Messaging 宿主，Windows 需要由安装程序注册宿主清单和允许访问的扩展 ID。因此，当前纯浏览器扩展不能在用户选择 ChatGPT 计划后静默完成宿主安装，也不应读取 ChatGPT 网页 Cookie 或调用内部 `backend-api`。本机程序把令牌留在 Windows DPAPI 保护的文件中，正式推理由官方 `POST /v1/responses` 完成。
 
-0.9.1 提供 Windows x64 独立安装器 EXE 和 ZIP 手动安装包，均内含经 Node.js 官方 SHA256 核对的运行时，不要求商店版用户预装 Node.js。商店版更新后的弹窗仅在用户同意后开始下载安装器；下载完成后仍须用户在浏览器下载列表打开它。安装器会校验内置文件、解压并为当前 Windows 用户注册 Edge、Chrome 正式扩展 ID，无需管理员权限。侧载开发版的扩展 ID 不同，弹窗和设置页会显示对应的开发安装命令，不会误用商店安装器。浏览器不能自行执行下载的程序，Windows 也可能要求安全确认。当前安装器未签名；若不希望运行 EXE，可选 ZIP 手动安装。参考：[OpenAI 账号与会话](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions)、[OpenAI 模型与推理](https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference)、[Edge Native Messaging](https://learn.microsoft.com/en-us/microsoft-edge/extensions/developer-guide/native-messaging)、[Chrome 下载 API](https://developer.chrome.com/docs/extensions/reference/api/downloads)。
+提供 Windows x64 独立安装器 EXE 和 ZIP 手动安装包，均内含经 Node.js 官方 SHA256 核对的运行时，不要求商店版用户预装 Node.js。0.9.2 不再在更新后的弹窗询问安装，只在选择 ChatGPT 且连接程序缺失时提供下载。选择“下载并继续授权”时请求可选下载权限，仅监测本次文件的完成或中断；无需该权限也可手动下载。下载完成后，用户仍须打开文件并确认安装一次。安装器校验文件并为当前用户注册 Edge、Chrome 正式扩展 ID，无需管理员权限。返回设置页后自动检测并继续官方授权；已安装的兼容版本直接复用。侧载开发版保留自身扩展 ID 的安装命令。浏览器不能自行执行下载的程序，Windows 也可能要求安全确认；当前安装器未签名。参考：[OpenAI 账号与会话](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions)、[OpenAI 模型与推理](https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference)、[Edge Native Messaging](https://learn.microsoft.com/en-us/microsoft-edge/extensions/developer-guide/native-messaging)、[Chrome 下载 API](https://developer.chrome.com/docs/extensions/reference/api/downloads)。
 
 ## 当前验证范围
 
@@ -19,7 +19,8 @@
 - 0.9.1 的独立 EXE 安装器已在本机完成内置 ZIP 校验自检；改动脚本、加入越界路径的负面样本均被拒绝，测试没有改动浏览器本机宿主注册。隔离 Edge 的侧载引导、模拟商店 ID 同意下载分支及连接设置 22／22 项通过；尚未在商店安装的浏览器中实际点击下载。安装器的真实用户界面、安全提示及 Chrome 商店版原生桥接仍需各设备实际验证。
 - **身份登录与计划额度不同：**[OpenAI 帮助中心](https://help.openai.com/en/articles/20001542-using-your-chatgpt-plan-in-other-apps-and-sites)说明参与应用的 ChatGPT 身份登录不要求 Plus / Pro；[开源接入快速入门](https://developers.openai.com/siwc/quickstart)目前将通过 ChatGPT 计划完成 AI 请求列为符合资格的 Plus / Pro 账号。商业应用的 Go 规则不等同于本开源接入方式。`invalid_grant` 不是明确的会员资格错误码；明确的计划资格错误包括 `subscription_sharing_user_not_eligible`。免费账号可继续使用默认机器翻译。
 - 授权协议、凭据保护、流式错误和界面流程通过本地合成数据测试；原有网页、文档、论文与图表功能另做回归验证。
-- Chrome 原生桥接、其他操作系统以及签名安装包未做本轮实机验证。GitHub 与两家商店的发布状态分别见 [0.9.1 发布记录](STORE_SUBMISSION_0.9.1.md)，提交审核不代表已上架。
+- 0.9.2 的按需下载、下载中断、停止等待、安装后继续授权及原有账号界面在隔离 Edge 中通过 25 项检查；原生宿主通过 30 项合成数据与真实本机组件检查。DPAPI 辅助入口、旧凭据兼容和缓存失效另有 5 项实测，详见[性能报告](PERFORMANCE_0.9.2.md)。
+- Chrome 原生桥接、其他操作系统以及签名安装包未做本轮实机验证。GitHub 与两家商店的发布状态分别见 [0.9.2 发布记录](STORE_SUBMISSION_0.9.2.md)，提交审核不代表已上架。
 
 ## Team / Business 成员使用自己的额度
 
@@ -42,12 +43,12 @@ ChatGPT Business 成员拥有各自的 ChatGPT Work / Codex 使用额度；这�
 ## 安装和使用
 
 1. 安装 Edge 或 Chrome 商店版扩展。设置页选择 **ChatGPT 计划（官方授权，预览）**。默认机器翻译无需继续以下步骤。
-2. 仅首次使用 ChatGPT 计划时，在更新后弹窗明确选择“同意并下载”，或从设置页[下载安装程序](https://github.com/qudadd/qudadflow-translator/releases/download/v0.9.1/qudadflow-chatgpt-bridge-installer-win-x64-v0.9.1.exe)。从[发布页](https://github.com/qudadd/qudadflow-translator/releases/tag/v0.9.1)核对 SHA256。下载完成后，用户需要在浏览器下载列表打开 EXE；安装器自动校验、解压并注册当前 Windows 用户的 Edge／Chrome 正式扩展 ID，不需要管理员权限。它尚未签名，Windows 可能要求用户核对和确认，浏览器无法替你执行。安装或更新前请结束正在进行的登录及翻译。
+2. 若未检测到可用连接程序，选择“下载并继续授权”，按需授予下载权限，或从设置页[手动下载](https://github.com/qudadd/qudadflow-translator/releases/download/v0.9.2/qudadflow-chatgpt-bridge-installer-win-x64-v0.9.2.exe)。从[发布页](https://github.com/qudadd/qudadflow-translator/releases/tag/v0.9.2)核对 SHA256。下载完成后，在浏览器下载列表打开 EXE 并确认安装一次。安装器自动校验、解压并注册当前用户的 Edge／Chrome 正式扩展 ID，不需要管理员权限。它尚未签名，Windows 可能要求核对和确认，浏览器无法替你执行。安装或更新前请结束正在进行的登录及翻译。下载中断时不会打开授权，默认机器翻译与自有 API 仍可使用。
 
-   若不希望运行 EXE，可下载[独立 ZIP 包](https://github.com/qudadd/qudadflow-translator/releases/download/v0.9.1/qudadflow-chatgpt-bridge-win-x64-v0.9.1.zip)，完整解压后双击 `Install-Bridge.cmd`。不要直接在 ZIP 中运行安装脚本。
+   若不希望运行 EXE，可下载[独立 ZIP 包](https://github.com/qudadd/qudadflow-translator/releases/download/v0.9.2/qudadflow-chatgpt-bridge-win-x64-v0.9.2.zip)，完整解压后双击 `Install-Bridge.cmd`。不要直接在 ZIP 中运行安装脚本。
 
-   若从 GitHub 运行版 ZIP 或源码侧载，扩展 ID 通常与商店版不同。弹窗会指向开发安装说明；可在源码根目录运行 `powershell -NoProfile -ExecutionPolicy Bypass -File ".\native-host\Install-Bridge.ps1" -ExtensionIds <设置页显示的扩展ID>`。该开发方式需要已有 Node.js 22.14 或更新版本，并保留原安装流程；商店版 EXE 不注册侧载 ID。
-3. 返回设置页后点击“重新检测”。连接成功后点击 **Continue with ChatGPT**，在 `auth.openai.com` 官方页面完成登录及额度授权；密码和验证码只在官方页面输入。
+   若从 GitHub 运行版 ZIP 或源码侧载，扩展 ID 通常与商店版不同。设置页显示开发安装说明；可在源码根目录运行 `powershell -NoProfile -ExecutionPolicy Bypass -File ".\native-host\Install-Bridge.ps1" -ExtensionIds <设置页显示的扩展ID>`。该开发方式需要已有 Node.js 22.14 或更新版本；商店版 EXE 不注册侧载 ID。
+3. 通过“下载并继续授权”安装后，返回此设置页会自动检测并继续官方登录。手动下载则点击“重新检测”，连接成功后选择 **Continue with ChatGPT**。在 `auth.openai.com` 完成登录及额度授权；密码和验证码只在官方页面输入。停止等待、切换方案或关闭设置页会取消自动继续；超过 10 分钟未检测到时可手动重新检测。
 
    Team / Business 成员授权前先读按钮上方的资格说明。若看到组织策略拒绝页，可返回设置展开“Team / Business 授权失败怎么办？”；官方拒绝页不一定会回调本地程序，此时可取消等待中的登录。不要重复授权，普通成员无需改动管理设置。
    如果页面提示 `invalid_grant`，关闭失败回调页，回到设置确认账号列表已选中“待完成授权”，再点击 **Continue with ChatGPT** 发起一次新授权。不要刷新或重复提交旧回调地址；若使用该记录再次失败，停止重复尝试，保留错误码与请求 ID 供 OpenAI 支持排查。
@@ -57,6 +58,8 @@ ChatGPT Business 成员拥有各自的 ChatGPT Work / Codex 使用额度；这�
 ## 账号和凭据
 
 本机程序位于 `%USERPROFILE%\.qudadflow\Bridge`，加密账号记录位于同级 `ChatGPT\accounts.dpapi`。程序使用 Windows DPAPI CurrentUser 加密，不降级为明文；扩展仅保存账号引用和非敏感模型目录。账号密码、访问令牌及刷新令牌不进入扩展存储、项目源码、日志或发布包。浏览器的官方登录页面由用户自行管理。
+
+0.9.2 使用编译后的 DPAPI 辅助入口代替每次启动 PowerShell，并在宿主内存复用未变化的解密记录；每次读取仍核对加密文件，识别其他进程的更新或退出。返回的状态不含令牌。扩展将连续调用的宿主连接保留至空闲 30 秒，之后释放；旧版 DPAPI 文件可直接使用，无需重新登录。
 
 多个注册分别保存，首次兑换失败后的待完成注册也保留 client ID；重新登录已有注册会复用该 ID。待完成注册退出时删除本机注册记录；已授权账号退出后清除本机令牌并尝试撤销远程访问。撤销未确认时会明确提示到 ChatGPT 设置断开应用。已授权账号的注册元数据保留用于再次授权。Edge 和 Chrome 的同账号请求通过文件锁串行化；退出账号会中断该注册正在执行的请求。
 
