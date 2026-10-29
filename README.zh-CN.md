@@ -1,21 +1,21 @@
 # QudadFlow Translator（Edge / Chrome 扩展）
 
-**版本 0.9.0**：未配置 AI 时默认使用免 Key 机器翻译，先尝试已准备好的浏览器本地 Translator 模型，否则立即使用 MyMemory。首次下载本地模型需在设置中主动点击；默认翻译无需这一步。MyMemory 可能按共享网络计数，不能保证每位用户独立额度。限定并发与短期缓存改善响应，链接附近与竖排文本的译文位置更准确。已保存方案、接口选择、模型、连接测试和保存设置集中在同一个分区。
-可选的 ChatGPT 计划官方登录为预览功能。Windows x64 用户须从 [v0.9.0 发布页](https://github.com/qudadd/qudadflow-translator/releases/tag/v0.9.0) 单独下载并安装本机连接程序；扩展更新无法代为安装。首次打开提供一次可关闭的引导，不改变默认机器翻译。OpenAI 开源接入目前只明确列出符合资格的 Plus／Pro，Business／Team 经此路径的资格尚未确认。一个个人 Pro 账号已读取 8 个真实模型并完成固定短句推理。详见 [安装与限制](docs/CHATGPT_LOGIN.md)、[更新说明](docs/RELEASE_NOTES_0.9.0.md)和[三平台状态](docs/STORE_SUBMISSION_0.9.0.md)。
+**版本 0.9.1**：未配置 AI 时默认使用免 Key 机器翻译，先尝试已准备好的浏览器本地 Translator 模型，否则立即使用 MyMemory。首次下载本地模型需在设置中主动点击；默认翻译无需这一步。MyMemory 可能按共享网络计数，不能保证每位用户独立额度。限定并发与短期缓存改善响应，链接附近与竖排文本的译文位置更准确。已保存方案、接口选择、模型、连接测试和保存设置集中在同一个分区。
+可选的 ChatGPT 计划官方登录为预览功能。Windows x64 的商店版用户更新后首次打开扩展时，可明确同意下载 [v0.9.1 独立安装器](https://github.com/qudadd/qudadflow-translator/releases/tag/v0.9.1)；下载完成后仍需用户打开文件，安装器会核对文件并自动解压、安装到当前 Windows 用户。侧载开发版会显示针对当前扩展 ID 的安装命令。浏览器不能自行运行下载的程序。安装器尚未签名，另保留 ZIP 手动安装方式。此提示可关闭，不改变默认机器翻译或现有 API 设置。OpenAI 开源接入目前只明确列出符合资格的 Plus／Pro，Business／Team 经此路径的资格尚未确认。一个个人 Pro 账号已读取 8 个真实模型并完成固定短句推理。详见 [安装与限制](docs/CHATGPT_LOGIN.md)、[更新说明](docs/RELEASE_NOTES_0.9.1.md)和[三平台状态](docs/STORE_SUBMISSION_0.9.1.md)。
 
 **版本 0.8.16**：网页论文与 PDF/Word/TXT/Markdown 图表工作台新增 **展开工作台 / 返回阅读**，提供大图总览、集中的批量操作和问答结果分栏。切换布局保留选择、草稿及进行中的分析。见[更新说明](docs/RELEASE_NOTES_0.8.16.md)。
 
 **0.8.15** 支持所有阅读界面自动读取上游模型，下拉框仅显示模型 ID；API 方案只在设置中新增和切换。PDF 可选逐页／连续阅读，增强按图注编号提取图表、可复制表格和总览内的 AI 候选核对流程，并收紧工作台占用。见[更新说明](docs/RELEASE_NOTES_0.8.15.md)和[三平台发布状态](docs/STORE_SUBMISSION_0.8.15.md)。
 
-这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，面向 Microsoft Edge 和 Google Chrome。支持自备 Google、DeepL、Microsoft、OpenAI 兼容及自定义 JSON API，提供 PDF/Word/TXT/Markdown 原位及对照阅读、论文问答、图表提取、Skill、可选跨页记忆和 Python/R 草稿。Edge 已完成隔离环境集成验证，本轮 Chrome 集成尚未验证。当前三平台进度见[发布记录](docs/STORE_SUBMISSION_0.9.0.md)。
+这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，面向 Microsoft Edge 和 Google Chrome。支持自备 Google、DeepL、Microsoft、OpenAI 兼容及自定义 JSON API，提供 PDF/Word/TXT/Markdown 原位及对照阅读、论文问答、图表提取、Skill、可选跨页记忆和 Python/R 草稿。Edge 已完成隔离环境集成验证，本轮 Chrome 集成尚未验证。当前三平台进度见[发布记录](docs/STORE_SUBMISSION_0.9.1.md)。
 
 **QQ 交流群：1048123205**。在 QQ 中搜索群号加入，交流使用体验、反馈问题与功能建议。扩展弹窗和“设置 → 交流与支持”也可查看群号。0.7.1 同时新增上游模型读取、明确选型、草稿测试及此交流入口，见[更新说明](docs/RELEASE_NOTES_0.7.1.md)。
 
-[![网页沉浸阅读、划词翻译、文档、论文分析、默认翻译及可选 ChatGPT 登录预览](branding/store-0.9.0/preview.jpg)](docs/STORE_PRESENTATION_0.9.0.md)
+[![网页沉浸阅读、划词翻译、文档、论文分析、默认翻译及可选 ChatGPT 登录预览](branding/store-0.9.1/preview.jpg)](docs/STORE_PRESENTATION_0.9.1.md)
 
-[新版商店展示资料](docs/STORE_PRESENTATION_0.9.0.md)包含中英文简介和七张带版本标注的截图，标明生成样例与模拟接口；真实翻译质量及速度取决于服务商。
+[新版商店展示资料](docs/STORE_PRESENTATION_0.9.1.md)包含中英文简介和七张带版本标注的截图，标明生成样例与模拟接口；真实翻译质量及速度取决于服务商。
 
-GitHub、Edge 与 Chrome 的实际更新状态见[0.9.0 发布记录](docs/STORE_SUBMISSION_0.9.0.md)，商店提交与审核通过分别记录。
+GitHub、Edge 与 Chrome 的实际更新状态见[0.9.1 发布记录](docs/STORE_SUBMISSION_0.9.1.md)，商店提交与审核通过分别记录。
 
 ## 本次图表改进
 
@@ -196,7 +196,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 .\package.ps1
 ```
 
-打包脚本用同一文件清单执行复制、依赖检查及 ZIP 审计：检查 Manifest、图标、自有脚本语法和本地依赖，再验证暂存运行目录，逐个比对压缩包文件与源文件字节。通过后生成 `outputs/qudadflow-translator-v0.9.0.zip`、独立源码包、审计 JSON 和 `SHA256SUMS-v0.9.0.txt`；源文件校验失败时保留已有安装包。固定 ZIP 时间戳和路径顺序，使相同源码在同一 Node/PowerShell/.NET 环境中构建结果一致。运行包不含开发测试、截图与文档；打包不会自动发布。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
+打包脚本用同一文件清单执行复制、依赖检查及 ZIP 审计：检查 Manifest、图标、自有脚本语法和本地依赖，再验证暂存运行目录，逐个比对压缩包文件与源文件字节。通过后生成 `outputs/qudadflow-translator-v0.9.1.zip`、独立源码包、审计 JSON 和 `SHA256SUMS-v0.9.1.txt`；源文件校验失败时保留已有安装包。固定 ZIP 时间戳和路径顺序，使相同源码在同一 Node/PowerShell/.NET 环境中构建结果一致。运行包不含开发测试、截图与文档；打包不会自动发布。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
 
 ## 项目与上架信息
 
@@ -210,7 +210,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 - 按目标 API 服务商的条款确认用户文本和 Key 的处理方式。
 - 使用真实 API 在干净的 Edge 配置中完成侧载验收，再提交商店审核。
 
-三个平台实际进度见[0.9.0 发布记录](docs/STORE_SUBMISSION_0.9.0.md)；中英文商店简介和截图见[展示资料](docs/STORE_PRESENTATION_0.9.0.md)。
+三个平台实际进度见[0.9.1 发布记录](docs/STORE_SUBMISSION_0.9.1.md)；中英文商店简介和截图见[展示资料](docs/STORE_PRESENTATION_0.9.1.md)。
 
 ## 自动功能验证
 

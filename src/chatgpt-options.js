@@ -4,6 +4,13 @@
   const status=(text,error=false)=>{element('chatgptStatus').textContent=text;element('chatgptStatus').classList.toggle('error',error);};
   const displayError=error=>{const message=error?.message||'账号操作未完成。',code=/^[a-zA-Z0-9_]{1,100}$/.test(error?.code||'')?error.code:'',requestId=/^[a-zA-Z0-9_.-]{1,160}$/.test(error?.upstreamRequestId||'')?error.upstreamRequestId:'';const guidance=code==='3p_delegated_access_policy_denied'?' 官方组织策略拒绝。若管理台未列出 QudadFlow，请停止重复授权；请管理员凭请求 ID 向 OpenAI 核查。':code==='subscription_sharing_user_not_eligible'?' 当前账号或工作区无法使用此接入的计划额度，请勿反复授权；默认机器翻译可免配置使用。':'';return `${message}${code?` 错误码：${code}。`:''}${requestId&&!message.includes(requestId)?` 请求 ID：${requestId}。`:''}${guidance}`;};
   element('chatgptInstallCommand').textContent='powershell -NoProfile -ExecutionPolicy Bypass -File ".\\native-host\\Install-Bridge.ps1" -ExtensionIds '+chrome.runtime.id;
+  if(!new Set(['nichpjndbjbcfkcbanfcfogpkdhblghh','dfecnbleolbeddoflpfmailolehhnaih']).has(chrome.runtime.id)){
+    const setup=element('chatgptSetup'),development=setup.querySelector('details');
+    setup.querySelector('p').hidden=true;
+    development.open=true;
+    development.querySelector('summary').textContent='侧载开发版：安装当前扩展 ID';
+    development.querySelector('p').textContent='请先安装 Node.js 22.14 或更新版本，再在源码文件夹运行以下命令。商店版安装器不注册此侧载 ID。';
+  }
   function controls(){for(const id of ['chatgptLogin','chatgptLogout','chatgptResume','chatgptRefresh','chatgptAccount'])element(id).disabled=working;element('chatgptCancel').hidden=!working;}
   function installationState(error){const setup=element('chatgptSetup'),missing=['HOST_DISCONNECTED','HOST_UNAVAILABLE'].includes(error?.code);if(missing){setup.hidden=false;setup.open=true;}return missing;}
   async function call(type,accountRef){const reply=await chrome.runtime.sendMessage({type,accountRef});if(!reply?.ok)throw Object.assign(new Error(reply?.error||'无法连接本地程序。'),{code:reply?.code||'HOST_ERROR',upstreamRequestId:reply?.upstreamRequestId});return reply;}

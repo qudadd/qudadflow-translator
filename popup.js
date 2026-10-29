@@ -203,12 +203,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("targetLanguage").value = stored.targetLanguage || DEFAULT_TARGET;
   const offer=$('chatgptInstallOffer');
   const platform=await chrome.runtime.getPlatformInfo().catch(()=>({}));
-  offer.hidden=stored.qfChatgptInstallOffer!=='0.9.0'||stored.apiStyle==='chatgpt-plan'||Boolean(stored.chatgptAccount)||platform.os!=='win'||platform.arch!=='x86-64';
+  const storeInstall=new Set(['nichpjndbjbcfkcbanfcfogpkdhblghh','dfecnbleolbeddoflpfmailolehhnaih']).has(chrome.runtime.id);
+  offer.hidden=stored.qfChatgptInstallOffer!=='0.9.1'||stored.apiStyle==='chatgpt-plan'||Boolean(stored.chatgptAccount)||platform.os!=='win'||platform.arch!=='x86-64';
+  if(!storeInstall){
+    offer.querySelector('p').textContent='当前是侧载开发版，扩展 ID 与商店版不同。请在设置页查看针对当前 ID 的安装命令；默认机器翻译无需连接程序。';
+    $('chatgptInstallGuide').textContent='查看开发版安装';
+  }
   $('chatgptInstallLater').addEventListener('click',async()=>{await chrome.storage.local.remove('qfChatgptInstallOffer');offer.hidden=true;});
   $('chatgptInstallGuide').addEventListener('click',async()=>{
-    await chrome.tabs.create({url:chrome.runtime.getURL('options.html?preview=chatgpt#connectionSettings')});
-    await chrome.storage.local.remove('qfChatgptInstallOffer');
-    window.close();
+    const button=$('chatgptInstallGuide');
+    button.disabled=true;
+    try{
+      await chrome.tabs.create({url:chrome.runtime.getURL('options.html?preview=chatgpt#connectionSettings')});
+      if(storeInstall)await chrome.tabs.create({url:'https://github.com/qudadd/qudadflow-translator/releases/download/v0.9.1/qudadflow-chatgpt-bridge-installer-win-x64-v0.9.1.exe'});
+      await chrome.storage.local.remove('qfChatgptInstallOffer');
+      window.close();
+    }catch(error){
+      setStatus('未能开始下载：'+error.message+'。可在设置页手动下载安装程序。',true);
+      button.disabled=false;
+    }
   });
   $("targetLanguage").addEventListener("change", () => chrome.storage.local.set({ targetLanguage: $("targetLanguage").value }));
   $("translateSelection").addEventListener("click", () => run("TRANSLATE_SELECTION"));

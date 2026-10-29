@@ -4,9 +4,9 @@
 
 | 平台 | 当前已确认状态 |
 | --- | --- |
-| GitHub | 正在准备 v0.9.0 代码、运行 ZIP、源码 ZIP、可选 Windows x64 连接程序 ZIP、逐文件审计与 SHA256。尚未创建 release。 |
-| Microsoft Edge Add-ons | 正在准备 0.9.0 包、英文／中文简介与认证说明；尚未确认本轮后台状态或提交。 |
-| Chrome Web Store | 正在准备 0.9.0 包、英文／中文简介与审核员说明；尚未确认本轮后台状态或提交。 |
+| GitHub | [v0.9.0 release](https://github.com/qudadd/qudadflow-translator/releases/tag/v0.9.0) 已公开，含运行 ZIP、源码 ZIP、Windows x64 连接程序 ZIP、逐文件审计与 SHA256。提交为 `8c0c0fd`。 |
+| Microsoft Edge Add-ons | 0.9.0 包、英文／中文简介与认证说明已准备；本轮未能访问发布者后台，未确认上传或提交。0.9.1 已接续准备。 |
+| Chrome Web Store | 0.9.0 包、英文／中文简介与审核员说明已准备；本轮未能访问开发者后台，未确认上传或提交。0.9.1 已接续准备。 |
 
 0.9.0 的默认机器翻译不需要 AI 账号。浏览器本地模型不可用时回退到 MyMemory，后者的匿名额度可能按共享网络计数，不承诺每位用户独享。ChatGPT 计划登录是可选预览，Windows x64 用户需要自行安装独立的 Native Messaging 连接程序；浏览器更新无法替用户安装。OpenAI 的开源计划额度文档目前只明确列出符合资格的 Plus／Pro，Business／Team 经此路径的资格尚未确认。个人 Pro 账号曾读取 8 个真实模型并完成一次固定短句推理；这不证明其他账号、真实翻译质量或长期可用性。
 

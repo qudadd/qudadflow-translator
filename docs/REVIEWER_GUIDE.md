@@ -1,4 +1,4 @@
-# QudadFlow Translator: certification review (0.9.0)
+# QudadFlow Translator: certification review (0.9.1)
 
 The extension has no QudadFlow service account. Its default machine translation needs no AI credentials. Optional Google Cloud Translation, DeepL, Microsoft Translator and OpenAI-compatible services use the reviewer's own endpoint and credentials. Optional ChatGPT plan sign-in uses each user's official OpenAI authorization and a separately installed Windows x64 native host. No shared production keys or account are supplied. The UI is Simplified Chinese; English/Chinese store metadata are included.
 
@@ -6,7 +6,7 @@ For basic text testing, leave **自动机器翻译（默认免 Key）** selected
 
 ## Optional ChatGPT plan preview and nativeMessaging
 
-The new `nativeMessaging` permission is used only when the reviewer explicitly selects **ChatGPT 计划（官方授权，预览）**. The separate Windows x64 host is [a v0.9.0 GitHub release asset](https://github.com/qudadd/qudadflow-translator/releases/tag/v0.9.0). Extract its ZIP and double-click `Install-Bridge.cmd` to register the host for the current user and both store IDs; no Node.js installation or administrator rights are needed. The browser cannot install or manage the native host. A one-time, dismissible popup offer after install or upgrade opens the setup draft but does not change the active translator. Default machine translation works without the host.
+The new `nativeMessaging` permission is used only when the reviewer explicitly selects **ChatGPT 计划（官方授权，预览）**. The separate Windows x64 host is [a v0.9.1 GitHub release asset](https://github.com/qudadd/qudadflow-translator/releases/tag/v0.9.1). The one-time popup in the store version asks before opening the installer download; the user must then open that file. The installer verifies its embedded bundle and registers the host for the current user and both store IDs, without a separate Node.js installation or administrator rights. A sideloaded extension instead shows a command for its own extension ID. The installer is currently unsigned. A ZIP/manual fallback is also available. The browser cannot execute the downloaded program or manage the native host. Dismissing the offer leaves the active translator unchanged, and default machine translation works without the host.
 
 Without installing the host, select ChatGPT plan in Settings and verify the setup guide opens with the public download link and **重新检测** button. With the host installed, sign-in opens `auth.openai.com`, asks the person to authorize their own account, then uses the official model list and an explicit model selection. **测试连接** sends a fixed short sentence and can consume plan allowance; no real reviewer account is provided. If authorization is denied by workspace policy, the UI retains the upstream code/Request ID and directs the user to stop repeated attempts. OpenAI's open-source plan-usage docs currently explicitly list eligible Plus/Pro users; Business/Team usage here remains unconfirmed. The host protects OAuth tokens under Windows DPAPI; the extension stores only an account reference/model and never reads ChatGPT browser cookies. The inference path uses `POST https://api.openai.com/v1/responses` with `store:false`, `stream:true`; it does not switch to paid API billing. See [setup and limits](CHATGPT_LOGIN.md).
 
@@ -63,10 +63,10 @@ Confirm the running manifest version at the bottom of popup, Settings, reader an
 
 ## Verification and privacy
 
-The 0.9.0 release checks and package hashes are recorded in the [publication record](STORE_SUBMISSION_0.9.0.md). Isolated Edge, generated papers, private local PDFs and synthetic APIs verify behavior. One personal Pro account previously read eight real models and completed a fixed short text inference; live service speed/quality, Business/Team access and Chrome native-host integration are not established. The 0.8.16 baseline passed 87 behavior checks plus package/syntax validation; historical results are preserved in its own release notes.
+The 0.9.1 release checks and package hashes are recorded in the [publication record](STORE_SUBMISSION_0.9.1.md). Isolated Edge, generated papers, private local PDFs and synthetic APIs verify behavior. One personal Pro account previously read eight real models and completed a fixed short text inference; live service speed/quality, Business/Team access and Chrome native-host integration are not established. The 0.8.16 baseline passed 87 behavior checks plus package/syntax validation; historical results are preserved in its own release notes.
 
 Files parse locally; only requested text/selected images and enabled research context go to the chosen provider. Keys/settings stay in browser-local extension storage; ChatGPT OAuth credentials stay in the local companion. No developer proxy, ads, analytics or remote executable extension code. Parsers/WASM are bundled; API output is rendered as text. Protected browser pages cannot receive injected translation controls.
 
-See [verification](VERIFICATION.md), [release notes](RELEASE_NOTES_0.9.0.md), [submission record](STORE_SUBMISSION_0.9.0.md), [privacy](https://qudadd.github.io/qudadflow-translator/privacy.html) and [third-party notices](../THIRD_PARTY_NOTICES.md).
+See [verification](VERIFICATION.md), [release notes](RELEASE_NOTES_0.9.1.md), [submission record](STORE_SUBMISSION_0.9.1.md), [privacy](https://qudadd.github.io/qudadflow-translator/privacy.html) and [third-party notices](../THIRD_PARTY_NOTICES.md).
 
 Support: lcf1249288484@outlook.com · QQ community: 1048123205.

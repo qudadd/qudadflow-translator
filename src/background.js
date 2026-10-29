@@ -556,7 +556,7 @@ chrome.runtime.onInstalled.addListener(details => {
   // the popup and leave the active translation configuration untouched.
   if (details.reason === 'install' || details.reason === 'update' &&
       /^0\.(?:[0-8]|9\.0)(?:\.|$)/.test(details.previousVersion || '')) {
-    chrome.storage.local.set({qfChatgptInstallOffer:'0.9.0'}).catch(() => {});
+    chrome.storage.local.set({qfChatgptInstallOffer:'0.9.1'}).catch(() => {});
   }
 });
 chrome.runtime.onStartup.addListener(createContextMenu);

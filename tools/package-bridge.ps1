@@ -17,7 +17,9 @@ if ($nodeHash -ne $ExpectedNodeZipSha256.ToLowerInvariant()) { throw 'Node distr
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $assetName = "qudadflow-chatgpt-bridge-win-x64-v$version.zip"
 $asset = Join-Path $output $assetName
-if (Test-Path -LiteralPath $asset) { throw 'Bridge asset already exists; choose a new output directory.' }
+$installerName = "qudadflow-chatgpt-bridge-installer-win-x64-v$version.exe"
+$installer = Join-Path $output $installerName
+if ((Test-Path -LiteralPath $asset) -or (Test-Path -LiteralPath $installer)) { throw 'Bridge asset already exists; choose a new output directory.' }
 $stage = [IO.Path]::GetFullPath((Join-Path $output ('.bridge-staging-' + [Guid]::NewGuid().ToString('N'))))
 if (-not $stage.StartsWith($output + [IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) { throw 'Invalid staging path.' }
 New-Item -ItemType Directory -Path $stage | Out-Null
@@ -78,7 +80,11 @@ try {
             if ($entryHash -ne (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()) { throw "Bridge ZIP checksum mismatch: $($file.Name)" }
         }
     } finally { $verified.Dispose() }
-    $validation = [ordered]@{ asset=$assetName; bytes=(Get-Item -LiteralPath $asset).Length; sha256=(Get-FileHash -LiteralPath $asset -Algorithm SHA256).Hash.ToLowerInvariant(); files=$stagedFiles.Count; nodeDistributionSha256=$nodeHash; nodeVersion=$nodeInfo; verified=$true }
+    & $compiler /nologo /target:winexe /codepage:65001 /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll /reference:System.Web.Extensions.dll "/resource:$asset,QudadFlowBridgeBundle" "/out:$installer" (Join-Path $source 'Installer.cs')
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $installer)) { throw 'Bridge installer compilation failed.' }
+    $installerCheck = Start-Process -FilePath $installer -ArgumentList '--self-test' -WindowStyle Hidden -Wait -PassThru
+    if ($installerCheck.ExitCode -ne 0) { throw 'Bridge installer could not verify and extract its embedded bundle.' }
+    $validation = [ordered]@{ asset=$assetName; bytes=(Get-Item -LiteralPath $asset).Length; sha256=(Get-FileHash -LiteralPath $asset -Algorithm SHA256).Hash.ToLowerInvariant(); files=$stagedFiles.Count; nodeDistributionSha256=$nodeHash; nodeVersion=$nodeInfo; verified=$true; installer=$installerName; installerBytes=(Get-Item -LiteralPath $installer).Length; installerSha256=(Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant(); installerSelfTest='passed' }
     [IO.File]::WriteAllText((Join-Path $output 'bridge-validation.json'),($validation | ConvertTo-Json -Depth 5),[Text.UTF8Encoding]::new($false))
     $validation | ConvertTo-Json -Compress
 } finally {

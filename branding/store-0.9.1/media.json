@@ -1,0 +1,106 @@
+{
+  "version": "0.9.1",
+  "source": "Current UI captured in isolated Edge; store-ID branch simulated for the unpacked extension. Historical features retain labeled prior screenshots. Synthetic API examples do not establish provider quality or speed.",
+  "edge_upload": [
+    "qudadflow-01-immersive.png",
+    "qudadflow-02-selection.png",
+    "qudadflow-03-documents.png",
+    "qudadflow-04-paper-figures.png",
+    "qudadflow-05-paper-analysis.png",
+    "qudadflow-06-default-translation.png",
+    "qudadflow-07-chatgpt-preview.png"
+  ],
+  "chrome_upload": [
+    "qudadflow-01-immersive.png",
+    "qudadflow-02-selection.png",
+    "qudadflow-03-documents.png",
+    "qudadflow-04-paper-figures.png",
+    "qudadflow-06-default-translation.png"
+  ],
+  "screenshots": [
+    {
+      "file": "qudadflow-01-immersive.png",
+      "caption_en": "Immersive bilingual webpage reading — simulated translation demo",
+      "caption_zh": "网页沉浸双语阅读（模拟接口演示）",
+      "capture_version": "0.8.7",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "source": "Historical unchanged feature screenshot from store-0.8.16",
+      "sha256": "61f8dccda454b60cb6c3b555f7916262a791684e97e055d7f3559dda91b59d59"
+    },
+    {
+      "file": "qudadflow-02-selection.png",
+      "caption_en": "Nearby selection translation — simulated response and timing",
+      "caption_zh": "就近划词翻译（模拟结果及耗时演示）",
+      "capture_version": "0.8.7",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "source": "Historical unchanged feature screenshot from store-0.8.16",
+      "sha256": "f5deea56b35c0d304e9128148f2c4f3f5f8b34fc81319cc7defa63ae861a2003"
+    },
+    {
+      "file": "qudadflow-03-documents.png",
+      "caption_en": "PDF in-place and original-layout comparison — generated document demo",
+      "caption_zh": "PDF 原位及原版对照阅读（生成文档演示）",
+      "capture_version": "0.8.15",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "source": "Historical unchanged feature screenshot from store-0.8.16",
+      "sha256": "630e119fe70690b80380afcb6baa0a29ede4eca6a578df4a7040604508b5eab2"
+    },
+    {
+      "file": "qudadflow-04-paper-figures.png",
+      "caption_en": "Expanded figure gallery with search and bulk selection — generated demo",
+      "caption_zh": "独立展开的图表总览、搜索与全选（生成样例）",
+      "capture_version": "0.8.16",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "source": "Historical unchanged feature screenshot from store-0.8.16",
+      "sha256": "ceae1b75146f9ed9174cf04ffbae9df40a07314a05fb5e0cd48efbea876d73a6"
+    },
+    {
+      "file": "qudadflow-05-paper-analysis.png",
+      "caption_en": "Expanded paper Q&A with separate question and answer columns — simulated response",
+      "caption_zh": "分栏论文问答与长篇结果（生成论文及模拟回答）",
+      "capture_version": "0.8.16",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "source": "Historical unchanged feature screenshot from store-0.8.16",
+      "sha256": "bf36831f35df9118bda0ecd11d716a0b7bb1611ab2e5572f1448da7daa7cc880"
+    },
+    {
+      "file": "qudadflow-06-default-translation.png",
+      "caption_en": "Default key-free translation and optional local model setup",
+      "caption_zh": "默认免 Key 翻译与可选本地模型准备",
+      "capture_version": "0.9.1",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "source": "Isolated Edge · Real 0.9.1 UI · No account or local model preconfigured",
+      "sha256": "fd7ef91da0f117580eac92e5cbe08a2797ab3ccade3e3f3f30124ec39c092045"
+    },
+    {
+      "file": "qudadflow-07-chatgpt-preview.png",
+      "caption_en": "Consent-based installer download and separate Windows host",
+      "caption_zh": "用户同意后下载安装器，独立安装 Windows 连接程序",
+      "capture_version": "0.9.1",
+      "dimensions": [
+        1280,
+        800
+      ],
+      "source": "Simulated store ID in Edge · User opens installer · Plus/Pro documented; Team unconfirmed",
+      "sha256": "5b55175aa50deb018aaabf0b32b532fab51aee01f715b2ee6ed7572d0289b66c"
+    }
+  ]
+}
