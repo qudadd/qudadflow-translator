@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {exampleSpec,panelExample} from './fixtures/figure-example.mjs';
+import {figureCode,figureNotes} from '../src/figure-code.mjs';
+const {validate,parseResponse,csvHeader,columns,checkRevision,templateReady}=globalThis.QFFigureSpec;
+const results=[];
+function check(name,fn){try{fn();results.push({name,passed:true});console.log('PASS '+name);}catch(error){results.push({name,passed:false,error:error.stack});console.error('FAIL '+name+': '+error.message);}}
+function rejects(change,pattern){const s=exampleSpec();change(s);assert.throws(()=>validate(s),pattern);}
+check('Parse one shared specification; preserve provenance and SD semantics',()=>{const s=exampleSpec();assert.deepEqual(parseResponse('```json\n'+JSON.stringify(s)+'\n```'),s);assert.equal(s.panels[0].interval.kind,'sd');assert.equal(parseResponse('```python\nprint(1)\n```'),null);});
+check('Malformed, duplicate and unsupported schema declarations do not compile',()=>{const s=JSON.stringify(exampleSpec());assert.throws(()=>parseResponse('```json\n'+s+'\n```\n```json\n'+s+'\n```'));assert.throws(()=>parseResponse('```json\n{"schema":"qudadflow.figure/v1",\n```'));rejects(s=>s.schema='qudadflow.figure/v2',/schema/);});
+check('No traversal, URL or machine-specific CSV paths',()=>{for(const file of ['../data.csv','C:\\data.csv','https://a/data.csv','nested/data.csv'])rejects(s=>s.data.file=file,/CSV/);});
+check('Reject impossible axis domains, zero log ticks and log bars',()=>{rejects(s=>s.panels[0].y.limits=[5,1],/limits/);rejects(s=>{s.panels[0].x.scale='log';s.panels[0].x.ticks=[0,1];},/刻度/);const s=exampleSpec('bar');s.panels[0].y.scale='log';assert.throws(()=>validate(s));});
+check('Reject hidden unsupported properties rather than silently dropping them',()=>{rejects(s=>s.panels[0].smoothing=.95,/smoothing/);rejects(s=>s.style.hatch='//',/hatch/);});
+check('Bound panels, output memory and distinct group colors',()=>{rejects(s=>s.canvas.dpi=1000,/范围/);rejects(s=>{s.canvas.width=20;s.canvas.height=20;s.canvas.dpi=600;},/像素/);rejects(s=>s.style.palette=['#000000'],/颜色不足/);rejects(s=>s.panels.push(structuredClone(s.panels[0])),/重复/);});
+check('CI levels cannot be assigned to SD or unknown intervals',()=>{rejects(s=>s.panels[0].interval.level=.95,/仅 CI/);rejects(s=>s.panels[0].interval.kind='95% CI',/interval.kind/);});
+check('CSV template contains all required columns and no fabricated observation',()=>{const s=panelExample(),header=csvHeader(s);assert.deepEqual(columns(s),['kind','dose','value','supp','lower','upper']);assert.equal(header.split('\n').length,2);assert.equal(header.split('\n')[1],'');s.panels[0].x.column='quoted,"column';assert.match(csvHeader(s),/"quoted,""column"/);});
+check('Visual revisions can change layout but cannot change scientific mappings',()=>{const before=exampleSpec(),after=structuredClone(before);after.style.fontSize=11;after.panels[0].series.order.reverse();checkRevision(before,after);after.panels[0].interval.kind='ci';assert.throws(()=>checkRevision(before,after),/语义/);after.panels[0].interval.kind='sd';after.data.status='digitized';assert.throws(()=>checkRevision(before,after),/来源/);});
+check('JSON object key ordering does not falsely reject a visual revision',()=>{const before=exampleSpec(),after=structuredClone(before);after.data=Object.fromEntries(Object.entries(after.data).reverse());after.panels[0].interval=Object.fromEntries(Object.entries(after.panels[0].interval).reverse());checkRevision(before,after);});
+check('A line can omit markers; zero-size scatter and fractional dpi are rejected',()=>{const s=exampleSpec();s.style.pointSize=0;validate(s);s.panels[0].type='scatter';assert.throws(()=>validate(s));rejects(s=>s.canvas.dpi=100.5,/整数/);});
+check('Templates compile identical data/axis specification for both languages',()=>{const s=exampleSpec();for(const lang of ['python','r']){const code=figureCode(s,lang);assert.ok(code.includes('qudadflow.figure/v1'));assert.ok(code.includes('sample SD'));assert.ok(!code.includes('__SPEC__'));assert.ok(code.includes('render-audit.json'));assert.match(code,/Duplicate x/);assert.match(figureNotes(s,lang),/尚未执行/);}});
+check('Special geometry remains custom and cannot be silently simplified',()=>{const s=exampleSpec();s.panels[0].type='custom';assert.equal(templateReady(validate(s)),false);assert.throws(()=>figureCode(s,'python'),/特殊图形/);});
+const report={scope:'Shared spec/parser, provenance guards and template compilation; no live model.',passed:results.filter(r=>r.passed).length,failed:results.filter(r=>!r.passed).length,results};
+if(process.argv[2])fs.writeFileSync(process.argv[2],JSON.stringify(report,null,2));
+console.log(JSON.stringify({passed:report.passed,failed:report.failed}));if(report.failed)process.exitCode=1;

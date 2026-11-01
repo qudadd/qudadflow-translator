@@ -51,7 +51,7 @@ export class FigurePicker {
         const preview=document.createElement('span');preview.className='figure-tile-preview';
         const title=document.createElement('strong'),caption=document.createElement('span'),state=document.createElement('small');caption.className='figure-tile-caption';state.className='figure-tile-state';
         choice.append(checkbox,preview,title,caption,state);
-        const inspect=document.createElement('button');inspect.textContent='查看详情 / 结果';inspect.onclick=()=>this.onInspect(key);
+        const inspect=document.createElement('button');inspect.textContent='打开解析浮窗';inspect.setAttribute('aria-haspopup','dialog');inspect.setAttribute('aria-controls','figureInspector');inspect.onclick=()=>this.onInspect(key);
         element.append(choice,inspect);this.grid.append(element);tile={element,checkbox,preview,title,caption,state,inspect};this.tiles.set(key,tile);
       }
       const data=record.data||record.previewData||'';
@@ -68,7 +68,7 @@ export class FigurePicker {
   }
   render(){
     const visible=this.visible(),visibleKeys=new Set(visible.map(r=>r.key)),selected=[...this.selected].map(key=>this.records.get(key)).filter(Boolean);
-    for(const [key,tile] of this.tiles){const record=this.records.get(key);tile.element.hidden=!visibleKeys.has(key);tile.checkbox.checked=this.selected.has(key);tile.checkbox.disabled=this.locked||!this.selectable(record);tile.inspect.disabled=this.locked;tile.element.classList.toggle('selected',tile.checkbox.checked);}
+    for(const [key,tile] of this.tiles){const record=this.records.get(key);tile.element.hidden=!visibleKeys.has(key);tile.checkbox.checked=this.selected.has(key);tile.checkbox.disabled=this.locked||!this.selectable(record);tile.element.classList.toggle('selected',tile.checkbox.checked);}
     const pending=selected.filter(r=>!r.data).length,hidden=selected.filter(r=>!visibleKeys.has(r.key)).length;
     this.$('figurePickerCount').textContent=`${this.records.size} 项`;
     this.$('figureSelectionStatus').textContent=`已选 ${selected.length} 项${pending?` · ${pending} 项待载入`:''}${hidden?` · ${hidden} 项不在当前筛选中`:''}。可全选并提问；超过 4 张时先逐张读图，再综合回答。`;

@@ -5,7 +5,7 @@ export class FigureWorkbench {
     this.bar=document.createElement('div');this.bar.className='workbench-bar';
     this.tabs=document.createElement('div');this.tabs.className='workbench-tabs';this.tabs.setAttribute('role','tablist');this.tabs.setAttribute('aria-label','图表工作台');
     this.panels=new Map();this.buttons=new Map();
-    for(const [key,label] of [['acquire','提取图表'],['gallery','图表总览'],['analysis','解读与问答'],['review','核对候选']]){
+    for(const [key,label] of [['acquire','提取图表'],['gallery','图表总览'],['analysis','论文问答'],['review','核对候选']]){
       const button=document.createElement('button');button.type='button';button.id=`figure-tab-${key}`;button.textContent=label;button.setAttribute('role','tab');button.setAttribute('aria-controls',`figure-panel-${key}`);button.hidden=key==='review';
       const panel=document.createElement('section');panel.className='workbench-panel';panel.id=`figure-panel-${key}`;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',button.id);panel.tabIndex=0;panel.hidden=true;
       button.onclick=()=>this.show(key);button.onkeydown=event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const visible=[...this.buttons.entries()].filter(([,b])=>!b.hidden),at=visible.findIndex(([k])=>k===key),index=event.key==='Home'?0:event.key==='End'?visible.length-1:(at+(event.key==='ArrowRight'?1:-1)+visible.length)%visible.length;this.show(visible[index][0]);visible[index][1].focus();};
@@ -79,6 +79,7 @@ export class FigureWorkbench {
   }
   // Cropping and locating a PDF candidate need the original page to be visible.
   withSource(){
+    this.inspector?.close();
     const expanded=this.expanded;if(expanded)this.setExpanded(false);
     return ()=>{if(expanded&&this.root.isConnected&&!this.expanded)this.setExpanded(true);};
   }
@@ -88,7 +89,7 @@ export class FigureWorkbench {
     for(const [name,panel]of this.panels){panel.hidden=name!==key;const button=this.buttons.get(name);button.setAttribute('aria-selected',String(name===key));button.tabIndex=name===key?0:-1;}
     this.body.scrollTop=0;
   }
-  reset(){this.buttons.get('review').hidden=true;this.panels.get('review').replaceChildren();this.show(document.body.classList.contains('research-page')?'analysis':'acquire',{open:false});}
+  reset(){this.inspector?.close();this.buttons.get('review').hidden=true;this.panels.get('review').replaceChildren();this.show(document.body.classList.contains('research-page')?'analysis':'acquire',{open:false});}
   review(element){this.panels.get('review').append(element);this.buttons.get('review').hidden=false;this.show('review');}
   finishReview(){this.panels.get('review').replaceChildren();this.buttons.get('review').hidden=true;this.show('gallery',{open:false});}
 }

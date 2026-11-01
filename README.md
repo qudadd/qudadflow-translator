@@ -1,5 +1,7 @@
 # QudadFlow Translator
 
+**Version 0.9.3:** inspect each figure in a native dialog with the reference image beside its interpretation, Python or R tab. Dedicated code boxes add line numbers, exact copying, download, wrapping and a larger code view. Shared specifications and labelled `--style-demo` runs focus on form, fonts, legends and annotations. See the [figure workflow](docs/FIGURE_REPRODUCTION.md), [release notes](docs/RELEASE_NOTES_0.9.3.md) and [publication status](docs/STORE_SUBMISSION_0.9.3.md).
+
 **Version 0.9.2:** faster popup startup, shared duplicate translation requests, reusable browser translation models and reduced native credential overhead. Saved profiles, provider choice, models, connection tests and Save settings stay in one section. Key-free machine translation remains the default: a ready browser model first, then MyMemory. MyMemory may share anonymous quota across a network. Measurements and their limits are in the [performance report](docs/PERFORMANCE_0.9.2.md).
 Optional ChatGPT plan sign-in appears only when selected in Settings. A working companion is reused. If missing, Windows x64 store users can choose Download and continue authorization; optional download permission enables progress/error monitoring for that file only. Open the downloaded file and confirm installation once, then return to Settings for automatic detection and continuation. No unpacking, command line or separate Node.js installation is needed for the store version. The extension never executes the download; the installer is currently unsigned. Sideloaded copies retain setup for their own extension ID. OpenAI currently explicitly lists eligible Plus/Pro for open-source plan usage; Business/Team access through this route is unconfirmed. See [setup and limits](docs/CHATGPT_LOGIN.md), [release notes](docs/RELEASE_NOTES_0.9.2.md) and [three-platform status](docs/STORE_SUBMISSION_0.9.2.md).
 
@@ -17,7 +19,7 @@ A Manifest V3 extension for Microsoft Edge and Google Chrome, with immersive bil
 
 The [store presentation](docs/STORE_PRESENTATION_0.9.2.md) includes current English/Chinese descriptions and seven versioned screenshots. Generated fixtures, simulated API responses and capture versions are labeled; provider quality and speed vary.
 
-GitHub and store submission states are recorded separately in the [0.9.2 publication record](docs/STORE_SUBMISSION_0.9.2.md). Store submission does not establish approval.
+GitHub and store submission states are recorded separately in the [0.9.3 publication record](docs/STORE_SUBMISSION_0.9.3.md). Store submission does not establish approval.
 
 ## Translation providers
 
@@ -126,7 +128,9 @@ Three built-in Skills cover close reading, methods/statistics and chart interpre
 
 Memory is **off by default**. Opt in and choose a notebook; ordinary translation stays stateless. Each analysis selects at most six relevant records from that notebook, within a 4,000/6,000/12,000-character budget (6,000 default). IndexedDB stores individual deduplicated records, globally capped at 300 records / two million content characters, evicting oldest records. Each record keeps up to 2,000 source characters and 10,000 analysis characters plus source metadata. Choose 7/30/90-day retention (90 default), or capacity-only retention. Expiry is cleaned on subsequent research access. Disable memory to stop future use/saving; existing records remain until deleted or expired. Settings provides search, deletion, clearing and all-notebook JSON/Markdown export. Exports exclude extension API configurations and image bytes, but include saved research text.
 
-After chart recognition, click **生成 Python** or **生成 R** to download a .py/.R draft and Markdown notes. Prompts require attributable data or user-provided data.csv, mark estimated values and prohibit invented sample data. The extension never executes generated code. Independently verify code, dependencies, data and methods; a picture cannot guarantee exact scientific reproduction.
+After chart recognition, click **生成 Python** or **生成 R** to download a .py/.R draft and Markdown notes. Supplied-data runs preserve provenance and label estimates. Style demonstrations use explicitly labelled synthetic values to show the layout without source data. The extension never executes generated code. Independently verify code, dependencies, data and methods; a picture cannot guarantee exact scientific reproduction.
+
+For line, scatter, grouped-bar and common multi-panel specifications, both languages reuse one JSON without another model request. A dedicated code box offers line numbers, Copy, Download, Wrap and a native focus dialog. Run with `--style-demo` to inspect form, fonts, palette, legends and annotations without a CSV; synthetic values are labelled and exported separately. Import the rendered image for explicit visual revision. Style acceptance does not require numeric recovery. Supplied-data mode and complete custom code for complex figures remain available. See the [figure reproduction workflow](docs/FIGURE_REPRODUCTION.md) for dependencies, examples and limits.
 
 Web captures use a separate local cache: up to four captures, 16 MB image bytes each, one-hour expiry with lazy cleanup. Local document images stay in tab memory. Analysis sends chosen material, source title/page and URL origin/path, selected Skill/question and enabled notebook context directly to your chosen AI. See the privacy policy for retention and deletion details.
 
@@ -146,7 +150,7 @@ Requires Node.js and PowerShell. Runtime libraries are checked into `vendor/`; n
 .\package.ps1 -OutputDirectory .\dist
 ```
 
-The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.2.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
+The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.3.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
 
 ## Verification
 

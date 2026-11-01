@@ -22,7 +22,7 @@ const DEFAULTS = {
   responsePath: "choices[0].message.content"
 };
 
-if (typeof importScripts === "function") importScripts("chatgpt-bridge.js", "profile-store.js", "my-memory.js", "machine-translation.js", "research-store.js", "research-service.js", "model-catalog.js", "model-store.js", "immersive-shortcut.js");
+if (typeof importScripts === "function") importScripts("chatgpt-bridge.js", "profile-store.js", "my-memory.js", "machine-translation.js", "research-store.js", "figure-spec.js", "research-service.js", "model-catalog.js", "model-store.js", "immersive-shortcut.js");
 
 const MAX_INPUT_CHARS = 12000;
 const activeRequests = new Map();

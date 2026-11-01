@@ -36,7 +36,7 @@ try{
  for(const sample of samples){
   await check(sample.id+': full local extraction retains every expected named figure/table segment and excludes legends-only pages',async()=>{
    await open(sample);assert.equal(Number(await page.locator('#pageCount').textContent()),sample.pages);const before=calls.length;await extract();
-   const labels=await page.locator('.figure-card strong').allTextContents();assert.equal(labels.length,sample.local.length,JSON.stringify(labels));
+   const labels=await page.locator('.figure-tile strong').allTextContents();assert.equal(labels.length,sample.local.length,JSON.stringify(labels));
    for(const item of sample.local)assert.equal(labels.filter(l=>l.startsWith('第 '+item.page+' 页')&&l.includes(item.label)).length,1,JSON.stringify(item));
    assert.equal(calls.length,before);assert.equal(await page.locator('#figure-tab-gallery').getAttribute('aria-selected'),'true');
    await page.screenshot({path:path.join(path.dirname(reportPath),`qudadflow-${sample.id}-local-v${version}.png`)});

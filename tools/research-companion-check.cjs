@@ -1,5 +1,5 @@
 /* Isolated Microsoft Edge, synthetic API only. Optional third argument: saved public Ovid HTML. */
-async function workbenchView(page,stage){await page.locator('#figureWorkflow').evaluate(e=>e.open=true);const tab=page.locator('#figure-tab-'+stage);if(await tab.getAttribute('aria-selected')!=='true')await tab.click();if(stage==='acquire'){const manual=page.locator('.workbench-manual');if(await manual.count())await manual.evaluate(e=>e.open=true);}}
+const {workbenchView,inspectFigure,figureView,closeInspector,removeFigure}=require('./figure-ui-test.cjs');
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(__dirname,'..'),reportPath=path.resolve(process.argv[2]||'research-companion-results.json');
@@ -105,7 +105,7 @@ async function extract(site){const tabId=await worker.evaluate(async url=>(await
       const before=calls.length;await view('analysis');await page.locator('#selectAllQuestionFigures').click();assert.equal(calls.length,before);await ask('ALL_FIVE_EVIDENCE');assert.equal(calls.length-before,6);assert.ok(calls.slice(before,before+5).every(c=>c.images.length===1&&c.prompt.includes('ALL_FIVE_EVIDENCE')));assert.equal(calls.at(-1).images.length,0);for(let n=1;n<=5;n++)assert.match(calls.at(-1).prompt,new RegExp('LABEL: Figure '+n));assert.match(calls.at(-1).prompt,/AI FIGURE READINGS|END_OF_PAPER/);await view('gallery');
       await workbenchView(page,'gallery');await page.locator('#nextFigureGroup').click();assert.equal(await page.locator('.figure-choice input:checked').count(),4);await workbenchView(page,'gallery');await page.locator('#nextFigureGroup').click();assert.equal(await page.locator('.figure-choice input:checked').count(),1);assert.equal(await page.locator('.figure-tile[data-key="web-4"] input').isChecked(),true);
       await workbenchView(page,'gallery');await page.locator('#nextFigureGroup').click();assert.equal(await page.locator('.figure-choice input:checked').count(),4);await workbenchView(page,'gallery');await page.locator('#clearFigureSelection').click();assert.equal(await page.locator('.figure-choice input:checked').count(),0);
-      await page.locator('.figure-tile[data-key="web-0"] input').check();await workbenchView(page,'analysis');await page.locator('.figure-choice input').nth(1).check();assert.equal(await page.locator('.figure-tile input:checked').count(),2);
+      await page.locator('.figure-tile[data-key="web-0"] input').check();const detail=await inspectFigure(page,1);await detail.locator('.figure-choice input').check();await closeInspector(page);assert.equal(await page.locator('.figure-tile input:checked').count(),2);
       await workbenchView(page,'analysis');await page.locator('#researchQuestion').fill('KEEP_CUSTOM_QUESTION');await workbenchView(page,'gallery');await page.locator('#askSelectedFigures').click();assert.equal(await page.locator('#researchQuestion').inputValue(),'KEEP_CUSTOM_QUESTION');assert.equal(calls.length,before+6);
     });
     await check('Overview fits narrow and wide windows and remains collapsible',async()=>{
@@ -210,7 +210,7 @@ async function extract(site){const tabId=await worker.evaluate(async url=>(await
         await worker.evaluate(()=>chrome.storage.local.set({temperature:0.21}));await probe.waitForFunction(()=>!document.querySelector('#figureSearch').disabled);await delay(950);
         assert.equal(await probe.locator('.figure-card').count(),0);assert.equal(await probe.locator('.figure-tile input:checked').count(),5);assert.equal(imageRequests.length-before,1);assert.equal(await probe.locator('.figure-tile-state').filter({hasText:'正在载入'}).count(),0);
         imageDelay=0;await workbenchView(probe,'acquire');await probe.locator('#loadAllFigures').click();await probe.waitForFunction(()=>document.querySelectorAll('.figure-card').length===5&&!document.querySelector('#figureSearch').disabled);
-        await workbenchView(probe,'analysis');await probe.locator('.figure-card').first().getByRole('button',{name:'移除',exact:true}).click();assert.equal(await probe.locator('.figure-tile').count(),4);assert.equal(await probe.locator('.figure-tile input:checked').count(),4);
+        await removeFigure(probe);assert.equal(await probe.locator('.figure-tile').count(),4);assert.equal(await probe.locator('.figure-tile input:checked').count(),4);
         await probe.reload();await probe.waitForFunction(()=>document.querySelectorAll('.figure-tile').length===5);assert.equal(await probe.locator('.figure-tile input:checked').count(),0);
       }finally{imageDelay=0;await probe.close();}
     });
