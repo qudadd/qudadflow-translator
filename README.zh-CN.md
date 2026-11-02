@@ -1,5 +1,7 @@
 # QudadFlow Translator（Edge / Chrome 扩展）
 
+**版本 0.9.4**：修正 Chrome 显示版本字段，打包校验和 ZIP 审计要求显示版本与内部版本一致，避免商店继续显示旧版本号。包含 0.9.3 的全部图表工作区改进，详见[更新说明](docs/RELEASE_NOTES_0.9.4.md)和[发布状态](docs/STORE_SUBMISSION_0.9.4.md)。
+
 **版本 0.9.3**：图表解析改用原生浮窗，原图与解读、Python、R 分页并排查看。独立代码框支持行号、一键复制、下载、自动换行和放大查看；两种语言共享图形规格，可用明确标记的演示数据试跑，验收形式、字体、图例与标注。详见[图表流程](docs/FIGURE_REPRODUCTION.md)、[更新说明](docs/RELEASE_NOTES_0.9.3.md)和[发布状态](docs/STORE_SUBMISSION_0.9.3.md)。
 
 **版本 0.9.2**：优化弹窗启动、合并重复翻译请求、复用浏览器本地翻译模型，并减少本机凭据读取耗时。已保存方案、接口选择、模型、连接测试和保存设置仍集中在同一个分区。默认机器翻译无需配置，优先使用已准备好的浏览器模型，否则使用 MyMemory；MyMemory 可能按共享网络计数，不能保证每位用户独立额度。对比数据及测试范围见[性能报告](docs/PERFORMANCE_0.9.2.md)。
@@ -17,7 +19,7 @@
 
 [新版商店展示资料](docs/STORE_PRESENTATION_0.9.2.md)包含中英文简介和七张带版本标注的截图，标明生成样例与模拟接口；真实翻译质量及速度取决于服务商。
 
-GitHub、Edge 与 Chrome 的实际更新状态见[0.9.3 发布记录](docs/STORE_SUBMISSION_0.9.3.md)，商店提交与审核通过分别记录。
+GitHub、Edge 与 Chrome 的实际更新状态见[0.9.4 发布记录](docs/STORE_SUBMISSION_0.9.4.md)，商店提交与审核通过分别记录。
 
 ## 本次图表改进
 
@@ -200,7 +202,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 .\package.ps1
 ```
 
-打包脚本用同一文件清单执行复制、依赖检查及 ZIP 审计：检查 Manifest、图标、自有脚本语法和本地依赖，再验证暂存运行目录，逐个比对压缩包文件与源文件字节。通过后生成 `outputs/qudadflow-translator-v0.9.3.zip`、独立源码包、审计 JSON 和 `SHA256SUMS-v0.9.3.txt`；源文件校验失败时保留已有安装包。固定 ZIP 时间戳和路径顺序，使相同源码在同一 Node/PowerShell/.NET 环境中构建结果一致。运行包不含开发测试、截图与文档；打包不会自动发布。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
+打包脚本用同一文件清单执行复制、依赖检查及 ZIP 审计：检查 Manifest、图标、自有脚本语法和本地依赖，再验证暂存运行目录，逐个比对压缩包文件与源文件字节。通过后生成 `outputs/qudadflow-translator-v0.9.4.zip`、独立源码包、审计 JSON 和 `SHA256SUMS-v0.9.4.txt`；源文件校验失败时保留已有安装包。固定 ZIP 时间戳和路径顺序，使相同源码在同一 Node/PowerShell/.NET 环境中构建结果一致。运行包不含开发测试、截图与文档；打包不会自动发布。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
 
 ## 项目与上架信息
 

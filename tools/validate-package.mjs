@@ -14,6 +14,7 @@ function assert(condition, message) {
 
 assert(manifest.manifest_version === 3, "manifest_version 必须为 3");
 assert(typeof manifest.version==='string'&&/^\d+(?:\.\d+){0,3}$/.test(manifest.version)&&manifest.version.split('.').every(part=>Number(part)<=65535&&(part==='0'||!part.startsWith('0')))&&manifest.version.split('.').some(part=>Number(part)>0), '扩展版本号无效');
+assert(manifest.version_name === undefined || manifest.version_name === manifest.version, '显示版本号 version_name 必须与 version 一致');
 assert(manifest.background?.service_worker, "缺少 background.service_worker");
 assert(fs.existsSync(path.join(root, manifest.background.service_worker)), "service worker 文件不存在");
 assert(Array.isArray(manifest.optional_host_permissions), "必须显式声明可选 API 域名权限");

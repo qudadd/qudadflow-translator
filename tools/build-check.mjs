@@ -50,6 +50,17 @@ try{
     const target=path.join(snapshot,'popup.js');fs.utimesSync(target,new Date('2022-05-01T00:00:00Z'),new Date('2022-05-01T00:00:00Z'));build(second);
     for(const name of [runtimeName,sourceName])assert.ok(fs.readFileSync(path.join(first,name)).equals(fs.readFileSync(path.join(second,name))),name+' is not reproducible');
   });
+  await check('A stale display version fails validation and preserves existing output packages',()=>{
+    const before=digest(fs.readFileSync(path.join(first,runtimeName)));
+    const manifest=JSON.parse(fs.readFileSync(path.join(snapshot,'manifest.json'),'utf8'));
+    manifest.version_name='0.0.1';
+    changed('manifest.json',JSON.stringify(manifest,null,2)+'\n',()=>{
+      assert.match(validate(false),/version_name/);
+      assert.match(build(first,false),/version_name/);
+    });
+    assert.equal(digest(fs.readFileSync(path.join(first,runtimeName))),before);
+    assert.equal(fs.readdirSync(snapshot).some(name=>name.startsWith('.package-staging-')),false);
+  });
   await check('New source modules join the runtime inventory and missing transitive imports fail validation',()=>changed('src/build-fixture.mjs','export const fixture=true;\n',()=>{
     assert.ok(runtimeFiles(snapshot).includes('src/build-fixture.mjs'));validate();
     fs.writeFileSync(path.join(snapshot,'src/build-fixture.mjs'),"import './missing-build-fixture.mjs';\n");assert.match(validate(false),/missing-build-fixture.mjs/);

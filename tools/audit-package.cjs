@@ -15,9 +15,9 @@ const digest=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
     assert.deepEqual(names.slice().sort(),expected,'Archive inventory differs from reviewed sources');
     for(const name of names)assert.equal(digest(entries[name]),digest(fs.readFileSync(path.join(root,name))),`Archive differs from working file: ${name}`);
     const manifest=JSON.parse(Buffer.from(entries['manifest.json']).toString());
-    assert.equal(manifest.version,version);assert.equal(manifest.manifest_version,3);assert.deepEqual(manifest.host_permissions,['https://api.mymemory.translated.net/*']);
+    assert.equal(manifest.version,version);assert.equal(manifest.version_name??manifest.version,version,'Display version differs from package version');assert.equal(manifest.manifest_version,3);assert.deepEqual(manifest.host_permissions,['https://api.mymemory.translated.net/*']);
     checkLocalReferences(runtime,name=>Buffer.from(entries[name]).toString());
-    reports.push({file,bytes:bytes.length,entries:names.length,sha256:digest(bytes),workingFileComparison:'passed',inventory:'passed',localReferences:'passed',version});
+    reports.push({file,bytes:bytes.length,entries:names.length,sha256:digest(bytes),workingFileComparison:'passed',inventory:'passed',localReferences:'passed',version,displayVersion:manifest.version_name??manifest.version});
   }
   assert.ok(fs.readFileSync(path.join(root,'privacy.html')).equals(fs.readFileSync(path.join(root,'docs/privacy.html'))),'Privacy policies differ');
   fs.writeFileSync(path.join(out,`qudadflow-package-validation-v${version}.json`),JSON.stringify({packages:reports,runtimePolicyEqualsHostedSource:true},null,2)+'\n');

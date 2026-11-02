@@ -1,5 +1,7 @@
 # QudadFlow Translator
 
+**Version 0.9.4:** correct the display version shown by Chrome and enforce matching package/display versions during validation and archive auditing. Includes the figure workspace introduced in 0.9.3. See the [release notes](docs/RELEASE_NOTES_0.9.4.md) and [publication status](docs/STORE_SUBMISSION_0.9.4.md).
+
 **Version 0.9.3:** inspect each figure in a native dialog with the reference image beside its interpretation, Python or R tab. Dedicated code boxes add line numbers, exact copying, download, wrapping and a larger code view. Shared specifications and labelled `--style-demo` runs focus on form, fonts, legends and annotations. See the [figure workflow](docs/FIGURE_REPRODUCTION.md), [release notes](docs/RELEASE_NOTES_0.9.3.md) and [publication status](docs/STORE_SUBMISSION_0.9.3.md).
 
 **Version 0.9.2:** faster popup startup, shared duplicate translation requests, reusable browser translation models and reduced native credential overhead. Saved profiles, provider choice, models, connection tests and Save settings stay in one section. Key-free machine translation remains the default: a ready browser model first, then MyMemory. MyMemory may share anonymous quota across a network. Measurements and their limits are in the [performance report](docs/PERFORMANCE_0.9.2.md).
@@ -19,7 +21,7 @@ A Manifest V3 extension for Microsoft Edge and Google Chrome, with immersive bil
 
 The [store presentation](docs/STORE_PRESENTATION_0.9.2.md) includes current English/Chinese descriptions and seven versioned screenshots. Generated fixtures, simulated API responses and capture versions are labeled; provider quality and speed vary.
 
-GitHub and store submission states are recorded separately in the [0.9.3 publication record](docs/STORE_SUBMISSION_0.9.3.md). Store submission does not establish approval.
+GitHub and store submission states are recorded separately in the [0.9.4 publication record](docs/STORE_SUBMISSION_0.9.4.md). Store submission does not establish approval.
 
 ## Translation providers
 
@@ -150,7 +152,7 @@ Requires Node.js and PowerShell. Runtime libraries are checked into `vendor/`; n
 .\package.ps1 -OutputDirectory .\dist
 ```
 
-The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.3.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
+The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.4.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
 
 ## Verification
 
