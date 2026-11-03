@@ -4,7 +4,7 @@
     "description": "所有语言均保留统一英文产品名称。"
   },
   "extensionDescription": {
-    "message": "网页沉浸式与划词翻译，PDF/Word/TXT/Markdown 阅读，论文问答、图表提取与可复制表格；自备 API，支持译文颜色及快捷键设置。"
+    "message": "面向论文深度阅读：PDF 对照翻译、正文与图表联合问答、图表精读、Python/R 样式复刻代码；兼具网页沉浸式与划词翻译。"
   },
   "translateSelection": {
     "message": "翻译当前选中文本"

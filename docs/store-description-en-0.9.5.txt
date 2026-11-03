@@ -1,0 +1,46 @@
+QudadFlow Translator is a research workspace for reading papers in depth and learning from their figures. It combines PDF bilingual reading, questions grounded in paper text and figures, detailed figure interpretation, and Python/R chart-style code in Edge and Chrome. Use it to study foreign-language literature, examine methods, prepare journal-club discussions and learn scientific plotting. The extension interface is Simplified Chinese.
+
+PDF BILINGUAL READING
+• Original-layout comparison puts source and translated pages side by side, preserving PDF page proportions and figure positions where possible so you can check terminology and context.
+• Paragraph comparison pairs corresponding source and translated passages. In-place reading shows translations in the original text regions; click a translation to inspect its source. Long translations that do not fit retain a full-text fallback.
+• Choose page-by-page or continuous reading. Translate the current page or all pages, stop and continue, and export bilingual TXT. Also open local Word DOCX, TXT and Markdown files or permitted document URLs.
+
+READ THE PAPER WITH ITS EVIDENCE
+Open a movable, resizable paper Q&A window from an article webpage, or use the document reader's research workbench. Combine extracted body text, captions and selected figures to ask follow-up questions about the research question, experimental design, groups and controls, methods and statistics, interpretation, evidence and limitations. Available page, figure and source labels help you return to the supplied material for checking.
+
+Built-in Skill prompts cover close paper reading, methods/statistics review and figure interpretation. Edit or import your own prompts, keep a multi-turn conversation and export Markdown. Optional notebook memory is off by default; enable it to retain relevant analyses within a research notebook, with search, deletion and export in Settings.
+
+STUDY FIGURES IN DEPTH
+Caption- and number-aware extraction finds figures and tables in webpages and PDFs. Search, select all and batch-load high-resolution originals when the source provides them. Extract the current PDF page or the whole document. Add missing material by cropping, importing or pasting a screenshot, or explicitly request AI-assisted detection and review candidates before adding them.
+
+Open a figure dialog with the reference beside Interpretation, Python and R tabs. Move between figures or maximize the view. The workbench can also expand for larger previews and separate question/answer columns. With an image-capable model and supplied paper context, explore:
+• What titles, captions, axes, units, categories and legends mean.
+• How panels are arranged and how colors, line styles and markers encode groups.
+• How trends, group differences and error bars or intervals relate to the stated methods; retain uncertainty when the source is insufficient.
+• How the figure supports a claim in the paper, which statements describe visible evidence and which need further data or experiments.
+
+LEARN CHART DESIGN THROUGH PYTHON AND R
+Generate plotting drafts after interpretation to study the figure's layers, panel layout, aspect ratio, linear/log axes, tick formatting, typography, colors, line/marker styles, legend placement and order, annotations and whitespace. The goal is executable code reproducing visual form and style; recovering the paper's original numerical observations is outside this workflow's acceptance criteria.
+
+Line, scatter, grouped-bar and common multi-panel charts can share one figure specification across Python and R, reusing it when switching languages. Special structures such as mixed layers, insets or broken axes use custom code drafts. Dedicated code boxes provide line numbers, exact copying, download, wrapping and a larger view; expand the run instructions, specification and empty data template when needed.
+
+Common templates include --style-demo: run the downloaded script in your own Python/R environment without an original CSV and export PNG, PDF and SVG to inspect layout, fonts, colors, legends and annotations. Synthetic demonstration data and images are labelled and cannot support scientific conclusions. Import a local trial render and explicitly choose Compare with reference to send both images to your selected model for visual revision. The extension generates code and instructions; it does not execute scripts or install dependencies.
+
+TURN TABLES INTO REUSABLE NOTES
+Copy or download native text tables locally as Markdown or TSV for notes and spreadsheet software. Explicit vision-AI transcription is available for image tables, retaining visible headers, units, footnotes and intervals while marking unreadable or missing content. Check transcriptions against the original image.
+
+BASIC READING AND YOUR MODEL CHOICE
+Immersive bilingual webpages, an opt-in selection-translation button, text colors and customizable shortcuts remain available. Default machine translation needs no API key: a ready browser-local model is tried first, then MyMemory. MyMemory receives requested text, may retain it and typically permits 5,000 anonymous characters/day, potentially shared across a network; it is not unlimited.
+
+Research Q&A, figure interpretation and code generation require a compatible AI service; image tasks need an image-capable model. Configure your own OpenAI-compatible or custom JSON API. Basic translation also supports Google Cloud Translation, DeepL and Microsoft Translator. Save up to 20 local profiles, switch API connections in Settings, and discover/select models on the active service from reading views.
+
+Eligible users may instead choose the optional ChatGPT plan sign-in preview with the separate v0.9.2 Windows x64 companion. If missing, follow its download guide, open the installer and confirm installation once, then return to Settings to continue official authorization. Optional download permission monitors that file only; compatible installed companions are reused. The installer is currently unsigned, with a ZIP/manual alternative. The companion protects OAuth credentials; the extension does not read ChatGPT cookies, collect passwords or switch automatically to paid API billing. OpenAI's open-source plan-usage documentation explicitly lists eligible Plus/Pro users; Business/Team eligibility through this route is unconfirmed. Default machine translation and your own API do not require the companion.
+
+SCOPE AND DATA
+Files and tables are parsed locally. Extraction, selection and loading do not themselves start AI analysis. Requested text, selected images and enabled relevant notebook memory go directly to your chosen provider. Keys and settings stay in browser-local storage; site/API permissions are requested as needed. No developer translation proxy, ads or analytics.
+
+Extraction and interpretation depend on page structure, image quality and model capability. AI analyses, transcriptions and generated code need checking; chart-style reproduction does not validate scientific results. Files are limited to 25 MB and PDF/rendered Word to 300 pages. Scanned body text needs external OCR; layout-preserving translated PDF/DOCX export is not included. Provider accounts, costs, context and quota limits apply.
+
+Support: lcf1249288484@outlook.com · QQ: 1048123205
+Privacy: https://qudadd.github.io/qudadflow-translator/privacy.html
+Source, examples and guides: https://github.com/qudadd/qudadflow-translator

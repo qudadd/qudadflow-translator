@@ -1,5 +1,22 @@
 # QudadFlow Translator（Edge / Chrome 扩展）
 
+**面向论文深度阅读与图表学习的研究工作台。**
+
+从 PDF 对照翻译，到结合正文和图表追问，再到理解学术绘图并生成 Python/R 样式代码，把阅读、证据整理和绘图学习放在同一流程中。
+
+- **PDF 对照阅读**：原版左右对照、段落配对和沉浸原位翻译；支持逐页／连续阅读、停止／继续及双语 TXT 导出，也可打开 Word DOCX、TXT、Markdown。
+- **论文深度问答**：结合正文、图注与所选图表，围绕研究设计、方法与统计、结果、证据和局限持续追问。支持内置／自定义 Skill、Markdown 导出及默认关闭的笔记本记忆。
+- **图表精读**：提取图表、批量载入可用高清原图，在解析浮窗中并排查看原图与“解读 / Python / R”。结合论文学习坐标、单位、分组、多面板、图例和不确定性的表达。
+- **Python/R 样式复刻**：把图层、布局、坐标形式、字体、配色、图例和标注转为共享规格或自定义代码。独立代码框便于复制、下载和放大；用明确标记的 `--style-demo` 演示值本地试跑，再导入结果请求视觉修订。扩展不执行代码，形式与风格验收不要求数值还原。
+- **论文证据整理**：原生表格可复制 Markdown/TSV，图片表格可主动调用视觉 AI 转写；保留可用页码、图号与来源，方便核对原文。
+
+沉浸式网页阅读与划词翻译是基础能力。默认机器翻译无需 Key；论文深度问答与图表任务需要兼容的 AI 服务／模型，或符合资格的可选 ChatGPT 计划连接。扩展界面为简体中文。详见[完整介绍](docs/store-description-zh-0.9.5.txt)和[图表学习流程](docs/FIGURE_REPRODUCTION.md)。
+
+**版本 0.9.5**：同步安装包摘要、中英文简介和项目网站的论文工作台定位，保留现有研究与翻译功能。详见[更新说明](docs/RELEASE_NOTES_0.9.5.md)和[发布状态](docs/STORE_SUBMISSION_0.9.5.md)。
+
+<details>
+<summary>此前版本摘要</summary>
+
 **版本 0.9.4**：修正 Chrome 显示版本字段，打包校验和 ZIP 审计要求显示版本与内部版本一致，避免商店继续显示旧版本号。包含 0.9.3 的全部图表工作区改进，详见[更新说明](docs/RELEASE_NOTES_0.9.4.md)和[发布状态](docs/STORE_SUBMISSION_0.9.4.md)。
 
 **版本 0.9.3**：图表解析改用原生浮窗，原图与解读、Python、R 分页并排查看。独立代码框支持行号、一键复制、下载、自动换行和放大查看；两种语言共享图形规格，可用明确标记的演示数据试跑，验收形式、字体、图例与标注。详见[图表流程](docs/FIGURE_REPRODUCTION.md)、[更新说明](docs/RELEASE_NOTES_0.9.3.md)和[发布状态](docs/STORE_SUBMISSION_0.9.3.md)。
@@ -11,15 +28,15 @@
 
 **0.8.15** 支持所有阅读界面自动读取上游模型，下拉框仅显示模型 ID；API 方案只在设置中新增和切换。PDF 可选逐页／连续阅读，增强按图注编号提取图表、可复制表格和总览内的 AI 候选核对流程，并收紧工作台占用。见[更新说明](docs/RELEASE_NOTES_0.8.15.md)和[三平台发布状态](docs/STORE_SUBMISSION_0.8.15.md)。
 
-这是一个以沉浸式双语阅读和划词翻译为核心的 Manifest V3 扩展，面向 Microsoft Edge 和 Google Chrome。支持自备 Google、DeepL、Microsoft、OpenAI 兼容及自定义 JSON API，提供 PDF/Word/TXT/Markdown 原位及对照阅读、论文问答、图表提取、Skill、可选跨页记忆和 Python/R 草稿。Edge 已完成隔离环境集成验证，本轮 Chrome 集成尚未验证。当前三平台进度见[发布记录](docs/STORE_SUBMISSION_0.9.3.md)。
+</details>
 
 **QQ 交流群：1048123205**。在 QQ 中搜索群号加入，交流使用体验、反馈问题与功能建议。扩展弹窗和“设置 → 交流与支持”也可查看群号。0.7.1 同时新增上游模型读取、明确选型、草稿测试及此交流入口，见[更新说明](docs/RELEASE_NOTES_0.7.1.md)。
 
 [![网页沉浸阅读、划词翻译、文档、论文分析、默认翻译及可选 ChatGPT 登录预览](branding/store-0.9.2/preview.jpg)](docs/STORE_PRESENTATION_0.9.2.md)
 
-[新版商店展示资料](docs/STORE_PRESENTATION_0.9.2.md)包含中英文简介和七张带版本标注的截图，标明生成样例与模拟接口；真实翻译质量及速度取决于服务商。
+[当前商店简介](docs/STORE_PRESENTATION_0.9.5.md)按论文研究流程提供中英文介绍；[0.9.2 展示资料](docs/STORE_PRESENTATION_0.9.2.md)保留七张带版本标注的截图，标明生成样例与模拟接口。真实服务效果取决于服务商与模型。
 
-GitHub、Edge 与 Chrome 的实际更新状态见[0.9.4 发布记录](docs/STORE_SUBMISSION_0.9.4.md)，商店提交与审核通过分别记录。
+GitHub、Edge 与 Chrome 的实际更新状态见[0.9.5 发布记录](docs/STORE_SUBMISSION_0.9.5.md)，商店提交与审核通过分别记录。
 
 ## 本次图表改进
 

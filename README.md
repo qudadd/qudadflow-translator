@@ -1,5 +1,22 @@
 # QudadFlow Translator
 
+**A research workspace for reading papers in depth and learning from their figures, for Edge and Chrome.**
+
+Read a PDF with its translation, ask questions using the paper's text and figures, study how evidence is presented, and turn chart-style observations into Python/R plotting drafts.
+
+- **PDF bilingual reading:** source and translated pages side by side, paired paragraphs or in-place translations; page-by-page/continuous navigation, stop/continue and bilingual TXT export. Word DOCX, TXT and Markdown are also supported.
+- **Paper Q&A:** combine body text, captions and selected figures to explore study design, methods, statistics, results and limitations. Use built-in or custom Skill prompts, follow up and export Markdown; optional notebook memory starts off.
+- **Figure study:** extract figures/tables, load available high-resolution originals and open a dialog with the reference beside Interpretation, Python and R tabs. Examine axes, units, groups, panels, legends and uncertainty in the context of the paper.
+- **Python/R chart-style code:** study layout, layers, axes, fonts, colors, legends and annotations through a shared specification or custom code. Dedicated code boxes support copying, download, wrapping and enlargement. Labelled `--style-demo` runs use synthetic inputs; import a local render for an explicit visual revision request. The extension does not execute code, and style acceptance does not require numerical recovery.
+- **Reusable evidence:** copy native tables as Markdown/TSV, explicitly transcribe image tables with vision AI, and retain available figure/page references for checking.
+
+Immersive webpage and selection translation provide the basic reading tools. Default machine translation needs no key; deeper AI research needs your compatible service/model or an eligible optional ChatGPT plan connection. The current interface is Simplified Chinese. [Full introduction](docs/store-description-en-0.9.5.txt) · [Figure workflow](docs/FIGURE_REPRODUCTION.md).
+
+**Version 0.9.5:** align the package summaries, English/Chinese introductions and project website around the paper research workflow. Existing research and translation behavior is retained. See the [release notes](docs/RELEASE_NOTES_0.9.5.md) and [publication status](docs/STORE_SUBMISSION_0.9.5.md).
+
+<details>
+<summary>Earlier release highlights</summary>
+
 **Version 0.9.4:** correct the display version shown by Chrome and enforce matching package/display versions during validation and archive auditing. Includes the figure workspace introduced in 0.9.3. See the [release notes](docs/RELEASE_NOTES_0.9.4.md) and [publication status](docs/STORE_SUBMISSION_0.9.4.md).
 
 **Version 0.9.3:** inspect each figure in a native dialog with the reference image beside its interpretation, Python or R tab. Dedicated code boxes add line numbers, exact copying, download, wrapping and a larger code view. Shared specifications and labelled `--style-demo` runs focus on form, fonts, legends and annotations. See the [figure workflow](docs/FIGURE_REPRODUCTION.md), [release notes](docs/RELEASE_NOTES_0.9.3.md) and [publication status](docs/STORE_SUBMISSION_0.9.3.md).
@@ -9,9 +26,9 @@ Optional ChatGPT plan sign-in appears only when selected in Settings. A working 
 
 **Version 0.8.16:** paper and PDF/Word/TXT/Markdown figure workbenches can expand into a dedicated viewport with larger previews, accessible bulk controls and separate question/answer columns. Layout changes retain selections, drafts and pending analyses. See [release notes](docs/RELEASE_NOTES_0.8.16.md) and [publication status](docs/STORE_SUBMISSION_0.8.16.md).
 
-A Manifest V3 extension for Microsoft Edge and Google Chrome, with immersive bilingual webpages, selection translation, and in-place document translation for PDF, Word DOCX, TXT, and Markdown. Traditional translation APIs and AI both power the base reading features. Vision AI adds an optional picture/chart workflow at the bottom.
-
 **0.8.15** adds automatic upstream model discovery in every reading view, plain model-ID lists and Settings-only API connection switching. PDF reading now offers page-by-page or continuous navigation, caption-aware figure/table extraction and an optional AI review workflow inside the compact figure overview. See [release notes](docs/RELEASE_NOTES_0.8.15.md) and [publication status](docs/STORE_SUBMISSION_0.8.15.md).
+
+</details>
 
 [Website](https://qudadd.github.io/qudadflow-translator/) · [Privacy policy](https://qudadd.github.io/qudadflow-translator/privacy.html) · [中文网站指南](https://qudadd.github.io/qudadflow-translator/zh-CN.html) · [中文 README](README.zh-CN.md)
 
@@ -19,9 +36,9 @@ A Manifest V3 extension for Microsoft Edge and Google Chrome, with immersive bil
 
 [![Webpage reading, selection translation, documents, paper research, default translation and optional ChatGPT preview](branding/store-0.9.2/preview.jpg)](docs/STORE_PRESENTATION_0.9.2.md)
 
-The [store presentation](docs/STORE_PRESENTATION_0.9.2.md) includes current English/Chinese descriptions and seven versioned screenshots. Generated fixtures, simulated API responses and capture versions are labeled; provider quality and speed vary.
+The [current store introduction](docs/STORE_PRESENTATION_0.9.5.md) describes the research workflow in English and Chinese. The illustrated [0.9.2 presentation](docs/STORE_PRESENTATION_0.9.2.md) retains its versioned screenshots; generated fixtures, simulated API responses and capture versions are labelled. Provider quality and speed vary.
 
-GitHub and store submission states are recorded separately in the [0.9.4 publication record](docs/STORE_SUBMISSION_0.9.4.md). Store submission does not establish approval.
+GitHub and store submission states are recorded separately in the [0.9.5 publication record](docs/STORE_SUBMISSION_0.9.5.md). Store submission does not establish approval.
 
 ## Translation providers
 

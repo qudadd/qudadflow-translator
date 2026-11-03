@@ -4,7 +4,7 @@
     "description": "The product name stays in English in every locale."
   },
   "extensionDescription": {
-    "message": "Immersive web and document translation, paper Q&A and figure/table tools. Use your own API, colors and shortcuts."
+    "message": "Research paper workspace: PDF bilingual reading, evidence-based Q&A, figure analysis and Python/R chart-style code."
   },
   "translateSelection": {
     "message": "Translate the selected text"
