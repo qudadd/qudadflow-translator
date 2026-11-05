@@ -103,7 +103,10 @@
   const figures=[],seen=new Map();let figuresTruncated=false,pixels=0;
   function safeUrl(value){try{const url=new URL(value,location.href);if(value&&/^https?:$/.test(url.protocol)&&!url.username&&!url.password)return url.href;}catch{}return '';}
   function imageUrl(img){
-    const link=img.closest('a[href]')?.getAttribute('href');if(link&&/\.(?:png|jpe?g|webp|gif)(?:[?#]|$)|\/image-api\//i.test(link))return safeUrl(link);
+    const link=safeUrl(img.closest('a[href]')?.getAttribute('href'));
+    // A viewer can end in ?id=figure.jpg while serving HTML (PMC tileshop).
+    // Only the URL path identifies a direct image or publisher image API.
+    if(link&&(/\.(?:png|jpe?g|webp|gif)$/i.test(new URL(link).pathname)||/\/image-api\//i.test(new URL(link).pathname)))return link;
     const sets=[img.getAttribute('data-srcset'),img.getAttribute('srcset'),...Array.from(img.closest('picture')?.querySelectorAll('source')||[]).flatMap(s=>[s.getAttribute('srcset'),s.getAttribute('data-srcset')])].filter(Boolean).flatMap(s=>s.split(',').map(part=>{const [url,size]=part.trim().split(/\s+/);return {url,score:parseFloat(size)||1};})).sort((a,b)=>b.score-a.score);
     const originals=['data-original','data-full-src','data-large-src','data-zoom-image','data-original-src'].flatMap(name=>[img.getAttribute(name),img.closest('a')?.getAttribute(name)]);
     return [...originals,...sets.map(s=>s.url),img.getAttribute('data-src'),img.getAttribute('data-lazy-src'),img.currentSrc,img.getAttribute('src')].map(safeUrl).find(Boolean)||'';
@@ -163,6 +166,17 @@
   function figureContext(element){
     const accessible=(element.getAttribute('aria-labelledby')||'').split(/\s+/).filter(Boolean).map(id=>document.getElementById(id)).filter(node=>node&&visible(node)&&!node.closest(excluded)).map(node=>clean(plain(node))).join(' ');
     if(named(accessible))return {wrapper:element.closest(figureWrapper)||element.parentElement,caption:accessible,captionSource:'aria-label',id:element.id};
+    // PMC puts the number in a heading and the explanation in a separate
+    // figcaption. Resolve the explicit figure before a nearby bare heading.
+    const figure=element.closest('figure,[role="figure"],.fig');
+    if(figure){
+      const entries=captions(figure),numbered=entries.filter(entry=>entry.name);
+      if(numbered.length&&new Set(numbered.map(entry=>entry.name.key)).size===1){
+        let caption=numbered.sort((a,b)=>b.value.length-a.value.length)[0].value;
+        for(const entry of entries.filter(entry=>!entry.name&&entry.node.matches(figureCaption)))if(entry.value&&!caption.includes(entry.value))caption+=' '+entry.value;
+        return {wrapper:figure,caption,captionSource:'caption',id:figure.id};
+      }
+    }
     let fallback=null,reference=null;
     for(let panel=element,depth=0;panel&&panel!==root&&panel!==document.body&&depth<7;panel=panel.parentElement,depth++){
       if(panel.matches('article,main,[role="article"],[role="main"]'))break;

@@ -28,10 +28,13 @@ export class FigureWorkbench {
     this.compose=document.createElement('div');this.compose.className='workbench-compose';
     this.compose.append(document.getElementById('researchOptions'),document.getElementById('paperStatus'),document.getElementById('paperElapsed'));
     this.answers=document.createElement('div');this.answers.className='workbench-answers';
+    const answerTools=document.createElement('div');answerTools.className='paper-answer-tools';
+    const answerLabel=document.createElement('strong');answerLabel.textContent='回答与追问';
+    answerTools.append(answerLabel,document.getElementById('copyPaperAnswer'),document.getElementById('downloadPaper'),document.getElementById('newConversation'),document.getElementById('paperCopyStatus'));
     const empty=document.createElement('div');empty.className='workbench-answer-placeholder';
     const heading=document.createElement('h3');heading.textContent='结合图表，深入阅读';
     const message=document.createElement('p');message.textContent='在图表总览选择图片，填写问题后发送。论文回答与追问记录会显示在这里。';empty.append(heading,message);
-    this.answers.append(empty,document.getElementById('paperConversation'),document.getElementById('currentQuestion'),document.getElementById('paperOutput'));
+    this.answers.append(answerTools,empty,document.getElementById('paperHistory'),document.getElementById('currentQuestion'),document.getElementById('paperOutput'));
     const researchLayout=document.createElement('div');researchLayout.className='workbench-research-layout';researchLayout.append(this.compose,this.answers);research.append(researchLayout);
     this.panels.get('analysis').append(research,cards);research.open=true;
     const stops=document.createElement('div');stops.className='workbench-stops';for(const id of ['stopExtraction','stopFigures']){const node=document.getElementById(id);if(node)stops.append(node);}

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "minimum_chrome_version": "125",
@@ -62,5 +62,5 @@
     "48": "assets/icon48.png",
     "128": "assets/icon128.png"
   },
-  "version_name": "0.9.6"
+  "version_name": "0.9.7"
 }

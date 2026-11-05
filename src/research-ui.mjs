@@ -18,6 +18,13 @@ export class ResearchControls {
     this.$('downloadPaper').onclick=()=>downloadText('QudadFlow-paper-conversation.md',this.transcript(),'text/markdown;charset=utf-8');
     this.$('newConversation').onclick=()=>{this.clear();this.notice('已开始新对话。所选图表保留；不会删除跨页面记忆。');};
     this.$('researchQuestion').onkeydown=event=>{if((event.ctrlKey||event.metaKey)&&event.key==='Enter'&&!this.$('analyzePaper').disabled){event.preventDefault();analyze();}};
+    const copy=document.createElement('button');copy.id='copyPaperAnswer';copy.textContent='复制回答';copy.disabled=true;
+    const retry=document.createElement('button');retry.id='retryPaperQuestion';retry.textContent='重试本次问题';retry.hidden=true;
+    const copyStatus=document.createElement('small');copyStatus.id='paperCopyStatus';copyStatus.setAttribute('role','status');
+    this.$('downloadPaper').before(copy,retry);this.$('paperStatus').after(copyStatus);
+    copy.onclick=async()=>{const text=this.result||this.active?.answer||'';if(!text)return;try{await navigator.clipboard.writeText(text);copyStatus.textContent='已复制回答 Markdown';}catch{const selection=getSelection(),range=document.createRange();range.selectNodeContents(this.$('paperOutput'));selection.removeAllRanges();selection.addRange(range);copyStatus.textContent='已选中回答，请按 Ctrl/Cmd+C 复制';}};
+    retry.onclick=()=>{if(this.active)this.$('researchQuestion').value=this.active.question;analyze();};
+    const conversation=this.$('paperConversation'),history=document.createElement('details'),historyLabel=document.createElement('summary');history.id='paperHistory';history.className='paper-history';history.hidden=true;historyLabel.id='paperHistoryLabel';conversation.replaceWith(history);history.append(historyLabel,conversation);
     for(const [label,question] of [['核心结论','这篇论文的核心问题、研究设计、主要证据和局限是什么？请按原文章节标明出处。'],['结合图表','结合所选图表与正文，逐图说明其证据、统计量、与作者结论的关系及不确定性。'],['质疑证据','哪些结论证据不足？请结合方法、样本、偏倚和所选图表提出可验证的问题。']]){const button=document.createElement('button');button.textContent=label;button.onclick=()=>{this.$('researchQuestion').value=question;this.$('researchQuestion').focus();};this.$('questionPresets').append(button);}
     this.$('researchMemory').onchange=()=>this.savePreference({enabled:this.$('researchMemory').checked});
     this.$('researchNotebook').onchange=()=>this.savePreference({notebookId:this.$('researchNotebook').value});
@@ -38,24 +45,40 @@ export class ResearchControls {
     this.ready=(this.ready||Promise.resolve()).then(()=>researchMessage({type:'RESEARCH_PREFS',values})).then(()=>this.refresh()).catch(error=>{this.error=error.message;this.notice(error.message,true);});return this.ready;
   }
   async options(){await this.ready;if(this.error)throw new Error(this.error);return {skillId:this.$('researchSkill').value,useMemory:this.$('researchMemory').checked,notebookId:this.$('researchNotebook').value,question:this.$('researchQuestion').value};}
-  notice(text,error=false){this.$('paperStatus').textContent=text;this.$('paperStatus').classList.toggle('error',error);}
+  notice(text,error=false){this.$('paperStatus').textContent=text;this.$('paperStatus').classList.toggle('error',error);this.onChange?.();}
   history(){let chars=0;const history=[];for(const turn of this.turns.filter(t=>t.complete).slice(-6).reverse()){const question=turn.question.slice(0,2000),room=24000-chars-question.length;if(room<=0)break;const answer=turn.answer.slice(0,Math.min(12000,room));history.unshift({question,answer});chars+=question.length+answer.length;}return history;}
-  begin(question,figures=[]){
+  begin(question,figures=[],unavailable=[]){
     this.finish();if(this.active){const details=document.createElement('details'),summary=document.createElement('summary'),answer=document.createElement('div');details.className='research-turn';summary.textContent=this.active.question+(this.active.complete?'':' · 未完成');renderResearch(answer,this.active.answer);details.append(summary,answer);this.$('paperConversation').append(details);}
-    this.active={question:question.trim()||'概览论文的主要问题、证据与局限',answer:'',complete:false,figures};this.turns.push(this.active);
+    this.active={question:question.trim()||'概览论文的主要问题、证据与局限',answer:'',complete:false,figures,unavailable};this.turns.push(this.active);
     if(this.turns.length>20){this.turns.shift();this.$('paperConversation').firstElementChild?.remove();}
     this.result='';this.renderer.cancel();this.$('paperOutput').replaceChildren();this.$('paperOutput').hidden=true;
-    this.$('currentQuestion').textContent=this.active.question+(figures.length?' · 结合 '+figures.join('、'):'');this.$('currentQuestion').hidden=false;
+    this.showQuestion();this.showHistory();this.$('copyPaperAnswer').disabled=true;this.$('retryPaperQuestion').hidden=true;this.$('paperCopyStatus').textContent='';
     this.started=Date.now();this.$('paperElapsed').hidden=false;const tick=()=>{this.$('paperElapsed').textContent=`已等待 ${Math.floor((Date.now()-this.started)/1000)} 秒 · ${this.result?'正在接收回答':'等待模型返回'} · 不设分析倒计时，可随时停止`;};tick();this.timer=setInterval(tick,1000);
+    this.onChange?.();
+  }
+  showQuestion(){const turn=this.active;if(!turn)return;this.$('currentQuestion').textContent=turn.question+(turn.figures.length?' · 结合 '+turn.figures.join('、'):'')+(turn.unavailable?.length?' · 未参与图片分析：'+turn.unavailable.join('、'):'')+(turn.complete?'':' · 未完成');this.$('currentQuestion').hidden=false;}
+  showHistory(){this.$('paperHistory').hidden=this.turns.length<2;this.$('paperHistoryLabel').textContent=`历史对话 · ${Math.max(0,this.turns.length-1)} 轮（展开查看）`;}
+  snapshot(){return {turns:this.turns.map(t=>({...t})),draft:this.$('researchQuestion').value,status:this.$('paperStatus').textContent,error:this.$('paperStatus').classList.contains('error'),options:{skill:this.$('researchSkill').value,scope:this.$('researchScope').value,notebook:this.$('researchNotebook').value,memory:this.$('researchMemory').checked}};}
+  restore(state){
+    this.clear();if(!state)return;
+    this.turns=state.turns.map(t=>({...t}));this.active=this.turns.at(-1);this.result=this.active?.answer||'';
+    for(const turn of this.turns.slice(0,-1)){const details=document.createElement('details'),summary=document.createElement('summary'),answer=document.createElement('div');details.className='research-turn';summary.textContent=turn.question+(turn.complete?'':' · 未完成');renderResearch(answer,turn.answer);details.append(summary,answer);this.$('paperConversation').append(details);}
+    this.showHistory();if(this.active){this.showQuestion();this.renderer.update(this.result,true);this.$('paperOutput').hidden=!this.result;}
+    this.$('researchQuestion').value=state.draft||'';this.$('downloadPaper').disabled=!this.turns.some(t=>t.answer);this.$('copyPaperAnswer').disabled=!this.result;
+    for(const [id,key]of [['researchSkill','skill'],['researchScope','scope'],['researchNotebook','notebook']])if([...this.$(id).options].some(o=>o.value===state.options?.[key]))this.$(id).value=state.options[key];
+    this.$('researchMemory').checked=state.options?.memory===true;
+    this.notice(this.active&&!this.active.complete?'已恢复未完成的回答与问题草稿；上次任务已中断，可点击“重试本次问题”。':state.status||'已恢复上次的论文问答。',Boolean(state.error));
+    this.$('retryPaperQuestion').hidden=!this.active||this.active.complete;
   }
   output(text,complete=false){
     this.result=text;if(this.active){this.active.answer=text;this.active.complete=complete;}
     this.$('paperOutput').hidden=!text;this.$('downloadPaper').disabled=!this.turns.some(t=>t.answer)&&!text;
     this.renderer.update(text,complete);
     if(complete){this.finish();this.$('researchQuestion').value='';}
+    this.$('copyPaperAnswer').disabled=!text;this.showQuestion();this.onChange?.();
   }
   finish(){clearInterval(this.timer);this.timer=null;this.renderer.flush();if(this.started){this.$('paperElapsed').textContent=`本次用时 ${Math.floor((Date.now()-this.started)/1000)} 秒 · 当前窗口最多保留 20 轮，可随时导出`;this.started=0;}}
-  transcript(){return '# QudadFlow Translator · Paper conversation\n\n'+this.turns.map(t=>'## '+t.question+(t.complete?'':'（未完成）')+'\n\n'+(t.figures.length?'Figures: '+t.figures.join(', ')+'\n\n':'')+t.answer).join('\n\n---\n\n');}
-  clear(){this.finish();this.renderer.cancel();this.turns=[];this.active=null;this.result='';this.$('paperConversation').replaceChildren();this.$('paperOutput').replaceChildren();this.$('paperOutput').hidden=true;this.$('currentQuestion').hidden=true;this.$('paperElapsed').hidden=true;this.$('downloadPaper').disabled=true;}
-  controls(busy,hasAI,textBusy){this.busy=busy;this.$('analyzePaper').disabled=busy||!hasAI||textBusy;this.$('stopPaper').hidden=!busy;for(const id of ['researchSkill','researchNotebook','researchMemory','researchQuestion','researchScope','newConversation'])this.$(id).disabled=busy;for(const button of this.$('questionPresets').children)button.disabled=busy;}
+  transcript(){return '# QudadFlow Translator · Paper conversation\n\n'+this.turns.map(t=>'## '+t.question+(t.complete?'':'（未完成）')+'\n\n'+(t.figures.length?'Figures: '+t.figures.join(', ')+'\n\n':'')+(t.unavailable?.length?'Images not inspected: '+t.unavailable.join(', ')+'\n\n':'')+t.answer).join('\n\n---\n\n');}
+  clear(){this.finish();this.renderer.cancel();this.turns=[];this.active=null;this.result='';this.$('paperConversation').replaceChildren();this.showHistory();this.$('paperOutput').replaceChildren();this.$('paperOutput').hidden=true;this.$('currentQuestion').hidden=true;this.$('paperElapsed').hidden=true;this.$('downloadPaper').disabled=true;this.$('copyPaperAnswer').disabled=true;this.$('retryPaperQuestion').hidden=true;this.onChange?.();}
+  controls(busy,hasAI,textBusy){this.busy=busy;this.$('analyzePaper').disabled=busy||!hasAI||textBusy;this.$('stopPaper').hidden=!busy;for(const id of ['researchSkill','researchNotebook','researchMemory','researchQuestion','researchScope','newConversation'])this.$(id).disabled=busy;for(const button of this.$('questionPresets').children)button.disabled=busy;this.$('retryPaperQuestion').disabled=busy||!hasAI||textBusy;this.$('retryPaperQuestion').hidden=busy||!this.active||this.active.complete;}
 }

@@ -126,17 +126,18 @@ globalThis.QFResearch = (() => {
   }
   async function capturePut(capture) {
     const prefs=await initialize();await cleanup(prefs);
-    const existing=(await read('captures')).sort((a,b)=>b.createdAt-a.createdAt);
+    const existing=(await read('captures')).sort((a,b)=>(b.updatedAt||b.createdAt)-(a.updatedAt||a.createdAt));
     const id=crypto.randomUUID(),now=Date.now();
-    // Blob storage avoids persistent base64 expansion; captures expire on the next research access.
+    // Initial previews use Blob storage; saved workspace image data is bounded separately.
     const viewport=capture.figures.find(f=>f.kind==='viewport'),candidates=capture.figures.filter(f=>f.kind!=='viewport');
     const retained=[...(viewport?[viewport]:[]),...candidates.slice(0,100)],skipped=capture.figures.length-retained.length;
     const figures=[];let bytes=0,omitted=0;
     for(const figure of retained){
       const item={...figure};if(item.data){const payload=item.data.split(',')[1],raw=Uint8Array.from(atob(payload),c=>c.charCodeAt(0));if(bytes+raw.length<=16*1024*1024){bytes+=raw.length;item.blob=new Blob([raw],{type:'image/jpeg'});}else omitted++;delete item.data;}figures.push(item);
     }
-    const value={...capture,id,figures,captureNotice:(capture.captureNotice||'')+(omitted?` ${omitted} 张图片仅保留来源与图注，可按需载入。`:'')+(skipped?` 另有 ${skipped} 个图表候选未保留，请分批提取。`:''),createdAt:now,expiresAt:now+3600000};
-    await write([...existing.slice(3).map(c=>({store:'captures',id:c.id,remove:true})),{store:'captures',value}]);return id;
+    const value={...capture,id,format:2,figures,captureNotice:(capture.captureNotice||'')+(omitted?` ${omitted} 张图片仅保留来源与图注，可按需载入。`:'')+(skipped?` 另有 ${skipped} 个图表候选未保留，请分批提取。`:''),createdAt:now,updatedAt:now,expiresAt:now+30*86400000};
+    let total=bytes;const evicted=[];for(const [index,c]of existing.entries()){total+=(c.workspaceBytes||0)+[...c.figures,...c.supplements||[]].reduce((n,f)=>n+(f.blob?.size||0),0);if(index>=19||total>256*1024*1024)evicted.push({store:'captures',id:c.id,remove:true});}
+    await write([...evicted,{store:'captures',value}]);return id;
   }
   async function captureRead(id) {
     const capture=await read('captures',id);if(!capture||capture.expiresAt<Date.now())throw new Error('网页材料已过期，请返回论文网页重新提取。');
@@ -149,9 +150,31 @@ globalThis.QFResearch = (() => {
   }
   async function captureGet(id) {
     const capture=await captureRead(id);
+    // Load the saved workspace separately so original previews and restored
+    // image data do not share one potentially oversized runtime message.
+    delete capture.workspace;
     for(const item of [...capture.figures,...capture.supplements||[]])if(item.blob){const bytes=new Uint8Array(await item.blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));item.data='data:image/jpeg;base64,'+btoa(binary);delete item.blob;}
     capture.canSupplement=Boolean(capture.binding?.documentId);delete capture.binding;
     return capture;
+  }
+  async function captureFind(urlKey,title){
+    // Legacy one-hour captures may contain the PMC viewer URL. Re-extract them
+    // once with the corrected selector before starting a persistent workspace.
+    const now=Date.now();return (await read('captures')).filter(c=>c.format===2&&c.expiresAt>now&&c.binding?.urlKey===urlKey&&c.binding.title===title).sort((a,b)=>(b.updatedAt||b.createdAt)-(a.updatedAt||a.createdAt))[0];
+  }
+  async function captureRebind(id,binding){const capture=await captureRead(id);if(capture.binding?.urlKey!==binding.urlKey||capture.binding.title!==binding.title)throw new Error('论文来源不匹配，未恢复其他网页的内容。');capture.binding=binding;capture.expiresAt=Date.now()+30*86400000;await write([{store:'captures',value:capture}]);}
+  async function captureSaveWorkspace(id,state){
+    const capture=await captureRead(id);
+    const string=(value,max)=>typeof value==='string'&&value.length<=max;
+    const data=value=>string(value,4*1024*1024)&&/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
+    if(!state||state.version!==1||!string(state.material,8*1024*1024)||!Array.isArray(state.items)||state.items.length>40||state.items.some(i=>!i||!data(i.data)||!string(i.key,2000)||!string(i.label,300)||!string(i.caption,2000)||!string(i.result,2000000)||!string(i.partial,2000000))||state.items.reduce((n,i)=>n+i.data.length,0)>32*1024*1024||!Array.isArray(state.keys)||state.keys.length>140||state.keys.some(k=>!string(k,2000))||!Array.isArray(state.selected)||state.selected.length>140||state.selected.some(k=>!string(k,2000))||!state.research||!string(state.research.draft,2000)||!Array.isArray(state.research.turns)||state.research.turns.length>20||state.research.turns.some(t=>!t||!string(t.question,2000)||!string(t.answer,2000000)||typeof t.complete!=='boolean'||!Array.isArray(t.figures)||t.figures.some(l=>!string(l,300))))throw new Error('本地问答状态超过存储限制，请导出对话后精简图片或材料。');
+    // Whitelist state fields: API credentials and provider configuration do not belong here.
+    const workspace={version:1,material:state.material,items:state.items.map(i=>({data:i.data,key:i.key,label:i.label,caption:i.caption,source:source(i.source),supplement:i.supplement===true,paperText:text(i.paperText,8000),result:i.result,partial:i.partial,codeResults:Object.fromEntries(['python','r'].filter(k=>i.codeResults?.[k]&&string(i.codeResults[k].code,2000000)&&string(i.codeResults[k].result,2000000)).map(k=>[k,{code:i.codeResults[k].code,result:i.codeResults[k].result,spec:i.codeResults[k].spec,compiled:i.codeResults[k].compiled===true}])),reproductionSpec:i.reproductionSpec,reproductionEvidence:text(i.reproductionEvidence,2000000),view:['analysis','python','r'].includes(i.view)?i.view:'analysis'})),keys:state.keys,selected:state.selected,errors:state.errors,search:text(state.search,2000),groupOffset:Number(state.groupOffset)||0,view:['acquire','gallery','analysis'].includes(state.view)?state.view:'analysis',expanded:state.expanded===true,inspector:state.inspector,panels:state.panels,scroll:state.scroll,research:{turns:state.research.turns.map(t=>({question:t.question,answer:t.answer,complete:t.complete,figures:t.figures,unavailable:Array.isArray(t.unavailable)?t.unavailable.filter(l=>string(l,300)).slice(0,100):[]})),draft:state.research.draft,status:text(state.research.status,4000),error:state.research.error===true,options:{skill:text(state.research.options?.skill,100),scope:state.research.options?.scope==='all'?'all':'page',notebook:text(state.research.options?.notebook,100),memory:state.research.options?.memory===true}}};
+    const bytes=new TextEncoder().encode(JSON.stringify(workspace)).byteLength;if(bytes>48*1024*1024)throw new Error('本地问答状态超过 48 MB，请先导出结果并精简图片。');
+    const now=Date.now();capture.workspace=workspace;capture.workspaceBytes=bytes;capture.updatedAt=now;capture.expiresAt=now+30*86400000;
+    const others=(await read('captures')).filter(c=>c.id!==id).sort((a,b)=>(b.updatedAt||b.createdAt)-(a.updatedAt||a.createdAt));
+    let total=bytes+[...capture.figures,...capture.supplements||[]].reduce((n,f)=>n+(f.blob?.size||0),0);const evicted=[];for(const [index,c]of others.entries()){total+=(c.workspaceBytes||0)+[...c.figures,...c.supplements||[]].reduce((n,f)=>n+(f.blob?.size||0),0);if(index>=19||total>256*1024*1024)evicted.push({store:'captures',id:c.id,remove:true});}
+    await write([...evicted,{store:'captures',value:capture}]);return {savedAt:now};
   }
   async function captureSaveTable(id,index,value){
     const capture=await captureRead(id),link=capture.linkedTables?.[index];
@@ -173,5 +196,5 @@ globalThis.QFResearch = (() => {
     await write([{store:'captures',value:{...capture,supplements:[...supplements,stored]}}]);
     return {figure,duplicate:false,count:supplements.length+1};
   }
-  return {source,action:message=>queued(()=>action(message)),context:message=>queued(()=>context(message)),remember:(...args)=>queued(()=>remember(...args)),skill:async id=>BUILTINS.find(s=>s.id===id)||await read('skills',id),capturePut:c=>queued(()=>capturePut(c)),captureGet,captureFigure,captureBinding:async id=>(await captureRead(id)).binding,captureLinkedTable:async(id,index)=>(await captureRead(id)).linkedTables?.[index],captureSaveTable:(...args)=>queued(()=>captureSaveTable(...args)),captureAppendView:(...args)=>queued(()=>captureAppendView(...args)),captureDelete:id=>queued(()=>write([{store:'captures',id,remove:true}]))};
+  return {source,action:message=>queued(()=>action(message)),context:message=>queued(()=>context(message)),remember:(...args)=>queued(()=>remember(...args)),skill:async id=>BUILTINS.find(s=>s.id===id)||await read('skills',id),capturePut:c=>queued(()=>capturePut(c)),captureFind,captureRebind:(...args)=>queued(()=>captureRebind(...args)),captureSaveWorkspace:(...args)=>queued(()=>captureSaveWorkspace(...args)),captureWorkspace:async id=>({workspace:(await captureRead(id)).workspace}),captureGet,captureFigure,captureBinding:async id=>(await captureRead(id)).binding,captureLinkedTable:async(id,index)=>(await captureRead(id)).linkedTables?.[index],captureSaveTable:(...args)=>queued(()=>captureSaveTable(...args)),captureAppendView:(...args)=>queued(()=>captureAppendView(...args)),captureDelete:id=>queued(()=>write([{store:'captures',id,remove:true}]))};
 })();

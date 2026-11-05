@@ -8,6 +8,7 @@ async function workbenchView(page,stage){
   await page.locator('#figureWorkflow').evaluate(e=>e.open=true);
   const tab=page.locator('#figure-tab-'+stage);
   if(await tab.getAttribute('aria-selected')!=='true')await tab.click();
+  if(stage==='analysis')await page.locator('.question-figures').evaluate(e=>e.open=true);
   if(stage==='acquire')await page.locator('.workbench-manual').evaluate(e=>e.open=true);
   if(stage==='gallery'){
     const supplement=page.locator('.workbench-web-supplement');

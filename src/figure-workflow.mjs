@@ -48,11 +48,13 @@ export class FigureWorkflow {
     this.overviewAskAll=document.createElement('button');this.overviewAskAll.id='askAllFigures';this.overviewAskAll.textContent='全选并提问';this.overviewAskAll.onclick=()=>this.prepareAllFigures();this.picker.container.querySelector('.figure-picker-actions').prepend(this.overviewAskAll);
     this.questionSelection=document.createElement('p');this.questionSelection.className='research-hint';this.questionSelection.setAttribute('role','status');
     const choose=document.createElement('button');choose.id='chooseQuestionFigures';choose.textContent='选择 / 调整';choose.onclick=()=>this.workbench.show('gallery');
-    questionTools.append(this.selectAllForQuestion,choose,this.questionSelection);this.research.$('researchQuestion').before(questionTools);
+    const textOnly=document.createElement('button');textOnly.id='askPaperTextOnly';textOnly.textContent='仅用正文';textOnly.onclick=()=>{this.picker.selected.clear();this.controls();this.research.$('researchQuestion').focus();};
+    questionTools.append(this.selectAllForQuestion,choose,textOnly,this.questionSelection);
+    this.questionFigures=document.createElement('details');this.questionFigures.id='questionFigures';this.questionFigures.className='question-figures';const figureSummary=document.createElement('summary');figureSummary.textContent='参与问答的图表';this.questionFigures.append(figureSummary,questionTools);this.research.$('researchQuestion').before(this.questionFigures);
     this.research.$('selectedFiguresHint').hidden=true;
     const questionArea=document.createElement('div');questionArea.className='workbench-question';
-    questionArea.append(this.research.container.querySelector('.question-label'),questionTools,this.research.$('researchQuestion'),this.research.$('questionPresets'),this.research.container.querySelector('.research-actions'));
-    this.research.$('researchOptions').after(questionArea);
+    questionArea.append(this.research.container.querySelector('.question-label'),this.questionFigures,this.research.$('researchQuestion'),this.research.$('questionPresets'),this.research.container.querySelector('.research-actions'));
+    this.research.$('researchOptions').before(questionArea);
     this.modelPicker=new ModelPicker($('figureModel'),{onState:state=>{this.hasAI=['openai-compatible','chatgpt-plan'].includes(state.apiStyle)&&Boolean(state.model);this.controls();},onNotice:(text,error)=>this.notice(text,error),onPending:()=>this.controls()});
   }
   notice(text,error=false){$('figureStatus').textContent=text;$('figureStatus').title=text;$('figureStatus').classList.toggle('error',error);}
@@ -73,21 +75,43 @@ export class FigureWorkflow {
     this.inspector?.sync();
     this.research?.controls(locked,this.hasAI,this.textBusy);
     const selected=this.selectedItems(),pending=(this.picker?.selected.size||0)-selected.length;
-    if(this.selectAllForQuestion){this.overviewAskAll.disabled=this.selectAllForQuestion.disabled=locked||this.textBusy||![...this.picker.records.values()].some(r=>this.picker.selectable(r));this.questionSelection.textContent=pending?`已选 ${this.picker.selected.size} 项 · ${pending} 项原图待载入，可点击全选重试。`:selected.length?`已纳入 ${selected.length} 张图表${this.needsFigureEvidence(selected)?` · 先逐张读取，再汇总回答（${selected.length+1} 次 AI 请求）`:' · 发送时结合原图'}。`:'尚未选图；正文和已提取的文字表格仍参与问答。';}
+    if(this.selectAllForQuestion){this.overviewAskAll.disabled=this.selectAllForQuestion.disabled=locked||this.textBusy||![...this.picker.records.values()].some(r=>this.picker.selectable(r));this.questionSelection.textContent=pending?`已选 ${this.picker.selected.size} 项 · ${selected.length} 张原图可用，${pending} 项未载入或失败，将跳过；正文问答可继续。`:selected.length?`已纳入 ${selected.length} 张图表${this.needsFigureEvidence(selected)?` · 先逐张读取，再汇总回答（${selected.length+1} 次 AI 请求）`:' · 发送时结合原图'}。`:'尚未选图；正文和已提取的文字表格仍参与问答。';this.questionFigures.querySelector('summary').textContent=`参与问答的图表 · ${selected.length} 张可用${pending?` · ${pending} 项将跳过`:''}`;this.research.$('askPaperTextOnly')?.toggleAttribute('disabled',locked);}
     $('figureCount').textContent=String(this.items.length);
     this.onBusy?.(locked);
+    this.onChange?.();
   }
   finishStream(){this.outputRenderer?.flush();this.outputRenderer=null;}
   invalidate(){this.generation++;this.finishStream();this.busy=false;this.importing=null;this.research?.finish();this.cropLayer?.remove();this.cropLayer=null;this.controls();}
   reset(){this.inspector?.close();this.invalidate();this.research?.clear();this.items=[];this.candidates.clear();this.extractedTables.clear();this.documentTables.replaceChildren();this.documentTables.hidden=true;this.picker?.reset();this.workbench?.reset();this.context=null;$('figureCards').replaceChildren();this.controls();this.notice('本地提取不调用 API；按需识别或分析才发送图片与相关文字。');}
   selectedItems(){const loaded=new Map(this.items.map(item=>[item.key,item]));return [...(this.picker?.records.keys()||[])].filter(key=>this.picker.selected.has(key)&&loaded.has(key)).map(key=>loaded.get(key));}
+  snapshot(){return {items:this.items.map(i=>Object.fromEntries(['data','key','label','caption','source','supplement','paperText','result','partial','codeResults','reproductionSpec','reproductionEvidence','view'].map(k=>[k,i[k]??(['result','partial','reproductionEvidence'].includes(k)?'':undefined)]))),keys:[...this.picker.records.keys()],selected:[...this.picker.selected],errors:[...this.candidates.values()].filter(i=>i.error).map(i=>({key:i.key,error:i.error})),search:this.picker.$('figureSearch').value,groupOffset:this.picker.groupOffset,view:this.workbench.active,expanded:Boolean(this.workbench.expanded),inspector:this.inspector.item?.key,research:this.research.snapshot()};}
+  async restore(state){
+    if(!state||state.version!==1)return;
+    for(const item of [...this.items])if(!state.keys.includes(item.key))this.removeItem(item);
+    for(const [key,item]of this.candidates)if(!state.keys.includes(key)){item.card?.remove();this.candidates.delete(key);}
+    for(const saved of state.items){
+      let item=this.items.find(i=>i.key===saved.key);if(!item){this.add(saved.data,saved.label,saved.key,saved.caption,saved.source,{supplement:saved.supplement,paperText:saved.paperText});item=this.items.find(i=>i.key===saved.key);}
+      if(!item)continue;
+      Object.assign(item,{result:saved.result||'',partial:saved.partial||'',codeResults:saved.codeResults||{},reproductionSpec:saved.reproductionSpec,reproductionEvidence:saved.reproductionEvidence||''});
+      renderResearch(item.output,item.result||item.partial);item.export.disabled=!item.result&&!item.partial;
+      for(const [language,info]of Object.entries(item.codeResults))if(['python','r'].includes(language)){const panel=document.createElement('section');this.renderCode(item,language,panel,info);item.codeMounts.get(language).replaceChildren(panel);item.codePanels.set(language,panel);}
+      item.setView(saved.view||'analysis');const candidate=this.candidates.get(item.key);if(candidate){candidate.loaded=true;candidate.card.remove();}
+    }
+    for(const saved of state.errors||[]){const candidate=this.candidates.get(saved.key);if(candidate&&!candidate.loaded){candidate.error=saved.error;candidate.message.textContent=candidate.caption+'\n'+saved.error;}}
+    this.picker.selected=new Set(state.selected.filter(key=>state.keys.includes(key)));this.picker.$('figureSearch').value=state.search||'';this.picker.groupOffset=state.groupOffset||0;
+    await this.research.ready;this.research.restore(state.research);this.controls();this.workbench.show(state.view||'analysis',{open:false});
+    if(state.expanded)this.workbench.setExpanded(true);
+    const inspector=this.items.find(i=>i.key===state.inspector);if(inspector)this.inspector.open(inspector,{view:inspector.view});
+  }
+  unavailableItems(){return [...(this.picker?.records.values()||[])].filter(item=>this.picker.selected.has(item.key)&&!this.items.some(loaded=>loaded.key===item.key)).map(item=>({label:item.label,caption:item.caption||'',reason:item.error?'原图载入失败':'原图尚未载入'}));}
+  questionNotice(){const missing=this.unavailableItems();return missing.length?`本次跳过 ${missing.length} 项未载入或失败的图片（${missing.map(item=>item.label).join('、')}）；正文与 ${this.selectedItems().length} 张可用原图仍可问答。可在总览重试原图。`:'';}
   selectionError(){
     const selected=this.selectedItems(),pending=(this.picker?.selected.size||0)-selected.length;
     if(pending)return `所选图表中有 ${pending} 项尚未载入，请先点击“载入所选原图”或取消这些选择。`;
     return '';
   }
   askSelected(){
-    const error=this.selectionError();if(error){this.notice(error,true);this.research.notice(error,true);return;}
+    const missing=this.questionNotice();if(missing)this.research.notice(missing);
     this.inspector.close();this.workbench.show('analysis');
     this.research.container.open=true;const question=this.research.$('researchQuestion');if(!question.value.trim())question.value='结合所选图表与正文，逐图解释证据、统计结果、与作者结论的关系及局限。';question.focus();question.scrollIntoView({behavior:'smooth',block:'center'});
   }
@@ -98,7 +122,7 @@ export class FigureWorkflow {
     const keys=[...this.picker.selected].filter(key=>!this.items.some(item=>item.key===key));
     // Keep original-image permission requests in the direct user-click call chain.
     const loading=keys.length?this.loadCandidates?.(keys):undefined;
-    Promise.resolve(loading).then(()=>{if(context!==this.context||generation!==this.generation)return;this.controls();this.research.notice(this.selectionError()||`已纳入 ${this.selectedItems().length} 张图表。填写问题后点击发送，才会调用 AI。`);}).catch(error=>{if(context===this.context&&generation===this.generation)this.research.notice(error.message,true);});
+    Promise.resolve(loading).then(()=>{if(context!==this.context||generation!==this.generation)return;this.controls();this.research.notice(this.questionNotice()||`已纳入 ${this.selectedItems().length} 张图表。填写问题后点击发送，才会调用 AI。`);}).catch(error=>{if(context===this.context&&generation===this.generation)this.research.notice(error.message,true);});
     this.research.$('researchQuestion').focus({preventScroll:true});
   }
   needsFigureEvidence(items){return items.length>4||items.reduce((sum,i)=>sum+i.data.length,0)>12*1024*1024;}
@@ -245,15 +269,14 @@ export class FigureWorkflow {
   }
   async analyzePaper(){
     if(this.busy||this.importing||this.externalBusy||this.textBusy||!this.hasAI)return;
-    const selectionError=this.selectionError();if(selectionError){this.research.notice(selectionError,true);return;}
     this.workbench.show('analysis');
     const generation=++this.generation;this.busy=true;this.controls();
     try{
       const options=await this.research.options(),source=await this.getSource?.(this.research.$('researchScope').value==='all');
       if(generation!==this.generation)return;
-      const items=this.selectedItems();let figures=items.map(i=>({data:i.data,label:i.label,caption:i.caption,analysis:i.result,source:i.source}));const figureNotes=[];
+      const items=this.selectedItems(),unavailableFigures=this.unavailableItems(),skipped=this.questionNotice();let figures=items.map(i=>({data:i.data,label:i.label,caption:i.caption,analysis:i.result,source:i.source}));const figureNotes=[];
       if(!source?.text?.trim()&&!figures.length)throw new Error('当前材料没有可提取文字。扫描页可提取并勾选图片后提问。');
-      const conversation=this.research.history();this.research.begin(options.question,figures.map(f=>f.label));
+      const conversation=this.research.history();this.research.begin(options.question,figures.map(f=>f.label),unavailableFigures.map(f=>f.label));
       if(this.needsFigureEvidence(items)){
         for(const [index,item]of items.entries()){
           this.research.notice(`读取图表 ${index+1}/${items.length}：${item.label}。完成后结合全部图表笔记与正文回答；可随时停止。`);
@@ -265,8 +288,8 @@ export class FigureWorkflow {
       }
       this.research.notice('正在分析 '+(source?.text?.length||0)+' 字和 '+figures.length+' 张原图'+(source?.truncated?'（文字达到上限，非完整论文）':'')+'；接口报错会直接显示，可随时停止。');
       if(figureNotes.length)this.research.notice(`正在综合 ${figureNotes.length} 张图表的 AI 笔记与 ${source?.text?.length||0} 字正文；本次汇总不重发原图，笔记需对照原图核查。`);
-      const result=await this.analyzeRequest(undefined,undefined,text=>{if(generation===this.generation)this.research.output(text);},{...options,type:'RESEARCH_ANALYZE',text:source?.text||'',source,figures,figureNotes,conversation});
-      if(generation!==this.generation)return;this.research.output(result,true);this.research.notice(this.memoryWarning||'分析完成。结论请对照原文；可导出 Markdown。',Boolean(this.memoryWarning));
+      const result=await this.analyzeRequest(undefined,undefined,text=>{if(generation===this.generation)this.research.output(text);},{...options,type:'RESEARCH_ANALYZE',text:source?.text||'',source,figures,figureNotes,unavailableFigures,conversation});
+      if(generation!==this.generation)return;this.research.output(result,true);this.research.notice('分析完成。'+(skipped?skipped+' ':'')+(this.memoryWarning||'结论请对照原文；可导出 Markdown。'),Boolean(this.memoryWarning));
     }catch(error){if(generation===this.generation)this.research.notice(error.message,true);}
     finally{if(generation===this.generation){this.research.finish();this.busy=false;this.controls();}}
   }
@@ -295,6 +318,14 @@ export class FigureWorkflow {
       const instructions=compiled?figureNotes(spec,language)+'\n\n模型识别记录（待核对）：\n\n'+recognition:recognition;
       const explanation=instructions+'\n\n```'+language+'\n'+code+'\n```';
       renderer.flush();this.outputRenderer=null;output.remove();item.codeResults[language]={code,result:explanation,spec,compiled};
+      this.renderCode(item,language,panel,item.codeResults[language]);
+      previous?.remove();item.codePanels.set(language,panel);completed=true;
+      this.notice('复现草稿已生成，尚未执行。'+(compiled?'Python/R 共用规格；可用 --style-demo 试跑，核对形式、风格、图例与标注。':spec?'特殊结构使用 AI 自定义代码，请核对依赖和视觉效果。':'模型未返回图形规格，已保留 AI 代码；尚未校验数据与样式。')+(cached?'':this.memoryWarning||''),!spec||Boolean(!cached&&this.memoryWarning));
+    }catch(error){if(generation===this.generation)this.notice(error.message,true);}
+    finally{if(!completed&&previous?.isConnected){panel.remove();previous.hidden=false;}if(generation===this.generation){this.finishStream();this.busy=false;this.controls();}}
+  }
+  renderCode(item,language,panel,{code,result:explanation,spec,compiled}){
+    const instructions=explanation.replace(/```(?:python|py|r)\s*\n[\s\S]*?```/gi,'');
       if(compiled){const start=document.createElement('div'),label=document.createElement('p'),command=document.createElement('code');start.className='figure-code-start';label.textContent='下载后用演示数据试跑，先看布局、字体、配色与图例：';command.textContent=(language==='r'?'Rscript QudadFlow-figure.R':'python QudadFlow-figure.py')+' --style-demo';start.append(label,command);panel.append(start);}
       panel.append(figureCodeView({code,language,onDownload:()=>downloadText('QudadFlow-figure.'+(language==='r'?'R':'py'),code)}));
       const material=document.createElement('details'),materialTitle=document.createElement('summary'),materialBody=document.createElement('div');material.className='figure-code-material';materialTitle.textContent='运行说明、图形规格与数据模板';material.append(materialTitle,materialBody);
@@ -313,10 +344,6 @@ export class FigureWorkflow {
         compare.onclick=()=>{if(rendered)void this.reproduce(item,language,{reviewImage:rendered});};review.append(upload,file,compare,preview);panel.append(review);
       }
       const details=document.createElement('div');details.className='figure-output';renderResearch(details,instructions);materialBody.append(details);panel.append(material);
-      previous?.remove();item.codePanels.set(language,panel);completed=true;
-      this.notice('复现草稿已生成，尚未执行。'+(compiled?'Python/R 共用规格；可用 --style-demo 试跑，核对形式、风格、图例与标注。':spec?'特殊结构使用 AI 自定义代码，请核对依赖和视觉效果。':'模型未返回图形规格，已保留 AI 代码；尚未校验数据与样式。')+(cached?'':this.memoryWarning||''),!spec||Boolean(!cached&&this.memoryWarning));
-    }catch(error){if(generation===this.generation)this.notice(error.message,true);}
-    finally{if(!completed&&previous?.isConnected){panel.remove();previous.hidden=false;}if(generation===this.generation){this.finishStream();this.busy=false;this.controls();}}
   }
   async analyzeAll(items=this.items.filter(item=>!item.result),{tablesOnly=false}={}){
     if(this.busy||this.importing||this.externalBusy||this.textBusy||!this.hasAI||!items.length)return;

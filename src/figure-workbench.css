@@ -48,6 +48,25 @@
 .figure-question-tools .research-hint{margin:0;flex:1;min-width:180px;font-size:11px}
 .workbench-question{margin:8px 0 12px}.workbench-question .research-actions{margin-top:7px}
 .workbench-compose,.workbench-answers{min-width:0}
+.question-figures{border:1px solid #dce5f2;border-radius:8px;padding:0 10px;margin:8px 0;font-size:12px;color:#58708c}
+.question-figures>summary{cursor:pointer;overflow-wrap:anywhere}
+.paper-answer-tools{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:0 0 12px;border-bottom:1px solid #e4eaf3;margin-bottom:14px}
+.paper-answer-tools strong{flex:1;color:#4c6481;font-size:12px;min-width:110px}.paper-answer-tools button{padding:6px 9px;font-size:11px}
+#paperCopyStatus{flex-basis:100%;font-size:11px;color:#536e93}#paperCopyStatus:empty{display:none}
+.paper-history{margin:0 0 16px;color:#5d7290;font-size:12px}.paper-history>summary{cursor:pointer}.paper-history .research-turn{margin:8px 0}
+#researchSaveStatus{font-size:11px;color:#617e70;max-width:170px;overflow-wrap:anywhere}#researchSaveStatus[data-state=error]{color:#b42318}
+.research-page .workbench-research-layout{display:grid;grid-template-columns:minmax(210px,265px) minmax(0,1fr);gap:20px;align-items:start}
+.research-page .workbench-compose{position:sticky;top:12px;padding:14px;border:1px solid #dce5f2;border-radius:12px;background:#fff}
+.research-page .workbench-answers{background:#fff;border:1px solid #dce5f2;border-radius:12px;padding:20px;min-height:360px}
+.research-page .workbench-question{margin:0 0 12px}.research-page .workbench-question textarea{min-height:120px;line-height:1.7}
+.research-page .workbench-answers .paper-output.research-markdown{max-height:none;padding:0;border:0;font-size:14px;line-height:1.85;overflow:visible}
+.research-page .workbench-answer-placeholder{display:block;padding:45px 12px;text-align:center;font-size:13px;line-height:1.8;color:#7588a2}
+.research-page .workbench-answer-placeholder h3{font-size:19px;color:#3d5374;font-weight:600}
+.research-page .workbench-answers:has(#currentQuestion:not([hidden]))>.workbench-answer-placeholder{display:none}
+.research-page .research-turn>div{max-height:none}
+.research-page .research-options{margin:10px 0 0;padding:5px 0;border:0;border-top:1px solid #e8edf5}
+.research-page .workbench-compose .research-hint{font-size:11px;line-height:1.7}
+@media(max-width:740px){.research-page .workbench-research-layout{grid-template-columns:minmax(0,1fr);gap:12px}.research-page .workbench-compose{position:static;padding:12px}.research-page .workbench-answers{padding:16px;min-height:240px}.research-page .workbench-question textarea{min-height:85px}#researchSaveStatus{max-width:100px;font-size:10px}}
 .workbench-answer-placeholder{display:none}
 .figure-workbench .figure-cards:empty{display:none}
 .figure-workbench .figure-cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))}

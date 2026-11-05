@@ -78,19 +78,19 @@ async function fetchOriginal(src,extra={}){return worker.evaluate(async({src,ext
       if(await analysisTab.getAttribute('aria-selected')!=='true')await analysisTab.click();
       const analysisDetails=companion.locator('details.research-controls');
       if(await analysisDetails.count()&&!(await analysisDetails.evaluate(e=>e.open)))await analysisDetails.locator(':scope > summary').click();
-      await companion.locator('#analyzePaper').click();assert.match(await companion.locator('#paperStatus').textContent(),/2 项尚未载入/);assert.equal(calls.length,0);assert.equal(imageRequests.filter(url=>url.startsWith('/original-')).length,0);
+      await companion.locator('#analyzePaper').click();await companion.waitForFunction(()=>document.querySelector('#paperStatus').textContent.startsWith('分析完成'));assert.match(await companion.locator('#paperStatus').textContent(),/跳过 2 项/);assert.equal(calls.length,1);assert.ok(!JSON.stringify(calls[0]).includes('"type":"image_url"'));assert.equal(imageRequests.filter(url=>url.startsWith('/original-')).length,0);
       await companion.locator('#figure-tab-gallery').click();
     });
     await check('Batch loading fetches full-size linked originals with generic MIME, keeps selection/order and preserves 2500-pixel detail',async()=>{
       await companion.locator('#loadSelectedFigures').click();await companion.waitForFunction(()=>document.querySelectorAll('.figure-card').length===2&&!document.querySelector('#figureSearch').disabled);
       assert.deepEqual(imageRequests.filter(url=>url.startsWith('/original-')),['/original-1.jpg','/original-2.jpg']);assert.equal(await companion.locator('.figure-tile input:checked').count(),2);
       assert.deepEqual(await companion.locator('.figure-tile').evaluateAll(nodes=>nodes.map(node=>node.dataset.key)),['web-0','web-1','web-2']);
-      for(const data of await companion.locator('.figure-card>img').evaluateAll(nodes=>nodes.map(node=>node.src)))assert.deepEqual(await dimensions(data),{width:2500,height:900});assert.equal(calls.length,0);
+      for(const data of await companion.locator('.figure-card>img').evaluateAll(nodes=>nodes.map(node=>node.src)))assert.deepEqual(await dimensions(data),{width:2500,height:900});assert.equal(calls.length,1);
     });
     await check('Missing MIME originals load too; explicit Q&A transmits selected full-resolution images, numbered captions and native table text',async()=>{
       await companion.locator('#selectAllFigures').click();await companion.locator('#loadSelectedFigures').click();await companion.waitForFunction(()=>document.querySelectorAll('.figure-card').length===3&&!document.querySelector('#figureSearch').disabled);
       assert.ok(imageRequests.includes('/original-0.jpg'));await companion.locator('#selectImageTables').click();await companion.locator('#figure-tab-analysis').click();await companion.locator('#researchQuestion').fill('Compare Table 1 and Table 2 with the native data.');await companion.locator('#analyzePaper').click();await companion.waitForFunction(()=>document.querySelector('#paperStatus').textContent.startsWith('分析完成'));
-      assert.equal(calls.length,1);const parts=calls[0].messages.at(-1).content,images=parts.filter(part=>part.type==='image_url'),prompt=parts.find(part=>part.type==='text').text;assert.equal(images.length,2);
+      assert.equal(calls.length,2);const parts=calls.at(-1).messages.at(-1).content,images=parts.filter(part=>part.type==='image_url'),prompt=parts.find(part=>part.type==='text').text;assert.equal(images.length,2);
       for(const image of images)assert.equal((await dimensions(image.image_url.url)).width,2500);
       assert.match(prompt,/INPUT IMAGE 1: Table 1/);assert.match(prompt,/INPUT IMAGE 2: Table 2/);assert.match(prompt,/Outcomes and uncertainty/);assert.match(prompt,/\| Treatment \| 42\.5 \|/);assert.match(prompt,/END_OF_PAPER/);
       await companion.locator('#figure-tab-gallery').click();
@@ -121,7 +121,7 @@ async function fetchOriginal(src,extra={}){return worker.evaluate(async({src,ext
       for(const width of [390,620,1440]){await companion.setViewportSize({width,height:1100});assert.ok(await companion.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'page overflows at '+width);await companion.locator('.figure-picker').screenshot({path:path.join(path.dirname(reportPath),`qudadflow-publisher-picker-${width}-v${version}.png`)});}
       await companion.locator('#tablePanel').screenshot({path:path.join(path.dirname(reportPath),`qudadflow-publisher-tables-v${version}.png`)});
     });
-    await check('No uncaught browser errors and no automatic AI requests',async()=>{assert.deepEqual(errors,[]);assert.equal(calls.length,1);});
+    await check('No uncaught browser errors and no automatic AI requests',async()=>{assert.deepEqual(errors,[]);assert.equal(calls.length,2);});
   }catch(error){results.push({name:'setup',passed:false,error:error.stack});console.error(error);}
   finally{
     await context?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));

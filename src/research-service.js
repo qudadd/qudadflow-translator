@@ -53,9 +53,27 @@ async function supplementResearchView(id) {
     return QFResearch.captureAppendView(id,{id:'view-'+key,key,kind:'viewport',data,src:'',caption:`用户补充的原论文当前视区（滚动位置 ${Math.round(before.view.x)}, ${Math.round(before.view.y)}）。仅含可见内容；请核对图表是否完整。AI 转写需逐项核对，不替代原始表格。`});
   }finally{chrome.tabs.onActivated.removeListener(activated);chrome.tabs.onUpdated.removeListener(updated);}
 }
-async function captureResearch(tabId) {
+const researchOpening=new Map();
+async function captureResearch(tabId){
+  const tab=await chrome.tabs.get(tabId),key=await researchUrlKey(tab.url||'');
+  if(researchOpening.has(key))return researchOpening.get(key);
+  const opening=openResearchCapture(tabId);researchOpening.set(key,opening);
+  try{return await opening;}finally{if(researchOpening.get(key)===opening)researchOpening.delete(key);}
+}
+async function openResearchCapture(tabId) {
   const tab=await chrome.tabs.get(tabId);
   if(!tab.active||!/^https?:/.test(tab.url||''))throw new Error('请在普通论文网页上提取；PDF 请使用文档阅读器。');
+  const state=(await chrome.scripting.executeScript({target:{tabId},func:()=>({href:location.href,title:document.title})}))[0];
+  const binding={tabId,windowId:tab.windowId,documentId:state.documentId,urlKey:await researchUrlKey(state.result.href),title:state.result.title};
+  await researchSourceState(binding);
+  const previous=await QFResearch.captureFind(binding.urlKey,binding.title);
+  if(previous){
+    await QFResearch.captureRebind(previous.id,binding);
+    const url=chrome.runtime.getURL('research.html#capture='+previous.id),existing=(await chrome.tabs.query({})).find(t=>t.url===url);
+    if(existing){await chrome.tabs.update(existing.id,{active:true});const window=await chrome.windows.get(existing.windowId);await chrome.windows.update(existing.windowId,{focused:true,...(window.state==='minimized'?{state:'normal'}:{})});}
+    else await createResearchWindow(tab.windowId,previous.id);
+    return {id:previous.id,count:previous.figures.length,resumed:true};
+  }
   const results=await chrome.scripting.executeScript({target:{tabId},files:['src/research-capture.js']});const capture=results[0]?.result;
   if(!capture)throw new Error('未能提取论文内容。');
   if(capture.figures.some(f=>!f.data&&f.visible))try {
@@ -74,11 +92,14 @@ async function captureResearch(tabId) {
   capture.binding={tabId,windowId:tab.windowId,documentId:results[0].documentId,urlKey:await researchUrlKey(capture.href),title:capture.documentTitle};
   await researchSourceState(capture.binding);
   delete capture.href;delete capture.view;delete capture.documentTitle;for(const figure of capture.figures){delete figure.rect;delete figure.visible;}
-  const id=await QFResearch.capturePut(capture),parent=await chrome.windows.get(tab.windowId);
+  const id=await QFResearch.capturePut(capture);await createResearchWindow(tab.windowId,id);
+  return {id,count:capture.figures.length};
+}
+async function createResearchWindow(windowId,id){
+  const parent=await chrome.windows.get(windowId);
   const width=Math.min(980,Math.max(620,(parent.width||1200)-80)),height=Math.min(940,Math.max(500,(parent.height||900)-60));
   // Let Edge choose a visible position (including mixed-DPI/multiple-display setups).
   await chrome.windows.create({type:'popup',url:chrome.runtime.getURL('research.html#capture='+id),width,height,focused:true});
-  return {id,count:capture.figures.length};
 }
 function researchImageType(bytes,declared) {
   const type=declared.toLowerCase().split(';')[0].trim();
@@ -136,6 +157,8 @@ async function analyzeResearch(message,controller,onProgress,metadata) {
   const selected=message.type==='RESEARCH_ANALYZE'?(message.figures||[]):[];
   if(!Array.isArray(selected)||selected.length>4||selected.some(f=>!f||!validImage(f.data))||selected.reduce((sum,f)=>sum+f.data.length,0)>12*1024*1024)throw new Error('每次论文问答最多结合 4 张图、共 12 MB，请减少所选图表。');
   const notes=message.type==='RESEARCH_ANALYZE'?(message.figureNotes||[]):[];
+  const unavailable=message.type==='RESEARCH_ANALYZE'?(message.unavailableFigures||[]):[];
+  if(!Array.isArray(unavailable)||unavailable.length>100||unavailable.some(f=>!f||typeof f.label!=='string'||f.label.length>300||typeof f.caption!=='string'||f.caption.length>2000||typeof f.reason!=='string'||f.reason.length>200))throw new Error('未载入图表列表无效。');
   if(!Array.isArray(notes)||notes.length>40||notes.some(n=>!n||typeof n.label!=='string'||typeof n.caption!=='string'||typeof n.analysis!=='string')||notes.reduce((sum,n)=>sum+n.analysis.length+n.caption.length+n.label.length,0)>2000000)throw new Error('图表笔记无效或超过本次 200 万字的资源上限，请减少图表后重试。');
   const history=message.type==='RESEARCH_ANALYZE'?(message.conversation||[]):[];
   if(!Array.isArray(history)||history.length>6||history.some(t=>!t||typeof t.question!=='string'||typeof t.answer!=='string'||t.question.length>2000||t.answer.length>12000)||history.reduce((sum,t)=>sum+t.question.length+t.answer.length,0)>24000)throw new Error('追问上下文超过限制，请开始新对话。');
@@ -144,7 +167,7 @@ async function analyzeResearch(message,controller,onProgress,metadata) {
   if(code&&message.renderedImage!==undefined&&!validImage(message.renderedImage))throw new Error('试运行图片无效或超过大小限制。');
   const reproductionSpec=code&&message.reproductionSpec!==undefined?QFFigureSpec.validate(message.reproductionSpec):null;
   if(code&&message.renderedImage&&!reproductionSpec)throw new Error('请先生成有效图形规格，再对照试运行图修订。');
-  const text=String(message.text||'')+(notes.length?'\n\nAI FIGURE READINGS FOR THIS QUESTION (unverified; original images are not attached to this synthesis):\n'+notes.map(n=>`LABEL: ${n.label}\nSOURCE: ${JSON.stringify(QFResearch.source(n.source))}\nCAPTION: ${n.caption}\nAI READING:\n${n.analysis}`).join('\n\n'):'');
+  const text=String(message.text||'')+(unavailable.length?'\n\nUNAVAILABLE SELECTED IMAGES (not attached or inspected; captions only, do not infer visual evidence):\n'+unavailable.map(f=>`LABEL: ${f.label}\nREASON: ${f.reason}\nCAPTION ONLY: ${f.caption}`).join('\n\n'):'')+(notes.length?'\n\nAI FIGURE READINGS FOR THIS QUESTION (unverified; original images are not attached to this synthesis):\n'+notes.map(n=>`LABEL: ${n.label}\nSOURCE: ${JSON.stringify(QFResearch.source(n.source))}\nCAPTION: ${n.caption}\nAI READING:\n${n.analysis}`).join('\n\n'):'');
   if(message.type==='RESEARCH_ANALYZE'&&!text.trim()&&!selected.length&&!notes.length)throw new Error('没有可供分析的文字或所选图表。');
   const settings=await QFModels.active(message);
   if(!settings)throw new Error('AI 配置已删除，请重新选择。');

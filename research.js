@@ -3,6 +3,7 @@ import {researchMessage} from './src/research-ui.mjs';
 import {renderResearch} from './src/research-render.mjs';
 import {assessResearchCapture,researchIdentity} from './src/research-coverage.mjs';
 import {parseLinkedTable} from './src/research-linked-tables.mjs';
+import {resumeResearchSession} from './src/research-session.mjs';
 const $=id=>document.getElementById(id),pending=new Map();let port,sequence=0,captureId='',canSupplement=false,source={title:'粘贴的论文材料',url:'',page:'web'};
 function connect(){
   if(port)return port;const connection=chrome.runtime.connect({name:'qudadflow-document'});port=connection;
@@ -157,5 +158,8 @@ async function load(){
   $('loadAllFigures').onclick=()=>loadRemote(remote.map(item=>item.key));
   workflow.controls();
   await loadLinkedTables();
+  const {workspace}=await researchMessage({type:'RESEARCH_WORKSPACE_GET',id:captureId});
+  await resumeResearchSession({id:captureId,workflow,state:workspace});
+  $('loadAllFigures').hidden=!remote.some(item=>!item.loaded&&item.canLoad);
 }
 load().catch(error=>{$('captureStatus').textContent=error.message;});
