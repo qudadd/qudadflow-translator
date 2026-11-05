@@ -11,7 +11,8 @@ const unavailableBrowserPairs = new Map();
 function machineLanguageTag(language) {
   if (/^zh-(tw|hk|hant)$/i.test(language)) return 'zh-Hant';
   if (/^zh(?:-|$)/i.test(language)) return 'zh';
-  return String(language || '').split('-')[0].toLowerCase();
+  const code = String(language || '').split('-')[0].toLowerCase();
+  return ({ iw: 'he', in: 'id', ji: 'yi' })[code] || code;
 }
 
 async function machineSourceLanguage(text, configured) {
@@ -21,7 +22,7 @@ async function machineSourceLanguage(text, configured) {
     try {
       const result = await chrome.i18n.detectLanguage(sample);
       const first = result.languages?.[0];
-      if (first && first.language !== 'und' && (result.isReliable || first.percentage >= 55)) return first.language;
+      if (first && first.language !== 'und' && (result.isReliable || first.percentage >= 55)) return first.language.replace(/^(iw|in|ji)(?=-|$)/i, code => ({ iw: 'he', in: 'id', ji: 'yi' })[code.toLowerCase()]);
     } catch { /* Use the script fallback below. */ }
   }
   if (/[\u3040-\u30ff]/u.test(sample)) return 'ja';
@@ -113,8 +114,38 @@ async function translateWithBrowserModel(text, source, target, controller, onPro
   return globalThis.requestBrowserTranslator(browserModelChunks(text), pair, controller, onProgress);
 }
 
-async function translateAutomaticMachine(settings, text, controller, onProgress, cacheAllowed = true) {
-  const source = await machineSourceLanguage(text, settings.sourceLanguage);
+async function translateAutomaticMachine(settings, text, controller, onProgress, cacheAllowed = true, detectedSource) {
+  let source = detectedSource;
+  if (!source && (!settings.sourceLanguage || settings.sourceLanguage === 'auto') && (text.match(/__EDGE_WT_\d+__/g) || []).length > 1) {
+    const parts = text.split(/(__EDGE_WT_\d+__)/g);
+    const indices = parts.map((part, index) => !MACHINE_MARKER.test(part) && part.trim() ? index : -1).filter(index => index >= 0);
+    const sources = await Promise.all(indices.map(index => machineSourceLanguage(parts[index], 'auto')));
+    if (controller.signal.aborted) throw translationError('翻译已取消。', 'CANCELLED');
+    if (new Set(sources.map(machineLanguageTag)).size > 1) {
+      // One webpage can contain several languages. Detect marked paragraphs
+      // separately while retaining the order expected by the content script.
+      const output = parts.map(part => MACHINE_MARKER.test(part) || !part.trim() ? part : undefined);
+      // The page scheduler already allows two parent requests. Process each
+      // parent's children in sequence so mixed batches do not multiply that
+      // provider concurrency, including when selection translation is active.
+      for (let slot = 0; slot < indices.length; slot += 1) {
+        if (controller.signal.aborted) throw translationError('翻译已取消。', 'CANCELLED');
+        const index = indices[slot], part = parts[index];
+        const prefix = part.match(/^\s*/)?.[0] || '', suffix = part.match(/\s*$/)?.[0] || '';
+        const prior = output.slice(0, index).join('');
+        const translated = await translateAutomaticMachine(settings, part.trim(), controller, partial => {
+          if (!controller.signal.aborted) onProgress?.(prior + prefix + partial);
+        }, cacheAllowed, sources[slot]);
+        if (controller.signal.aborted) throw translationError('翻译已取消。', 'CANCELLED');
+        output[index] = prefix + translated + suffix;
+        onProgress?.(output.slice(0, index + 1).join(''));
+      }
+      return output.join('').trim();
+    }
+    source = sources[0];
+  }
+  source ||= await machineSourceLanguage(text, settings.sourceLanguage);
+  if (controller.signal.aborted) throw translationError('翻译已取消。', 'CANCELLED');
   if (machineLanguageTag(source) === machineLanguageTag(settings.targetLanguage)) return text;
   const local = await translateWithBrowserModel(text, source, settings.targetLanguage, controller, onProgress);
   if (local !== null) return local;

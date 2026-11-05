@@ -12,10 +12,12 @@
 
 沉浸式网页阅读与划词翻译是基础能力。默认机器翻译无需 Key；论文深度问答与图表任务需要兼容的 AI 服务／模型，或符合资格的可选 ChatGPT 计划连接。扩展界面为简体中文。详见[完整介绍](docs/store-description-zh-0.9.5.txt)和[图表学习流程](docs/FIGURE_REPRODUCTION.md)。
 
-**版本 0.9.5**：同步安装包摘要、中英文简介和项目网站的论文工作台定位，保留现有研究与翻译功能。详见[更新说明](docs/RELEASE_NOTES_0.9.5.md)和[发布状态](docs/STORE_SUBMISSION_0.9.5.md)。
+**版本 0.9.6**：增强代码、公式、表格标题、编辑器及动态段落适配，补充多行省略/固定高度卡片、固定导航、Ruby 注音、视觉隐藏标签及多语言段落的处理；论文作者保留原名单的排列和链接，名单下方统一显示一段译文，单位说明单独处理。完成后状态浮窗缩为可展开的小条。详见[更新说明](docs/RELEASE_NOTES_0.9.6.md)、[网页测试指南](docs/IMMERSIVE_WEB_TESTING.md)、[第一轮验证](docs/VERIFICATION_0.9.6.md)、[扩展测试](docs/VERIFICATION_0.9.6_EXPANDED.md)、[作者排版验证](docs/VERIFICATION_0.9.6_AUTHORS.md)和[发布状态](docs/STORE_SUBMISSION_0.9.6.md)。
 
 <details>
 <summary>此前版本摘要</summary>
+
+**版本 0.9.5**：同步安装包摘要、中英文简介和项目网站的论文工作台定位，详见[更新说明](docs/RELEASE_NOTES_0.9.5.md)。
 
 **版本 0.9.4**：修正 Chrome 显示版本字段，打包校验和 ZIP 审计要求显示版本与内部版本一致，避免商店继续显示旧版本号。包含 0.9.3 的全部图表工作区改进，详见[更新说明](docs/RELEASE_NOTES_0.9.4.md)和[发布状态](docs/STORE_SUBMISSION_0.9.4.md)。
 
@@ -36,7 +38,7 @@
 
 [当前商店简介](docs/STORE_PRESENTATION_0.9.5.md)按论文研究流程提供中英文介绍；[0.9.2 展示资料](docs/STORE_PRESENTATION_0.9.2.md)保留七张带版本标注的截图，标明生成样例与模拟接口。真实服务效果取决于服务商与模型。
 
-GitHub、Edge 与 Chrome 的实际更新状态见[0.9.5 发布记录](docs/STORE_SUBMISSION_0.9.5.md)，商店提交与审核通过分别记录。
+GitHub、Edge 与 Chrome 的实际更新状态见[0.9.6 发布记录](docs/STORE_SUBMISSION_0.9.6.md)，商店提交与审核通过分别记录。
 
 ## 本次图表改进
 
@@ -219,7 +221,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 .\package.ps1
 ```
 
-打包脚本用同一文件清单执行复制、依赖检查及 ZIP 审计：检查 Manifest、图标、自有脚本语法和本地依赖，再验证暂存运行目录，逐个比对压缩包文件与源文件字节。通过后生成 `outputs/qudadflow-translator-v0.9.4.zip`、独立源码包、审计 JSON 和 `SHA256SUMS-v0.9.4.txt`；源文件校验失败时保留已有安装包。固定 ZIP 时间戳和路径顺序，使相同源码在同一 Node/PowerShell/.NET 环境中构建结果一致。运行包不含开发测试、截图与文档；打包不会自动发布。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
+打包脚本用同一文件清单执行复制、依赖检查及 ZIP 审计：检查 Manifest、图标、自有脚本语法和本地依赖，再验证暂存运行目录，逐个比对压缩包文件与源文件字节。通过后生成 `outputs/qudadflow-translator-v0.9.6.zip`、独立源码包、审计 JSON 和 `SHA256SUMS-v0.9.6.txt`；源文件校验失败时保留已有安装包。固定 ZIP 时间戳和路径顺序，使相同源码在同一 Node/PowerShell/.NET 环境中构建结果一致。运行包不含开发测试、截图与文档；打包不会自动发布。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
 
 ## 项目与上架信息
 
@@ -233,7 +235,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 - 按目标 API 服务商的条款确认用户文本和 Key 的处理方式。
 - 使用真实 API 在干净的 Edge 配置中完成侧载验收，再提交商店审核。
 
-三个平台实际进度见[0.9.3 发布记录](docs/STORE_SUBMISSION_0.9.3.md)；中英文商店简介和截图见[展示资料](docs/STORE_PRESENTATION_0.9.2.md)。
+三个平台实际进度见[0.9.6 发布记录](docs/STORE_SUBMISSION_0.9.6.md)；中英文商店简介见[当前介绍](docs/STORE_PRESENTATION_0.9.5.md)，历史截图见[展示资料](docs/STORE_PRESENTATION_0.9.2.md)。
 
 ## 自动功能验证
 

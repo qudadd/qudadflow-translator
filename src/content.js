@@ -10,13 +10,24 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
     const IMMERSIVE_BATCH_BLOCKS = 8;
     const MAX_CONCURRENT_REQUESTS = 2;
     const MAX_MARKER_FALLBACK_BLOCKS = 8;
-    const IMMERSIVE_BLOCK_SELECTOR = "p,li,h1,h2,h3,h4,h5,h6,blockquote,figcaption,td,th,pre,summary,dt,dd,div,article,section,main,aside";
+    const IMMERSIVE_BLOCK_SELECTOR = "p,li,h1,h2,h3,h4,h5,h6,blockquote,figcaption,caption,td,th,summary,dt,dd,div,article,section,main,aside";
     const EXCLUDED_SELECTOR = "#edge-web-translator-host,#edge-wt-selection-host,[data-edge-wt-ignore],[data-edge-wt-immersive-translation],script,style,noscript,template,textarea,input,select,button,svg,canvas,[contenteditable]:not([contenteditable='false']),[translate='no'],.notranslate";
+    // Whole-page translation must not rewrite source code, equations or editor
+    // buffers. Explicit selection translation remains available for these texts.
+    const IMMERSIVE_EXCLUDED_SELECTOR = EXCLUDED_SELECTOR + ",pre,code,kbd,samp,rt,rp,math,mjx-container,.katex,.MathJax,.MathJax_Display,.monaco-editor,.cm-editor,.CodeMirror,[role='textbox'],[role='button'],[inert],[aria-hidden='true']";
+    const AUTHOR_GROUP_SELECTOR = '.c-article-author-list,.authors-list,.author-list,.author-group,.article-authors,.article__authors,.loa__authors,.contrib-group,ul.authors,ol.authors,p.authors,[data-test="authors-list"]';
+    const AUTHOR_NAME_SELECTOR = '[data-test="author-name"],[itemprop~="name"],.author-name,.authorName,.full-name,.contrib-name,a[rel~="author"]';
+    const AUTHOR_AFFILIATION_SELECTOR = '.affiliation,.affiliations,[itemprop~="affiliation"],.author-info,.contributor-info';
+    const AUTHOR_DETAIL_SELECTOR = 'p,dl,table,' + AUTHOR_AFFILIATION_SELECTOR;
+    const AUTHOR_ANNOTATION_SELECTOR = 'sup,sub,a[href^="mailto:"],a[href*="orcid.org/"],[itemprop~="email"],.orcid,.orcid-id';
     let host;
     let shadow;
+    let immersivePanelExpanded = false;
     const immersiveStyles = new Map();
     let immersiveColor = '', immersiveColorRevision = 0;
     const immersiveWrappers = new Set();
+    const immersiveUnclipped = new Map();
+    const immersiveFitted = new Map();
     let immersiveRecords = [];
     let immersiveSession;
     let immersiveRunId = 0;
@@ -124,17 +135,22 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
           .primary { background:#315bc7; color:#fff; padding:7px 11px; }
           .primary:hover { background:#254aa8; color:#fff; }
           .restore { display:none; }
+          .minimize { display:none; }
           .status { margin:0 0 12px; color:#66748b; }
           .error { color:#b42318; background:#fff3f1; border-color:#ffd8d3; }
           .panel.compact { top:auto; bottom:16px; right:16px; width:min(340px, calc(100vw - 32px)); max-height:35vh; border-radius:12px; }
           .compact .head { padding:9px 12px; }
+          .compact .minimize { display:inline-block; font-size:16px; }
+          .compact.minimized { width:max-content; max-width:calc(100vw - 32px); }
+          .compact.minimized .head { border-bottom:0; }
+          .compact.minimized .body { display:none; }
           .compact .body { padding:10px 12px; }
           .compact .source { margin:0 0 5px; padding:0; border:0; background:none; font-size:12px; }
           .compact .status { margin:0 0 4px; font-size:12px; }
           .compact .label, .compact .translation, .compact .actions, .compact .copy { display:none; }
         </style>
         <section class="panel" role="dialog" aria-label="QudadFlow Translator">
-          <header class="head"><strong class="title">QudadFlow Translator</strong><button class="restore" title="恢复网页原文">恢复原文</button><button class="copy" title="复制译文">复制</button><button class="close" title="关闭">×</button></header>
+          <header class="head"><strong class="title">QudadFlow Translator</strong><button class="minimize" title="收起翻译状态" aria-label="收起翻译状态" aria-expanded="true">−</button><button class="restore" title="恢复网页原文">恢复原文</button><button class="copy" title="复制译文">复制</button><button class="close" title="关闭">×</button></header>
           <div class="body"><p class="status"></p><p class="label">原文</p><div class="box source"></div><p class="label">译文</p><div class="box translation"></div><div class="actions"><button class="primary copy-bottom">复制译文</button></div></div>
         </section>`;
       const close = () => {
@@ -144,6 +160,11 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         shadow = undefined;
       };
       shadow.querySelector(".close").addEventListener("click", close);
+      shadow.querySelector(".minimize").addEventListener("click", () => {
+        const minimized = shadow.querySelector(".panel").classList.toggle("minimized");
+        immersivePanelExpanded = !minimized;
+        updatePanelMinimizeButton();
+      });
       shadow.querySelector(".restore").addEventListener("click", () => {
         const count = restoreImmersive();
         showPanel({ title: "沉浸式翻译", status: count ? `已恢复 ${count} 个网页段落。` : "当前页面没有沉浸式译文。" });
@@ -166,9 +187,21 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       return shadow;
     }
 
-    function showPanel({ title, source = "", translation = "", status = "", showRestore = false, compact = false }) {
+    function updatePanelMinimizeButton() {
+      const minimized = shadow.querySelector(".panel").classList.contains("minimized");
+      const button = shadow.querySelector(".minimize");
+      button.textContent = minimized ? "+" : "−";
+      button.title = minimized ? "展开翻译状态" : "收起翻译状态";
+      button.setAttribute("aria-label", button.title);
+      button.setAttribute("aria-expanded", String(!minimized));
+    }
+
+    function showPanel({ title, source = "", translation = "", status = "", showRestore = false, compact = false, settled = false }) {
       const root = ensurePanel();
       root.querySelector(".panel").classList.toggle("compact", compact);
+      if (!compact || status.startsWith("翻译失败")) root.querySelector(".panel").classList.remove("minimized");
+      else if (settled && !immersivePanelExpanded) root.querySelector(".panel").classList.add("minimized");
+      updatePanelMinimizeButton();
       root.querySelector(".title").textContent = title || "QudadFlow Translator";
       root.querySelector(".source").textContent = source;
       root.querySelector(".translation").textContent = translation;
@@ -177,10 +210,14 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       root.querySelector(".translation").classList.toggle("error", !translation && status.startsWith("翻译失败"));
     }
 
-    function setStatus(status) {
+    function setStatus(status, reveal = false) {
       const root = ensurePanel();
       progressText = status;
       root.querySelector(".status").textContent = status;
+      if (reveal) {
+        root.querySelector(".panel").classList.remove("minimized");
+        updatePanelMinimizeButton();
+      }
     }
 
     function runtimeMessage(message, onProgress, scope = "panel") {
@@ -238,7 +275,23 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
           current = "";
         }
         if (paragraph.length > maxChars) {
-          for (let i = 0; i < paragraph.length; i += maxChars) chunks.push(paragraph.slice(i, i + maxChars));
+          let start = 0;
+          while (start < paragraph.length) {
+            let end = Math.min(start + maxChars, paragraph.length);
+            if (end < paragraph.length) {
+              // Keep complete sentences where possible, then prefer a word
+              // boundary. A long unbroken token still obeys the request limit.
+              if (/[\uD800-\uDBFF]/u.test(paragraph[end - 1]) && /[\uDC00-\uDFFF]/u.test(paragraph[end])) end -= 1;
+              const window = paragraph.slice(start, end);
+              let sentenceEnd = 0, wordEnd = 0;
+              for (const match of window.matchAll(/(?:[.!?]["'”’»）)\]]*\s+|[。！？][”’」』）)\]]*\s*)/gu)) sentenceEnd = match.index + match[0].length;
+              for (const match of window.matchAll(/\s+/gu)) wordEnd = match.index + match[0].length;
+              const boundary = sentenceEnd >= maxChars / 2 ? sentenceEnd : wordEnd >= maxChars / 2 ? wordEnd : 0;
+              if (boundary) end = start + boundary;
+            }
+            chunks.push(paragraph.slice(start, end));
+            start = end;
+          }
         } else {
           current = current ? `${current}\n\n${paragraph}` : paragraph;
         }
@@ -404,6 +457,22 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       });
     } catch { /* The page can outlive an extension update. */ }
 
+    function isVisuallyClipped(style) {
+      if (/^inset\(\s*(?:50|100)%/i.test(style.clipPath)) return true;
+      const rect = style.clip?.startsWith('rect(') ? style.clip.match(/-?\d+(?:\.\d+)?/g)?.map(Number) : null;
+      return Boolean(rect?.length === 4 && rect[1] - rect[3] <= 1 && rect[2] - rect[0] <= 1);
+    }
+
+    function isPinnedNavigation(element, style) {
+      if (!element.matches('nav,header,[role="navigation"],[role="banner"]')) return false;
+      style ||= element.ownerDocument.defaultView?.getComputedStyle(element);
+      // Bilingual menu rows can push the original links outside a fixed-height
+      // header. Keep pinned site chrome intact; ordinary article headings and
+      // navigation in the document flow can still participate.
+      return Boolean(['fixed', 'sticky'].includes(style?.position) &&
+        (element.matches('nav,[role="navigation"]') || element.querySelector('nav,[role="navigation"]')));
+    }
+
     function isCssVisible(element) {
       for (let current = element; current; current = current.parentElement) {
         const style = getComputedStyle(current);
@@ -421,7 +490,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         length += piece.length;
       };
       const visit = (element) => {
-        if (length > maxChars || element.matches(EXCLUDED_SELECTOR) || !isCssVisible(element)) return;
+        if (length > maxChars || element.matches(IMMERSIVE_EXCLUDED_SELECTOR) || !isCssVisible(element) || isVisuallyClipped(getComputedStyle(element)) || isPinnedNavigation(element)) return;
         if (element.tagName === "BR") { append("\n"); return; }
         const display = getComputedStyle(element).display;
         const block = !["inline", "inline-block", "contents"].includes(display);
@@ -443,13 +512,17 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
 
     function excludedFromImmersive(element) {
       for (let current = element; current; current = composedParent(current)) {
-        if (current.matches(EXCLUDED_SELECTOR)) return true;
+        if (current.matches(IMMERSIVE_EXCLUDED_SELECTOR) || isPinnedNavigation(current)) return true;
       }
       return false;
     }
 
     function originalStillMatches(record, checkedElements = new Map()) {
-      if (!record.nodes.every((node, index) => node.isConnected && node.textContent === record.originals[index])) return false;
+      if (record.invalidated) return false;
+      if (record.authorGroup && record.element.parentNode !== record.authorParent) return false;
+      if (!record.nodes.every((node, index) =>
+        node.isConnected && record.container.contains(node) && node.textContent === record.originals[index] &&
+        (!index || (record.nodes[index - 1].compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING)))) return false;
       for (const node of record.nodes) {
         for (let element = node.parentElement || node.getRootNode()?.host; element; element = composedParent(element)) {
           // Check each ancestor's own style once. Calling isCssVisible here
@@ -458,7 +531,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
             const view = element.ownerDocument.defaultView;
             if (!view) return false; // A reloaded iframe can leave connected nodes in its old Document.
             const style = view.getComputedStyle(element);
-            checkedElements.set(element, !element.matches(EXCLUDED_SELECTOR) && style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse' && Number(style.opacity) !== 0 && style.contentVisibility !== 'hidden');
+            checkedElements.set(element, !element.matches(IMMERSIVE_EXCLUDED_SELECTOR) && style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse' && Number(style.opacity) !== 0 && style.contentVisibility !== 'hidden' && !isVisuallyClipped(style) && !isPinnedNavigation(element, style));
           }
           if (!checkedElements.get(element)) return false;
         }
@@ -481,13 +554,66 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       record.flowWrapper = undefined;
     }
 
+    function isAuthorGroup(element) {
+      if (element.matches(AUTHOR_GROUP_SELECTOR)) return true;
+      // Some publishers provide only schema.org author metadata, without a
+      // publisher-specific class. Require a list of people, not a whole paper.
+      const children = Array.from(element.children);
+      return children.filter(child => child.matches('[itemprop~="author"],a[rel~="author"]')).length > 1 &&
+        children.every(child => child.matches('[itemprop~="author"],a[rel~="author"],sup,sub,br,wbr,button,svg'));
+    }
+
+    function authorTranslationAnchor(element) {
+      const parent = element.parentElement;
+      if (!parent || parent.matches('html,body,main,article,section')) return element;
+      const style = parent.ownerDocument.defaultView.getComputedStyle(parent);
+      // A new sibling inside a row would become another column and shrink the
+      // names. Place the translation below the metadata row and its controls.
+      return style.display.includes('flex') && !style.flexDirection.startsWith('column') ||
+        style.display.includes('grid') && style.gridTemplateColumns.split(' ').length > 1 ? parent : element;
+    }
+
+    function collectAuthorGroup(element, visibleElement) {
+      if (element.closest('a,button')) return null;
+      let names = Array.from(element.querySelectorAll(AUTHOR_NAME_SELECTOR)).filter(name => {
+        const detail = name.closest(AUTHOR_AFFILIATION_SELECTOR);
+        return !detail || !element.contains(detail);
+      });
+      names = names.filter(name => !names.some(other => other !== name && other.contains(name)));
+      const details = Array.from(element.querySelectorAll(AUTHOR_DETAIL_SELECTOR)).filter(detail => !names.some(name => detail.contains(name)));
+      const inDetails = node => details.some(detail => detail.contains(node));
+      if (!names.length) names = Array.from(element.children).filter(child =>
+        child.matches('li,span,a,[itemprop~="author"],.author,.contrib') && !child.matches(AUTHOR_ANNOTATION_SELECTOR));
+      if (!names.length && !details.length) names = [element];
+      const nodes = [], originals = [], pieces = [];
+      for (const name of names) {
+        const stack = [name], texts = [];
+        while (stack.length) {
+          const node = stack.pop();
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            if (!visibleElement(node) || node.matches(IMMERSIVE_EXCLUDED_SELECTOR + ',' + AUTHOR_ANNOTATION_SELECTOR) || inDetails(node)) continue;
+            if (texts.length && node.matches('[itemprop~="givenName"],[itemprop~="familyName"],.given-name,.given-names,.surname')) texts.push(' ');
+            for (let index = node.childNodes.length - 1; index >= 0; index -= 1) stack.push(node.childNodes[index]);
+          } else if (node.nodeType === Node.TEXT_NODE) {
+            texts.push(node.textContent); nodes.push(node); originals.push(node.textContent);
+          }
+        }
+        const text = texts.join('').replace(/\s+/g, ' ').replace(/^[\s,;·&]+|[\s,;·&]+$/g, '');
+        if (/\p{L}/u.test(text)) pieces.push(text);
+      }
+      if (!pieces.length || !nodes.length) return null;
+      return {
+        record: { element, container: element, authorGroup: true, authorNames: pieces, authorParent: element.parentNode, authorAnchor: authorTranslationAnchor(element), source: pieces.join(', '), nodes, originals, lastNode: nodes.at(-1), directLayout: false },
+        details: details.filter(detail => !details.some(other => other !== detail && other.contains(detail)))
+      };
+    }
+
     async function collectImmersiveBlocks(session) {
       const records = [];
       const body = document.body || document.documentElement;
       const styles = new WeakMap();
       const visible = new WeakMap();
       const owners = new WeakMap();
-      const validity = new WeakMap();
       const shadowHostOf = (node) => node.parentNode?.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? node.parentNode.host : null;
       session.roots = new Set([document]);
       const pushChildren = (node) => { for (let index = node.childNodes.length - 1; index >= 0; index -= 1) stack.push(node.childNodes[index]); };
@@ -499,7 +625,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         if (!element) return true;
         if (!visible.has(element)) {
           const style = styleOf(element);
-          visible.set(element, style.display !== "none" && style.visibility !== "hidden" && style.visibility !== "collapse" && Number(style.opacity) !== 0 && style.contentVisibility !== "hidden" && visibleElement(composedParent(element)));
+          visible.set(element, style.display !== "none" && style.visibility !== "hidden" && style.visibility !== "collapse" && Number(style.opacity) !== 0 && style.contentVisibility !== "hidden" && !isVisuallyClipped(style) && visibleElement(composedParent(element)));
         }
         return visible.get(element);
       };
@@ -507,6 +633,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       const ownerOf = (element) => {
         if (!element) return null;
         if (owners.has(element)) return owners.get(element);
+        if (element.dataset.edgeWtFlowWrapper === "1") return ownerOf(element.parentElement);
         const display = styleOf(element).display;
         const parent = element.parentElement;
         const layoutItem = parent && /flex|grid/.test(styleOf(parent).display);
@@ -531,12 +658,27 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
           continue;
         }
         if (node.nodeType === Node.ELEMENT_NODE) {
-          if (!visibleElement(node) || node.matches(EXCLUDED_SELECTOR)) {
-            if (!["inline", "inline-block", "contents"].includes(styleOf(node).display)) current = undefined;
+          if (!visibleElement(node) || node.matches(IMMERSIVE_EXCLUDED_SELECTOR) || isPinnedNavigation(node, styleOf(node))) {
+            const inlineAnnotation = ["rt", "rp"].includes(node.localName) || node.localName === "math" && node.getAttribute("display") !== "block";
+            if (!inlineAnnotation && !["inline", "inline-block", "inline-flex", "inline-grid", "contents"].includes(styleOf(node).display)) current = undefined;
             continue;
           }
+          // The wrapper represents an original anonymous flex/grid text item;
+          // it must remain transparent to subsequent source scans.
+          if (node.dataset.edgeWtFlowWrapper === "1") { pushChildren(node); continue; }
+          if (isAuthorGroup(node)) {
+            const authors = collectAuthorGroup(node, visibleElement);
+            if (authors) {
+              current = undefined;
+              records.push(authors.record);
+              // Affiliation and biography prose remain independent blocks. The
+              // original author list, links and superscripts receive no children.
+              for (let index = authors.details.length - 1; index >= 0; index -= 1) stack.push(authors.details[index]);
+              continue;
+            }
+          }
           if (node.tagName === "BR" && current) current.source += "\n";
-          else if (!["inline", "inline-block", "contents"].includes(styleOf(node).display) || /flex|grid/.test(styleOf(node.parentElement || node).display)) current = undefined;
+          else if (!["inline", "inline-block", "contents", "ruby"].includes(styleOf(node).display) || /flex|grid/.test(styleOf(node.parentElement || node).display)) current = undefined;
           pushChildren(node);
           if (node.shadowRoot) stack.push(node.shadowRoot);
           if (node.tagName === "IFRAME") {
@@ -549,15 +691,12 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
           continue;
         }
         if (node.nodeType !== Node.TEXT_NODE) continue;
-        const previous = session.seen.get(node);
-        if (previous && !validity.has(previous.record)) validity.set(previous.record, originalStillMatches(previous.record));
-        if (previous && previous.original === node.textContent && validity.get(previous.record)) { current = undefined; continue; }
         const element = ownerOf(node.parentElement) || shadowHostOf(node);
         if (!element) { current = undefined; continue; }
         if (!node.textContent.trim() && (!current || current.element !== element)) continue;
-        const directLayout = node.parentElement === element && /flex|grid/.test(styleOf(element).display);
+        const directLayout = (node.parentElement === element || node.parentElement?.dataset.edgeWtFlowWrapper === "1") && /flex|grid/.test(styleOf(element).display);
         if (!current || current.element !== element || directLayout && current.lastNode.nextSibling !== node) {
-          current = { element, source: "", nodes: [], originals: [], lastNode: node, directLayout };
+          current = { element, container: shadowHostOf(node) ? node.parentNode : element, source: "", nodes: [], originals: [], lastNode: node, directLayout };
           records.push(current);
         }
         const style = styleOf(node.parentElement || element);
@@ -566,14 +705,24 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         current.originals.push(node.textContent);
         current.lastNode = node;
       }
+      const changed = new Set();
       const eligible = records.filter((record) => {
         record.source = record.source.replace(/[^\S\n]+/g, " ").replace(/ *\n */g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+        const previous = session.seen.get(record.nodes[0])?.record;
+        if (previous && previous.element === record.element && previous.source === record.source && previous.authorGroup === record.authorGroup && previous.authorParent === record.authorParent && previous.authorAnchor === record.authorAnchor && previous.directLayout === record.directLayout && previous.nodes.length === record.nodes.length && previous.nodes.every((node, index) => node === record.nodes[index]) && (!previous.completed || previous.translationElement?.isConnected)) return false;
+        // Inserting a phrase or moving existing nodes changes the entire source
+        // segment, even when every original Text node retains its old value.
+        for (const node of record.nodes) {
+          const old = session.seen.get(node)?.record;
+          if (old) changed.add(old);
+        }
         if (!/[\p{L}]/u.test(record.source.replace(/https?:\/\/\S+|\b\S+@\S+\.\S+/g, ""))) return false;
         const range = record.lastNode.ownerDocument.createRange();
         if (!record.nodes.some((node) => { range.selectNodeContents(node); return Array.from(range.getClientRects()).some((rect) => rect.width > 0 && rect.height > 0); })) return false;
         record.distance = viewportDistance(record);
         return true;
       });
+      if (changed.size) pruneImmersive(session, changed);
       eligible.forEach((record, index) => { record.order = index; });
       return eligible;
     }
@@ -601,9 +750,12 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
 
     function immersiveStyleText() {
       return `
+        [data-edge-wt-immersive="1"], [data-edge-wt-fitted="1"] { min-inline-size:0 !important; max-inline-size:100% !important; }
+        [data-edge-wt-fitted="1"] { box-sizing:border-box !important; }
         [data-edge-wt-immersive-translation="1"] { all:initial !important; display:block !important; position:static !important; float:none !important; box-sizing:border-box !important; width:auto !important; min-width:0 !important; max-width:100% !important; margin:.4em 0 0 !important; padding:0 !important; color:${immersiveColor || '#315bc7'} !important; font:inherit !important; line-height:1.6 !important; text-align:inherit !important; writing-mode:inherit !important; text-indent:0 !important; text-transform:none !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; }
         @media (prefers-color-scheme:dark) { [data-edge-wt-immersive-translation="1"] { color:${immersiveColor || '#9abaff'} !important; } }
         [data-edge-wt-pending="1"] { opacity:.7 !important; }
+        [data-edge-wt-unclipped="1"] { block-size:auto !important; max-block-size:none !important; -webkit-line-clamp:unset !important; line-clamp:unset !important; }
       `;
     }
     function setImmersiveColor(value) {
@@ -627,7 +779,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       const nodes = immersiveRecords.map((record) => record.translationElement).filter((node) => node?.isConnected);
       const count = nodes.length;
       nodes.forEach((node) => node.remove());
-      immersiveRecords.forEach((record) => delete record.element.dataset.edgeWtImmersive);
+      immersiveRecords.forEach((record) => { delete record.element.dataset.edgeWtImmersive; releaseImmersiveClipping(record); });
       for (const record of immersiveRecords) unwrapImmersive(record);
       immersiveWrappers.clear();
       immersiveRecords = [];
@@ -701,8 +853,65 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         if (record.translationElement?.dataset.edgeWtPending !== "1") continue;
         record.translationElement.remove();
         record.translationElement = undefined;
+        releaseImmersiveClipping(record);
         unwrapImmersive(record);
         if (!record.element.querySelector('[data-edge-wt-immersive-translation="1"]')) delete record.element.dataset.edgeWtImmersive;
+      }
+    }
+
+    function releaseImmersiveClipping(record) {
+      for (const element of record.fitted || []) {
+        const state = immersiveFitted.get(element);
+        if (!state) continue;
+        state.records.delete(record);
+        if (state.records.size) continue;
+        if (state.previous === null) element.removeAttribute('data-edge-wt-fitted');
+        else element.setAttribute('data-edge-wt-fitted', state.previous);
+        immersiveFitted.delete(element);
+      }
+      record.fitted?.clear();
+      for (const element of record.unclipped || []) {
+        const state = immersiveUnclipped.get(element);
+        if (!state) continue;
+        state.records.delete(record);
+        if (state.records.size) continue;
+        if (state.previous === null) element.removeAttribute('data-edge-wt-unclipped');
+        else element.setAttribute('data-edge-wt-unclipped', state.previous);
+        immersiveUnclipped.delete(element);
+      }
+      record.unclipped?.clear();
+    }
+
+    function revealImmersiveTranslation(record) {
+      const node = record.translationElement;
+      for (let element = composedParent(node); element && element !== element.ownerDocument.body; element = composedParent(element)) {
+        const style = element.ownerDocument.defaultView.getComputedStyle(element);
+        const parent = composedParent(element);
+        const outputRect = node.getBoundingClientRect(), elementRect = element.getBoundingClientRect();
+        if (parent && !['absolute', 'fixed'].includes(style.position) &&
+          (outputRect.right > element.ownerDocument.defaultView.innerWidth + 2 || outputRect.left < -2) &&
+          elementRect.width > parent.clientWidth + 2 && /flex|grid/.test(parent.ownerDocument.defaultView.getComputedStyle(parent).display)) {
+          if (!immersiveFitted.has(element)) {
+            immersiveFitted.set(element, { previous: element.getAttribute('data-edge-wt-fitted'), records: new Set() });
+            ensureImmersiveStyle(element.getRootNode());
+            element.setAttribute('data-edge-wt-fitted', '1');
+          }
+          immersiveFitted.get(element).records.add(record);
+          (record.fitted ||= new Set()).add(element);
+        }
+        const rect = node.getBoundingClientRect(), bounds = element.getBoundingClientRect();
+        const clipped = (['hidden', 'clip'].includes(style.overflowY) && (rect.bottom > bounds.bottom + 2 || rect.top < bounds.top - 2 || Number(style.webkitLineClamp) > 0)) ||
+          (['hidden', 'clip'].includes(style.overflowX) && (rect.right > bounds.right + 2 || rect.left < bounds.left - 2));
+        // Explicit scrolling containers keep their scroll behavior. Only expand
+        // a clipping ancestor that actually hides an inserted translation.
+        if (!clipped && !immersiveUnclipped.has(element)) continue;
+        if (!immersiveUnclipped.has(element)) {
+          immersiveUnclipped.set(element, { previous: element.getAttribute('data-edge-wt-unclipped'), records: new Set() });
+          ensureImmersiveStyle(element.getRootNode());
+          element.setAttribute('data-edge-wt-unclipped', '1');
+        }
+        immersiveUnclipped.get(element).records.add(record);
+        (record.unclipped ||= new Set()).add(element);
       }
     }
 
@@ -736,14 +945,18 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       node.setAttribute("lang", record.targetLanguage || "");
       node.setAttribute("translate", "no");
       node.setAttribute("dir", "auto");
-      node.textContent = translation;
-      element.dataset.edgeWtImmersive = "1";
+      node.textContent = record.authorGroup ? translation.replace(/\s+/g, ' ').trim() : translation;
+      if (record.authorGroup) node.dataset.edgeWtAuthorTranslation = '1';
+      else element.dataset.edgeWtImmersive = "1";
       // Stop before the next original child. Direct text before/after nested blocks is paired separately.
-      if (!node.isConnected) {
+      if (record.authorGroup) {
+        const anchor = record.authorAnchor;
+        if (anchor.nextElementSibling !== node) anchor.after(node);
+      } else if (!node.isConnected) {
         let anchor = record.lastNode;
         const inlineFlow = (sibling) => {
           if (sibling.nodeType !== Node.ELEMENT_NODE) return true;
-          if (!["inline", "inline-block", "contents", "none"].includes(getComputedStyle(sibling).display)) return false;
+          if (!["inline", "inline-block", "contents", "none", "ruby"].includes(getComputedStyle(sibling).display)) return false;
           return !Array.from(sibling.querySelectorAll(IMMERSIVE_BLOCK_SELECTOR)).some((child) => !["inline", "inline-block", "contents", "none"].includes(getComputedStyle(child).display));
         };
         while (anchor.parentElement !== element && anchor.parentElement) {
@@ -756,6 +969,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         anchor.after(node);
       }
       record.translationElement = node;
+      revealImmersiveTranslation(record);
       scheduleSelectionPosition();
       return true;
     }
@@ -786,6 +1000,11 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
     }
 
     async function alreadyTargetLanguage(record, session) {
+      if (record.authorGroup) {
+        const decisions = record.authorNames.flatMap(name => name.split(/[,;，；、&]+/)).map(name => targetScriptDecision(name, session.targetLanguage));
+        if (decisions.some(decision => decision === false)) return false;
+        if (decisions.every(decision => decision === true)) return true;
+      }
       const script = targetScriptDecision(record.source, session.targetLanguage);
       if (script !== null) return script;
       if (!chrome.i18n?.detectLanguage) return false;
@@ -833,7 +1052,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       if (!session.isCurrent()) return;
       if (location.href.split("#")[0] !== session.url) {
         beginPanelRun();
-        if (shadow) setStatus("页面已切换，已停止沉浸式翻译。请在新页面重新开启。");
+        if (shadow) setStatus("页面已切换，已停止沉浸式翻译。请在新页面重新开启。", true);
         return;
       }
       session.dirty = true;
@@ -856,9 +1075,12 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       for (const root of session.roots) {
         if (!session.observers.has(root)) {
           const observer = new MutationObserver((mutations) => {
-            if (mutations.some((mutation) => (mutation.type === "attributes" && mutation.attributeName === "data-edge-wt-ignore" || !internal(mutation.target)) && (mutation.type !== "childList" || [...mutation.addedNodes, ...mutation.removedNodes].some((node) => !internal(node))))) scheduleImmersiveScan(session);
+            const removedOutput = (mutation) => mutation.type === 'childList' && [...mutation.removedNodes].some((node) =>
+              node.nodeType === Node.ELEMENT_NODE && node.hasAttribute('data-edge-wt-immersive-translation') && !node.isConnected &&
+              immersiveRecords.some((record) => record.completed && !record.invalidated && record.translationElement === node));
+            if (mutations.some((mutation) => removedOutput(mutation) || (mutation.type === "attributes" && mutation.attributeName === "data-edge-wt-ignore" || !internal(mutation.target)) && (mutation.type !== "childList" || [...mutation.addedNodes, ...mutation.removedNodes].some((node) => !internal(node))))) scheduleImmersiveScan(session);
           });
-          observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["class", "style", "hidden", "open", "lang", "translate", "contenteditable", "data-edge-wt-ignore"] });
+          observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["class", "style", "hidden", "inert", "aria-hidden", "role", "open", "lang", "translate", "contenteditable", "data-edge-wt-ignore"] });
           session.observers.set(root, observer);
         }
         const view = (root.ownerDocument || root).defaultView;
@@ -881,10 +1103,13 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       }
     }
 
-    function pruneImmersive(session) {
+    function pruneImmersive(session, changed = new Set()) {
       immersiveRecords = immersiveRecords.filter((record) => {
-        if (originalStillMatches(record)) return true;
+        if (!changed.has(record) && originalStillMatches(record)) return true;
+        record.invalidated = true;
+        session.pending.delete(record);
         record.translationElement?.remove();
+        releaseImmersiveClipping(record);
         if (record.completed) session.translatedCount -= 1;
         if (record.skipped) session.skippedCount -= 1;
         record.nodes.forEach((node) => { if (session.seen.get(node)?.record === record) session.seen.delete(node); });
@@ -1030,12 +1255,13 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         if (failure) throw failure;
       }
       if (!isCurrent()) throw Object.assign(new Error("翻译已取消。"), { code: "CANCELLED" });
-      showPanel({ title: "沉浸式翻译", source: `已显示 ${session.translatedCount} 个译文段落，已跳过 ${session.skippedCount} 个目标语言段落。`, status: "滚动或展开内容后自动补译。关闭浮窗停止补译；恢复原文可移除译文。", showRestore: true, compact: true });
+      showPanel({ title: `沉浸式翻译 · ${session.translatedCount} 段`, source: `已显示 ${session.translatedCount} 个译文段落，已跳过 ${session.skippedCount} 个目标语言段落。`, status: "滚动或展开内容后自动补译。关闭浮窗停止补译；恢复原文可移除译文。", showRestore: true, compact: true, settled: true });
       return { ok: true, translatedCount: session.translatedCount, skippedCount: session.skippedCount };
     }
 
     async function translateImmersive(targetLanguage) {
       restoreImmersive();
+      immersivePanelExpanded = false;
       const runId = ++immersiveRunId;
       panelRunId += 1;
       showPanel({ title: "沉浸式翻译", status: "正在读取网页并在本地识别目标语言…", showRestore: true, compact: true });
@@ -1121,7 +1347,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       if(!running)return;
       if(selectionBusy)hideSelectionBubble(true);
       cancelRequests();immersiveRunId+=1;panelRunId+=1;
-      if(running&&shadow)setStatus('翻译配置已更改，当前任务已停止。已完成的译文保留；可重新发起翻译。');
+      if(running&&shadow)setStatus('翻译配置已更改，当前任务已停止。已完成的译文保留；可重新发起翻译。', true);
     });
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

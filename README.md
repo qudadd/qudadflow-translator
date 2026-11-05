@@ -12,10 +12,12 @@ Read a PDF with its translation, ask questions using the paper's text and figure
 
 Immersive webpage and selection translation provide the basic reading tools. Default machine translation needs no key; deeper AI research needs your compatible service/model or an eligible optional ChatGPT plan connection. The current interface is Simplified Chinese. [Full introduction](docs/store-description-en-0.9.5.txt) · [Figure workflow](docs/FIGURE_REPRODUCTION.md).
 
-**Version 0.9.5:** align the package summaries, English/Chinese introductions and project website around the paper research workflow. Existing research and translation behavior is retained. See the [release notes](docs/RELEASE_NOTES_0.9.5.md) and [publication status](docs/STORE_SUBMISSION_0.9.5.md).
+**Version 0.9.6:** improve immersive translation around code, formulas, captions, editors and dynamic paragraphs, with additional handling for clipped cards, pinned navigation, ruby annotations, visually hidden labels and mixed-language batches. Paper author lists retain their original rows and links, with one translation beneath the list and separate affiliation prose. Completed status shrinks to an expandable control. See the [release notes](docs/RELEASE_NOTES_0.9.6.md), [testing guide](docs/IMMERSIVE_WEB_TESTING.md), [initial verification](docs/VERIFICATION_0.9.6.md), [expanded checks](docs/VERIFICATION_0.9.6_EXPANDED.md), [author layout checks](docs/VERIFICATION_0.9.6_AUTHORS.md) and [publication status](docs/STORE_SUBMISSION_0.9.6.md).
 
 <details>
 <summary>Earlier release highlights</summary>
+
+**Version 0.9.5:** align the package summaries, English/Chinese introductions and project website around the paper research workflow. See the [release notes](docs/RELEASE_NOTES_0.9.5.md).
 
 **Version 0.9.4:** correct the display version shown by Chrome and enforce matching package/display versions during validation and archive auditing. Includes the figure workspace introduced in 0.9.3. See the [release notes](docs/RELEASE_NOTES_0.9.4.md) and [publication status](docs/STORE_SUBMISSION_0.9.4.md).
 
@@ -38,7 +40,7 @@ Optional ChatGPT plan sign-in appears only when selected in Settings. A working 
 
 The [current store introduction](docs/STORE_PRESENTATION_0.9.5.md) describes the research workflow in English and Chinese. The illustrated [0.9.2 presentation](docs/STORE_PRESENTATION_0.9.2.md) retains its versioned screenshots; generated fixtures, simulated API responses and capture versions are labelled. Provider quality and speed vary.
 
-GitHub and store submission states are recorded separately in the [0.9.5 publication record](docs/STORE_SUBMISSION_0.9.5.md). Store submission does not establish approval.
+GitHub and store submission states are recorded separately in the [0.9.6 publication record](docs/STORE_SUBMISSION_0.9.6.md). Store submission does not establish approval.
 
 ## Translation providers
 
@@ -169,7 +171,7 @@ Requires Node.js and PowerShell. Runtime libraries are checked into `vendor/`; n
 .\package.ps1 -OutputDirectory .\dist
 ```
 
-The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.4.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
+The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.6.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
 
 ## Verification
 
@@ -195,4 +197,4 @@ Version 0.8.1 passed **240 checks with zero failures**: 229 across eight Edge su
 
 ## Publishing
 
-The local trial is **0.8.15**; see its [release notes](docs/RELEASE_NOTES_0.8.15.md). The earlier [submission record](docs/STORE_SUBMISSION_0.8.8.md) tracks GitHub, Edge and Chrome separately. Local source versions and store availability have independent states.
+Version **0.9.6** includes the webpage translation and paper-author layout fixes. See the [release notes](docs/RELEASE_NOTES_0.9.6.md) and [publication record](docs/STORE_SUBMISSION_0.9.6.md) for GitHub, Edge and Chrome status. Local source versions and store availability have independent states.
