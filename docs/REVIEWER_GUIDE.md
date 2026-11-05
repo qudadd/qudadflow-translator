@@ -1,8 +1,16 @@
-# QudadFlow Translator: certification review (0.9.2)
+# QudadFlow Translator: certification review (0.9.6)
 
 The extension has no QudadFlow service account. Its default machine translation needs no AI credentials. Optional Google Cloud Translation, DeepL, Microsoft Translator and OpenAI-compatible services use the reviewer's own endpoint and credentials. Optional ChatGPT plan sign-in uses each user's official OpenAI authorization and a separately installed Windows x64 native host. No shared production keys or account are supplied. The UI is Simplified Chinese; English/Chinese store metadata are included.
 
 For basic text testing, leave **自动机器翻译（默认免 Key）** selected in Settings. Approve site access when prompted, open a normal English HTTP(S) webpage and request immersive or selection translation. The extension first tries a ready browser-local Translator model. If the browser supports it, the user may click **下载并准备本地模型** in Settings to download a model for the chosen language pair. Without a ready model, requested text goes immediately to MyMemory over HTTPS. MyMemory's typical anonymous allowance is 5,000 characters/day, possibly shared by network, and its retention/usage terms apply. A personal contact email can be added for the provider's stated higher allowance; no independent per-person public quota is guaranteed. AI research and vision need a compatible API profile/model or an eligible ChatGPT plan account.
+
+## Webpage and paper-author review in 0.9.6
+
+On a PubMed, Springer or Nature paper, start immersive translation and inspect the author list. Original names retain their rows, links, order, affiliation superscripts, contribution/correspondence markers and ORCID controls. One naturally wrapping translation appears below the visible list or its horizontal metadata row; affiliations and author-contribution prose translate separately. Expand more authors, restore the original and translate again. Unknown custom author structures can still need adaptation; provider-specific name spelling is not guaranteed.
+
+Check article text with inline code, formulas and table captions, clipped cards on a narrow viewport, and text inserted or reordered after translation. Protected code, formulas, pinned navigation and visually hidden labels stay intact. Completed status shrinks into an expandable control. The default service detects mixed-language marked paragraphs separately without increasing the existing two-parent-request limit. No new extension permissions or runtime dependencies are introduced.
+
+The final author-layout regression passed 635 checks with zero failures; the release also passed 56 quick checks. Edge tests exercise the actual MV3 extension, while Chrome checks use the actual content script with a simulated message bridge. Synthetic author translations verify layout and behavior, not real-provider name accuracy. See [author checks](VERIFICATION_0.9.6_AUTHORS.md), [expanded webpage checks](VERIFICATION_0.9.6_EXPANDED.md) and [release status](STORE_SUBMISSION_0.9.6.md).
 
 ## Optional ChatGPT plan preview and nativeMessaging
 
@@ -51,7 +59,7 @@ Confirm the running manifest version at the bottom of popup, Settings, reader an
 3. Copy/download native tables as Markdown/TSV locally. Explicitly request vision transcription for image tables, inspect its verification warning and compare with the original. Import/paste a screenshot or supplement the source viewport when needed. Limits: 100 extraction candidates, 12 manual supplements and a 16 MB capture budget.
 4. Choose a model on the active API, a Skill and a question. Analyze selected text/figures and export Markdown. Document reading shares this workflow. Source/page references remain visible. AI output/numbers/conclusions need independent checks.
 5. Edit/import Skills as plain text prompts. Optional notebook memory defaults off, is notebook-isolated, bounded and exportable as JSON/Markdown. Search/delete records; disabling stops future use/saving without erasing existing records. Basic translation does not use research memory.
-6. Generate/download Python/R reproduction drafts. Code is inert text and never executed. Exact reproduction needs original data and verification.
+6. Open a figure dialog beside its reference and switch between Interpretation, Python and R. Inspect line numbers, exact copying, download, wrapping and enlarged code view. Generate/download chart-style drafts, run labelled `--style-demo` templates in your own Python/R environment, and optionally import the result for explicit visual revision. Acceptance concerns form, fonts, colors, legends, panels and annotations; original numerical recovery is not required. Code is inert text and never executed by the extension. See the [figure workflow](FIGURE_REPRODUCTION.md).
 
 ## PDF and model workflow review in 0.8.15
 
@@ -67,6 +75,6 @@ The 0.9.2 checks and package details are recorded in the [publication record](ST
 
 Files parse locally; only requested text/selected images and enabled research context go to the chosen provider. Keys/settings stay in browser-local extension storage; ChatGPT OAuth credentials stay in the local companion. No developer proxy, ads, analytics or remote executable extension code. Parsers/WASM are bundled; API output is rendered as text. Protected browser pages cannot receive injected translation controls.
 
-See [verification](VERIFICATION.md), [release notes](RELEASE_NOTES_0.9.2.md), [submission record](STORE_SUBMISSION_0.9.2.md), [privacy](https://qudadd.github.io/qudadflow-translator/privacy.html) and [third-party notices](../THIRD_PARTY_NOTICES.md).
+See [verification](VERIFICATION.md), [release notes](RELEASE_NOTES_0.9.6.md), [submission record](STORE_SUBMISSION_0.9.6.md), [privacy](https://qudadd.github.io/qudadflow-translator/privacy.html) and [third-party notices](../THIRD_PARTY_NOTICES.md).
 
 Support: lcf1249288484@outlook.com · QQ community: 1048123205.
