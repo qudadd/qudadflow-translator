@@ -68,7 +68,7 @@ function connect() {
     void chrome.runtime.lastError;
     if (port === connection) port = undefined;
     for (const [id, request] of pending) if (request.connection === connection) {
-      pending.delete(id);request.resolve({ok:false,error:'扩展连接已断开，请重新点击翻译。'});
+      pending.delete(id);request.resolve({ok:false,error:'扩展连接已断开，请重新点击翻译。',code:'EXTENSION_DISCONNECTED'});
     }
   });
   return connection;
@@ -84,7 +84,7 @@ function request(text, context, onProgress,extra={}) {
   signal?.addEventListener('abort',abort,{once:true});
   try {connection.postMessage({type:'TRANSLATE', requestId, text, context, targetLanguage:$('targetLanguage').value,...payload});}
   catch {pending.delete(requestId); resolve({ok:false,error:'扩展已重新加载，请刷新阅读器。'});}
-  return promise.then(result => {if (!result.ok) throw new Error(result.error || '翻译失败。');return payload.type&&payload.type!=='TRANSLATE'?result:result.translation;}).finally(()=>signal?.removeEventListener('abort',abort));
+  return promise.then(result => {if (!result.ok) throw Object.assign(new Error(result.error || '翻译失败。'),{code:result.code});return payload.type&&payload.type!=='TRANSLATE'?result:result.translation;}).finally(()=>signal?.removeEventListener('abort',abort));
 }
 const heartbeat = setInterval(() => {if (pending.size) try {port?.postMessage({type:'PING'});} catch {}}, 20000);
 function cancelRequests() {

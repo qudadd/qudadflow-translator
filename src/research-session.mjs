@@ -7,7 +7,7 @@ export async function resumeResearchSession({id,workflow,state}){
   const forget=document.createElement('button');forget.id='forgetPaperSession';forget.textContent='清除本页记录并关闭';forget.title='删除这篇论文在当前浏览器保存的草稿、对话、图片和代码；不会清除跨页面笔记本。';document.querySelector('.paper-answer-tools').append(forget);
   let enabled=false,timer,dirty=0,saved=0,saving=false;
   const viewIds=['sourcePanel','tablePanel','researchOptions','coveragePanel','paperHistory','questionFigures','figureWorkflow'];
-  const scrollNodes=()=>[$('figure-panel-analysis'),workflow.workbench.answers,$('sourcePreview'),document.scrollingElement];
+  const scrollNodes=()=>[$('figure-panel-analysis'),workflow.workbench.answers,$('sourcePreview'),document.scrollingElement,workflow.research.$('paperChatWindow')];
   const snapshot=()=>({version:1,material:$('paperMaterial').value,...workflow.snapshot(),panels:{...Object.fromEntries(viewIds.map(key=>[key,Boolean($(key)?.open)])),materialRead:$('paperMaterial').hidden},scroll:scrollNodes().map(node=>node?.scrollTop||0)});
   const reportError=error=>{status.textContent='保存失败 · 可导出对话';status.dataset.state='error';status.title=error.message+'；当前窗口内容保留。';};
   async function write(value,revision){

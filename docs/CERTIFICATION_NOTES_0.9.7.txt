@@ -1,0 +1,7 @@
+QudadFlow Translator 0.9.7. No service account or shared production credentials. Default machine translation needs no AI key. Optional paper Q&A/vision uses the reviewer's own compatible provider/model; optional ChatGPT plan uses official authorization and the unchanged 0.9.2 Windows companion.
+
+Test https://pmc.ncbi.nlm.nih.gov/articles/PMC9529820/ : open paper research and load Figure 1, which resolves the real image instead of an HTML zoom-viewer link. Unavailable selected images must not block ordinary text Q&A; their labels remain disclosed. Dedicated figure analysis requires loaded images.
+
+Send a question: accepted input clears immediately and stays in conversation. Long answers scroll within a bounded pane. Resize using the lower-right corner, reset size, fold history/workbench, and reopen the same webpage to restore draft, conversation, figures and Python/R code. Existing windows are reused. Interrupted responses retain partial text with explicit retry; incomplete turns are excluded from context, and reopening never calls AI automatically.
+
+Webpage-only local IndexedDB recovery: 30 days, 20 papers, 256 MB total and 48 MB per snapshot. No credentials/API profiles in snapshots. Complete document-reader sessions are not persisted. No new permissions/dependencies. Prior author-layout and figure-style workflows remain. Guide: https://qudadd.github.io/qudadflow-translator/ . Review details and simulated-test limits: docs/REVIEWER_GUIDE.md on GitHub.

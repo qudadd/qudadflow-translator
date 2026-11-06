@@ -1,8 +1,16 @@
-# QudadFlow Translator: certification review (0.9.6)
+# QudadFlow Translator: certification review (0.9.7)
 
 The extension has no QudadFlow service account. Its default machine translation needs no AI credentials. Optional Google Cloud Translation, DeepL, Microsoft Translator and OpenAI-compatible services use the reviewer's own endpoint and credentials. Optional ChatGPT plan sign-in uses each user's official OpenAI authorization and a separately installed Windows x64 native host. No shared production keys or account are supplied. The UI is Simplified Chinese; English/Chinese store metadata are included.
 
 For basic text testing, leave **自动机器翻译（默认免 Key）** selected in Settings. Approve site access when prompted, open a normal English HTTP(S) webpage and request immersive or selection translation. The extension first tries a ready browser-local Translator model. If the browser supports it, the user may click **下载并准备本地模型** in Settings to download a model for the chosen language pair. Without a ready model, requested text goes immediately to MyMemory over HTTPS. MyMemory's typical anonymous allowance is 5,000 characters/day, possibly shared by network, and its retention/usage terms apply. A personal contact email can be added for the provider's stated higher allowance; no independent per-person public quota is guaranteed. AI research and vision need a compatible API profile/model or an eligible ChatGPT plan account.
+
+## Paper conversations and recovery in 0.9.7
+
+On https://pmc.ncbi.nlm.nih.gov/articles/PMC9529820/ open the paper workspace and load Figure 1. Its source must be an actual image, rather than an HTML zoom-viewer link. Unavailable selected images do not block ordinary text Q&A; unavailable labels remain disclosed. Dedicated image analysis still requires loaded images.
+
+With your own compatible AI profile, send a question: accepted input clears immediately and stays in conversation. Long answers scroll within a bounded pane. Drag its lower-right corner to resize, reset size, fold history/workbench, and reopen the same webpage to restore drafts, conversation, figures and code. Existing windows are reused. Interrupted answers retain partial text with explicit retry; incomplete turns are excluded from context, and reopening never calls AI automatically.
+
+Webpage snapshots remain in local IndexedDB for 30 days, up to 20 papers and 256 MB total, with a 48 MB snapshot cap. Credentials and API profiles are excluded. Full document-reader sessions are not persisted. No new permissions/dependencies. The 212-check baseline and later 180-check chat regression are documented separately; the final composer adjustment passed 28 relevant checks. Isolated fixtures and simulated APIs test behavior, not real-provider answer quality.
 
 ## Webpage and paper-author review in 0.9.6
 

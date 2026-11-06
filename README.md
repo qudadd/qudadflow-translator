@@ -1,6 +1,6 @@
 # QudadFlow Translator
 
-Version **0.9.7** is a local development update for PMC image capture, resilient paper Q&A and saved webpage workspaces. See [release notes](docs/RELEASE_NOTES_0.9.7.md). Store submission status remains documented under 0.9.6.
+Version **0.9.7** improves PMC image capture, keeps paper Q&A usable when images fail, and restores saved webpage workspaces. Chat messages use a bounded, resizable scrolling area; interrupted answers retain their text for explicit retry, and accepted questions clear the composer immediately. See [release notes](docs/RELEASE_NOTES_0.9.7.md) and [GitHub/Chrome/Edge publication status](docs/STORE_SUBMISSION_0.9.7.md).
 
 **A research workspace for reading papers in depth and learning from their figures, for Edge and Chrome.**
 
@@ -42,7 +42,7 @@ Optional ChatGPT plan sign-in appears only when selected in Settings. A working 
 
 The [current store introduction](docs/STORE_PRESENTATION_0.9.5.md) describes the research workflow in English and Chinese. The illustrated [0.9.2 presentation](docs/STORE_PRESENTATION_0.9.2.md) retains its versioned screenshots; generated fixtures, simulated API responses and capture versions are labelled. Provider quality and speed vary.
 
-GitHub and store submission states are recorded separately in the [0.9.6 publication record](docs/STORE_SUBMISSION_0.9.6.md). Store submission does not establish approval.
+GitHub and store submission states are recorded separately in the [0.9.7 publication record](docs/STORE_SUBMISSION_0.9.7.md). Store submission does not establish approval.
 
 ## Translation providers
 
@@ -173,7 +173,7 @@ Requires Node.js and PowerShell. Runtime libraries are checked into `vendor/`; n
 .\package.ps1 -OutputDirectory .\dist
 ```
 
-The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.6.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
+The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.7.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
 
 ## Verification
 
@@ -199,4 +199,4 @@ Version 0.8.1 passed **240 checks with zero failures**: 229 across eight Edge su
 
 ## Publishing
 
-Version **0.9.6** includes the webpage translation and paper-author layout fixes. See the [release notes](docs/RELEASE_NOTES_0.9.6.md) and [publication record](docs/STORE_SUBMISSION_0.9.6.md) for GitHub, Edge and Chrome status. Local source versions and store availability have independent states.
+Version **0.9.7** includes PMC capture, saved webpage workspaces and resilient conversations, with earlier author-layout fixes retained. See the [release notes](docs/RELEASE_NOTES_0.9.7.md) and [publication record](docs/STORE_SUBMISSION_0.9.7.md) for GitHub, Edge and Chrome status. Local source versions and store availability have independent states.

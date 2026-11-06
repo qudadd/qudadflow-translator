@@ -54,12 +54,27 @@
 .paper-answer-tools strong{flex:1;color:#4c6481;font-size:12px;min-width:110px}.paper-answer-tools button{padding:6px 9px;font-size:11px}
 #paperCopyStatus{flex-basis:100%;font-size:11px;color:#536e93}#paperCopyStatus:empty{display:none}
 .paper-history{margin:0 0 16px;color:#5d7290;font-size:12px}.paper-history>summary{cursor:pointer}.paper-history .research-turn{margin:8px 0}
+.paper-chat-window{box-sizing:border-box;width:100%;height:clamp(220px,40vh,540px);min-height:180px;max-height:min(74vh,780px);min-width:0;resize:vertical;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;border:1px solid #dce5ef;border-radius:8px;padding:14px;background:#f7f9fc;color:#263b56;}
+.paper-message{max-width:min(100%,920px);min-width:0;margin:12px 0;padding:12px 14px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;overflow-wrap:anywhere}
+.paper-message-user{margin-left:auto;border-color:#d9e5f7;background:#eef4fc}
+.paper-message-speaker{display:block;margin-bottom:7px;color:#64748b;font-size:11px;font-weight:650}
+.paper-message-user .current-question{margin:0;padding:0;border-radius:0;background:transparent;color:#29466e;white-space:pre-wrap;font-size:13px;line-height:1.7}
+.paper-message-assistant .paper-output.research-markdown{max-height:none;overflow:visible;margin:0;padding:0;border:0;background:transparent}
+.paper-thinking,.paper-failure{margin:8px 0 0;font-size:12px;line-height:1.7;color:#64748b;white-space:pre-wrap;overflow-wrap:anywhere}
+.paper-failure{padding:8px 10px;border-left:3px solid #d28a28;background:#fff8eb;color:#76501a}
+.paper-retry{margin-top:10px;font-size:12px}
+.paper-chat-size-tools{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;padding-top:8px;color:#73849b;font-size:11px}.paper-chat-size-tools button{font-size:11px;padding:4px 8px}
+.paper-chat-window[hidden]+.paper-chat-size-tools{display:none}
+.paper-chat-window:focus-visible{outline:2px solid #7ba4f0;outline-offset:2px}
+.paper-conversation:empty{display:none}
 #researchSaveStatus{font-size:11px;color:#617e70;max-width:170px;overflow-wrap:anywhere}#researchSaveStatus[data-state=error]{color:#b42318}
 .research-page .workbench-research-layout{display:grid;grid-template-columns:minmax(210px,265px) minmax(0,1fr);gap:20px;align-items:start}
 .research-page .workbench-compose{position:sticky;top:12px;padding:14px;border:1px solid #dce5f2;border-radius:12px;background:#fff}
 .research-page .workbench-answers{background:#fff;border:1px solid #dce5f2;border-radius:12px;padding:20px;min-height:360px}
 .research-page .workbench-question{margin:0 0 12px}.research-page .workbench-question textarea{min-height:120px;line-height:1.7}
 .research-page .workbench-answers .paper-output.research-markdown{max-height:none;padding:0;border:0;font-size:14px;line-height:1.85;overflow:visible}
+.research-page .workbench-answers .paper-chat-window{height:clamp(220px,40vh,540px);max-height:min(74vh,780px);min-height:180px;resize:vertical;overflow:auto;padding:14px}
+.research-page .workbench-answers .paper-message-assistant .paper-output.research-markdown{padding:0;border:0;margin:0;overflow:visible}
 .research-page .workbench-answer-placeholder{display:block;padding:45px 12px;text-align:center;font-size:13px;line-height:1.8;color:#7588a2}
 .research-page .workbench-answer-placeholder h3{font-size:19px;color:#3d5374;font-weight:600}
 .research-page .workbench-answers:has(#currentQuestion:not([hidden]))>.workbench-answer-placeholder{display:none}
@@ -108,6 +123,7 @@
   .pdf-detection-preview .pdf-detection-card img{height:92px;max-height:92px}
   .pdf-detection-preview .pdf-detection-card{font-size:11px;padding:7px}
 }
+@media(max-width:740px){.paper-chat-window{height:clamp(210px,38vh,460px);max-height:72vh;resize:vertical;padding:10px}.paper-message{padding:10px 11px}.research-page .workbench-answers .paper-chat-window{height:clamp(210px,38vh,460px);max-height:72vh;padding:10px}}
 @media(max-width:650px){.document-reader #layoutNotice{display:none}.document-reader #status{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}.document-reader .layout-bar{padding-bottom:8px}}
 .workbench-profile{white-space:nowrap}
 

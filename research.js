@@ -7,8 +7,8 @@ import {resumeResearchSession} from './src/research-session.mjs';
 const $=id=>document.getElementById(id),pending=new Map();let port,sequence=0,captureId='',canSupplement=false,source={title:'粘贴的论文材料',url:'',page:'web'};
 function connect(){
   if(port)return port;const connection=chrome.runtime.connect({name:'qudadflow-document'});port=connection;
-  connection.onMessage.addListener(message=>{const task=pending.get(message.requestId);if(!task)return;if(message.type==='PROGRESS')task.progress?.(message.translation);if(message.type==='RESULT'){pending.delete(message.requestId);message.ok?task.resolve(message):task.reject(new Error(message.error));}});
-  connection.onDisconnect.addListener(()=>{void chrome.runtime.lastError;if(port===connection)port=null;for(const [id,task] of pending)if(task.connection===connection){pending.delete(id);task.reject(new Error('扩展连接断开，请重试。'));}});return connection;
+  connection.onMessage.addListener(message=>{const task=pending.get(message.requestId);if(!task)return;if(message.type==='PROGRESS')task.progress?.(message.translation);if(message.type==='RESULT'){pending.delete(message.requestId);message.ok?task.resolve(message):task.reject(Object.assign(new Error(message.error),{code:message.code}));}});
+  connection.onDisconnect.addListener(()=>{void chrome.runtime.lastError;if(port===connection)port=null;for(const [id,task] of pending)if(task.connection===connection){pending.delete(id);task.reject(Object.assign(new Error('扩展连接断开，请重试。'),{code:'EXTENSION_DISCONNECTED'}));}});return connection;
 }
 function request(imageData,profileId,onProgress,extra={}) {
   return new Promise((resolve,reject)=>{const requestId='research-'+(++sequence),connection=connect();pending.set(requestId,{resolve,reject,progress:onProgress,connection});try{connection.postMessage({type:'FIGURE_ANALYZE',requestId,imageData,profileId,...extra});}catch{pending.delete(requestId);reject(new Error('扩展已重新加载，请刷新此页。'));}});

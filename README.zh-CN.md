@@ -1,6 +1,6 @@
 # QudadFlow Translator（Edge / Chrome 扩展）
 
-**0.9.7 本地开发更新**：修复 PMC 缩放图原图识别；坏图不阻断正文问答；同一网页问答窗口复用并恢复草稿、对话、图表及代码，改善问答布局。见[更新说明](docs/RELEASE_NOTES_0.9.7.md)。商店送审状态仍以 0.9.6 发布记录为准。
+**版本 0.9.7**：修复 PMC 图 1 原图提取；坏图不阻断正文问答；同一网页复用窗口，关闭后恢复草稿、对话、图表和代码。对话区独立滚动、可调整高度并保留折叠；断流保留部分回答，支持明确重试。问题开始发送后立即清空提问框。见[更新说明](docs/RELEASE_NOTES_0.9.7.md)和[GitHub／Chrome／Edge 发布状态](docs/STORE_SUBMISSION_0.9.7.md)。
 
 **面向论文深度阅读与图表学习的研究工作台。**
 
@@ -40,7 +40,7 @@
 
 [当前商店简介](docs/STORE_PRESENTATION_0.9.5.md)按论文研究流程提供中英文介绍；[0.9.2 展示资料](docs/STORE_PRESENTATION_0.9.2.md)保留七张带版本标注的截图，标明生成样例与模拟接口。真实服务效果取决于服务商与模型。
 
-GitHub、Edge 与 Chrome 的实际更新状态见[0.9.6 发布记录](docs/STORE_SUBMISSION_0.9.6.md)，商店提交与审核通过分别记录。
+GitHub、Edge 与 Chrome 的实际更新状态见[0.9.7 发布记录](docs/STORE_SUBMISSION_0.9.7.md)，商店提交与审核通过分别记录。
 
 ## 本次图表改进
 
@@ -223,7 +223,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 .\package.ps1
 ```
 
-打包脚本用同一文件清单执行复制、依赖检查及 ZIP 审计：检查 Manifest、图标、自有脚本语法和本地依赖，再验证暂存运行目录，逐个比对压缩包文件与源文件字节。通过后生成 `outputs/qudadflow-translator-v0.9.6.zip`、独立源码包、审计 JSON 和 `SHA256SUMS-v0.9.6.txt`；源文件校验失败时保留已有安装包。固定 ZIP 时间戳和路径顺序，使相同源码在同一 Node/PowerShell/.NET 环境中构建结果一致。运行包不含开发测试、截图与文档；打包不会自动发布。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
+打包脚本用同一文件清单执行复制、依赖检查及 ZIP 审计：检查 Manifest、图标、自有脚本语法和本地依赖，再验证暂存运行目录，逐个比对压缩包文件与源文件字节。通过后生成 `outputs/qudadflow-translator-v0.9.7.zip`、独立源码包、审计 JSON 和 `SHA256SUMS-v0.9.7.txt`；源文件校验失败时保留已有安装包。固定 ZIP 时间戳和路径顺序，使相同源码在同一 Node/PowerShell/.NET 环境中构建结果一致。运行包不含开发测试、截图与文档；打包不会自动发布。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
 
 ## 项目与上架信息
 
@@ -237,7 +237,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 - 按目标 API 服务商的条款确认用户文本和 Key 的处理方式。
 - 使用真实 API 在干净的 Edge 配置中完成侧载验收，再提交商店审核。
 
-三个平台实际进度见[0.9.6 发布记录](docs/STORE_SUBMISSION_0.9.6.md)；中英文商店简介见[当前介绍](docs/STORE_PRESENTATION_0.9.5.md)，历史截图见[展示资料](docs/STORE_PRESENTATION_0.9.2.md)。
+三个平台实际进度见[0.9.7 发布记录](docs/STORE_SUBMISSION_0.9.7.md)；中英文商店简介见[当前介绍](docs/STORE_PRESENTATION_0.9.5.md)，历史截图见[展示资料](docs/STORE_PRESENTATION_0.9.2.md)。
 
 ## 自动功能验证
 

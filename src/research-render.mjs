@@ -21,7 +21,12 @@ export function createResearchRenderer(container,options={unverified:true}) {
     clearTimeout(timer);timer=null;
     if(pending===null)return;
     const value=pending;pending=null;
-    if(value!==rendered){renderResearch(container,value,options);rendered=value;}
+    if(value!==rendered){
+      const scroller=options.scrollContainer,top=scroller?.scrollTop,follow=scroller&&scroller.scrollHeight-scroller.clientHeight-top<100;
+      renderResearch(container,value,options);rendered=value;
+      // Decide before rendering: a long new fragment must not disable following.
+      if(scroller)scroller.scrollTop=follow?scroller.scrollHeight:top;
+    }
   };
   return {
     update(value,complete=false){

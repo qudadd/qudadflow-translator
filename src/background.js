@@ -466,6 +466,9 @@ async function readEventStream(response, settings, onProgress) {
     if (!completed) throw translationError("API 连接提前结束，未收到完整译文，请重试。", "INCOMPLETE_RESPONSE");
     if (!translation.trim()) throw translationError("API 返回中没有找到翻译文本。", "EMPTY_TRANSLATION");
     return translation.trim();
+  } catch (error) {
+    if (error.name === 'AbortError' || typeof error.code === 'string') throw error;
+    throw translationError("接收回答时网络连接中断，请检查网络或模型服务后重试。", "STREAM_INTERRUPTED");
   } finally {
     await reader.cancel().catch(() => {});
     reader.releaseLock();
@@ -714,8 +717,9 @@ chrome.runtime.onConnect?.addListener((port) => {
     }
     const controller = new AbortController(), metadata = {}, started = Date.now();
     requests.set(requestId, controller);
-    let lastProgress = 0;
+    let lastProgress = 0, pendingProgress = '';
     const progress = translation => {
+      pendingProgress = translation;
       if (controller.signal.aborted || Date.now() - lastProgress < 150) return;
       lastProgress = Date.now();
       post({ type: "PROGRESS", requestId, translation });
@@ -725,7 +729,11 @@ chrome.runtime.onConnect?.addListener((port) => {
       try {
         const translation = await (message.type==='TRANSLATE'?translateText:message.type==='PDF_FIGURE_DETECT'?detectPdfResearchFigures:analyzeResearch)(message, controller, progress, metadata);
         result = { ok: true, translation, cached: Boolean(metadata.cached), memoryCount:metadata.memoryCount, memoryWarning:metadata.memoryWarning };
-      } catch (error) { result = { ok: false, error: error.message, code: error.code || "TRANSLATION_FAILED", ...upstreamDiagnostic(error) }; }
+      } catch (error) {
+        // Deliver the final received fragment even if it fell inside the UI throttle.
+        if (pendingProgress && !controller.signal.aborted) post({type:"PROGRESS",requestId,translation:pendingProgress});
+        result = { ok: false, error: error.message, code: error.code || "TRANSLATION_FAILED", ...upstreamDiagnostic(error) };
+      }
       finally { requests.delete(requestId); }
       post({ type: "RESULT", requestId, ...result, elapsedMs: Date.now() - started });
     })();

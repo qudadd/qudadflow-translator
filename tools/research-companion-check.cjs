@@ -24,11 +24,13 @@ const server=http.createServer(async(req,res)=>{
   res.writeHead(200,{'Content-Type':'text/event-stream'});
   const event=data=>res.write('data: '+JSON.stringify(data)+'\n\n');
   const send=text=>event(body.input?{type:'response.output_text.delta',delta:text}:{choices:[{delta:{content:text}}]});
+  if(record.mode==='early-error'){event({error:{message:'Upstream response stream was interrupted'}});return res.end();}
   send(answer.slice(0,68));
   if(record.mode==='stall')return;
   await delay(300);
   if(res.destroyed)return;
-  if(record.mode==='stream-error'){event({error:{message:'Synthetic upstream failure'}});return res.end();}
+  if(record.mode==='stream-error'){send('\nLAST_RECEIVED_BEFORE_ERROR');event({error:{message:'Upstream response stream was interrupted'}});return res.end();}
+  if(record.mode==='network-error')return res.destroy();
   if(record.mode==='eof')return res.end();
   send(answer.slice(68));
   if(body.input)event({type:'response.completed',response:{output_text:answer}});
@@ -144,12 +146,24 @@ async function extract(site){const tabId=await worker.evaluate(async url=>(await
       mode='delayed';const start=Date.now();await ask('LONG_WAIT_ANALYSIS');assert.ok(Date.now()-start>=35000);assert.equal(calls.at(-1).aborted,false);assert.match(await page.locator('#paperOutput').textContent(),/证据解读/);
     });
     await check('Provider stream errors preserve partial answers and exclude them from follow-up context',async()=>{
-      await workbenchView(page,'analysis');await page.locator('#newConversation').click();mode='stream-error';await workbenchView(page,'analysis');await page.locator('#researchQuestion').fill('FAILED_TURN_MARKER');await workbenchView(page,'analysis');await page.locator('#analyzePaper').click();await page.waitForFunction(()=>document.querySelector('#paperStatus').textContent.includes('Synthetic upstream failure'));assert.match(await page.locator('#paperOutput').textContent(),/证据解读/);assert.equal(await page.locator('#downloadPaper').isEnabled(),true);
+      await workbenchView(page,'analysis');await page.locator('#newConversation').click();mode='stream-error';await workbenchView(page,'analysis');await page.locator('#researchQuestion').fill('FAILED_TURN_MARKER');await workbenchView(page,'analysis');await page.locator('#analyzePaper').click();await page.waitForFunction(()=>document.querySelector('#paperStatus').textContent.includes('回答流意外中断'));assert.match(await page.locator('#paperOutput').textContent(),/证据解读/);assert.match(await page.locator('#paperOutput').textContent(),/LAST_RECEIVED_BEFORE_ERROR/);assert.match(await page.locator('#paperFailure').textContent(),/部分回答已保留/);assert.equal(await page.locator('#retryPaperQuestion').isVisible(),true);assert.equal(await page.locator('#downloadPaper').isEnabled(),true);
       const download=page.waitForEvent('download');await workbenchView(page,'analysis');await page.locator('#downloadPaper').click();assert.match(fs.readFileSync(await(await download).path(),'utf8'),/未完成/);mode='normal';await ask('RECOVERY_QUESTION');assert.doesNotMatch(calls.at(-1).prompt,/FAILED_TURN_MARKER/);
     });
     await check('Premature EOF and HTTP model errors surface actionable messages instead of successful completion',async()=>{
-      mode='eof';await workbenchView(page,'analysis');await page.locator('#analyzePaper').click();await page.waitForFunction(()=>document.querySelector('#paperStatus').classList.contains('error'));assert.match(await page.locator('#paperOutput').textContent(),/证据解读/);assert.doesNotMatch(await page.locator('#paperStatus').textContent(),/^分析完成/);
+      mode='eof';await workbenchView(page,'analysis');await page.locator('#analyzePaper').click();await page.waitForFunction(()=>document.querySelector('#paperStatus').classList.contains('error'));assert.match(await page.locator('#paperOutput').textContent(),/证据解读/);assert.match(await page.locator('#paperFailure').textContent(),/回答流意外中断/);assert.doesNotMatch(await page.locator('#paperStatus').textContent(),/^分析完成/);
       mode='http-error';await workbenchView(page,'analysis');await page.locator('#analyzePaper').click();await page.waitForFunction(()=>document.querySelector('#paperStatus').textContent.includes('422'));assert.match(await page.locator('#paperStatus').textContent(),/支持图片输入/);
+    });
+    await check('Socket disconnect and an error before the first token keep retry visible without automatic requests',async()=>{
+      for(const failure of ['network-error','early-error']){
+        mode=failure;const before=calls.length;await workbenchView(page,'analysis');await page.locator('#researchQuestion').fill('RECOVER_'+failure);await page.locator('#analyzePaper').click();
+        await page.waitForFunction(()=>!document.querySelector('#analyzePaper').disabled&&document.querySelector('#paperStatus').classList.contains('error'));
+        assert.equal(calls.length,before+1);assert.equal(await page.locator('#retryPaperQuestion').isVisible(),true);
+        assert.match(await page.locator('#paperFailure').textContent(),/中断/);
+        if(failure==='early-error')assert.match(await page.locator('#paperFailure').textContent(),/尚未收到/);
+        else assert.match(await page.locator('#paperOutput').textContent(),/证据解读/);
+      }
+      mode='normal';const before=calls.length;await page.locator('#retryPaperQuestion').click();await waitDone();
+      assert.equal(calls.length,before+1);assert.match(calls.at(-1).prompt,/CURRENT USER QUESTION:\nRECOVER_early-error/);
     });
     await check('Stopping an analysis aborts its HTTP request and leaves partial output exportable',async()=>{
       mode='stall';await workbenchView(page,'analysis');await page.locator('#analyzePaper').click();await page.waitForFunction(()=>document.querySelector('#paperOutput').textContent.includes('证据解读'));await workbenchView(page,'analysis');await page.locator('#stopPaper').click();await delay(150);assert.equal(calls.at(-1).aborted,true);assert.equal(await page.locator('#downloadPaper').isEnabled(),true);assert.match(await page.locator('#paperStatus').textContent(),/保留/);

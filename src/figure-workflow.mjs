@@ -34,7 +34,7 @@ export class FigureWorkflow {
     tools.prepend(this.importButton,this.imageFile);
     const pasteHint=document.createElement('div');pasteHint.className='figure-paste-hint';pasteHint.tabIndex=0;pasteHint.setAttribute('aria-label','粘贴图表截图');pasteHint.textContent='图表漏提取？点击这里后按 Ctrl+V 粘贴截图，或导入 PNG / JPEG / WebP。仅本地载入，核对后再点击分析。';tools.after(pasteHint);
     body.addEventListener('paste',event=>{const files=Array.from(event.clipboardData?.items||[]).filter(item=>item.kind==='file'&&item.type.startsWith('image/')).map(item=>item.getAsFile()).filter(Boolean);if(!files.length)return;event.preventDefault();void this.importImages(files);});
-    this.research=new ResearchControls($('figureWorkflow').querySelector('.figure-body'),{analyze:()=>this.analyzePaper(),stop:()=>{this.invalidate();this.cancel();this.research.notice('分析已停止，已收到的回答保留并可导出；未完成回答不加入追问上下文。');}});
+    this.research=new ResearchControls($('figureWorkflow').querySelector('.figure-body'),{analyze:()=>this.analyzePaper(),stop:()=>{this.invalidate();this.cancel();this.research.stopped();}});
     this.picker=new FigurePicker(body,{onChange:()=>this.controls(),onLoad:keys=>this.loadCandidates?.(keys),onAsk:()=>this.askSelected(),onInspect:key=>this.inspector.open(this.items.find(i=>i.key===key)),analyzeButton:$('analyzeFigures'),stopButton:$('stopFigures')});
     this.transcribeSelected=document.createElement('button');this.transcribeSelected.id='transcribeSelectedTables';this.transcribeSelected.textContent='转写所选表格';this.transcribeSelected.title='向所选 AI 发送已选图片，提取可复制的表格；请核对原图';this.transcribeSelected.onclick=()=>{const error=this.selectionError();if(error){this.notice(error,true);return;}void this.analyzeAll(this.selectedItems(),{tablesOnly:true});};$('analyzeFigures').after(this.transcribeSelected);
     this.picker.container.append($('figureStatus'));
@@ -290,7 +290,7 @@ export class FigureWorkflow {
       if(figureNotes.length)this.research.notice(`正在综合 ${figureNotes.length} 张图表的 AI 笔记与 ${source?.text?.length||0} 字正文；本次汇总不重发原图，笔记需对照原图核查。`);
       const result=await this.analyzeRequest(undefined,undefined,text=>{if(generation===this.generation)this.research.output(text);},{...options,type:'RESEARCH_ANALYZE',text:source?.text||'',source,figures,figureNotes,unavailableFigures,conversation});
       if(generation!==this.generation)return;this.research.output(result,true);this.research.notice('分析完成。'+(skipped?skipped+' ':'')+(this.memoryWarning||'结论请对照原文；可导出 Markdown。'),Boolean(this.memoryWarning));
-    }catch(error){if(generation===this.generation)this.research.notice(error.message,true);}
+    }catch(error){if(generation===this.generation)this.research.fail(error);}
     finally{if(generation===this.generation){this.research.finish();this.busy=false;this.controls();}}
   }
   async reproduce(item,language,{reviewImage}={}){
