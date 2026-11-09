@@ -1,6 +1,6 @@
 # QudadFlow Translator
 
-Version **0.9.7** improves PMC image capture, keeps paper Q&A usable when images fail, and restores saved webpage workspaces. Chat messages use a bounded, resizable scrolling area; interrupted answers retain their text for explicit retry, and accepted questions clear the composer immediately. See [release notes](docs/RELEASE_NOTES_0.9.7.md) and [GitHub/Chrome/Edge publication status](docs/STORE_SUBMISSION_0.9.7.md).
+Version **0.9.8** requests all HTTP/HTTPS website access once for pages, original images, document URLs and APIs. Missing access shows a grant action. After a webpage translation error or interrupted stream, **继续翻译** resumes unfinished paragraphs/chunks while retaining complete translations. **恢复原文** closes the translation panel directly. See [release notes](docs/RELEASE_NOTES_0.9.8.md) and [three-platform publication status](docs/STORE_SUBMISSION_0.9.8.md).
 
 **A research workspace for reading papers in depth and learning from their figures, for Edge and Chrome.**
 
@@ -12,7 +12,7 @@ Read a PDF with its translation, ask questions using the paper's text and figure
 - **Python/R chart-style code:** study layout, layers, axes, fonts, colors, legends and annotations through a shared specification or custom code. Dedicated code boxes support copying, download, wrapping and enlargement. Labelled `--style-demo` runs use synthetic inputs; import a local render for an explicit visual revision request. The extension does not execute code, and style acceptance does not require numerical recovery.
 - **Reusable evidence:** copy native tables as Markdown/TSV, explicitly transcribe image tables with vision AI, and retain available figure/page references for checking.
 
-Immersive webpage and selection translation provide the basic reading tools. Default machine translation needs no key; deeper AI research needs your compatible service/model or an eligible optional ChatGPT plan connection. The current interface is Simplified Chinese. [Full introduction](docs/store-description-en-0.9.5.txt) · [Figure workflow](docs/FIGURE_REPRODUCTION.md).
+Immersive webpage and selection translation provide the basic reading tools. Default machine translation needs no key; deeper AI research needs your compatible service/model or an eligible optional ChatGPT plan connection. The current interface is Simplified Chinese. [Full introduction](docs/store-description-en-0.9.8.txt) · [Figure workflow](docs/FIGURE_REPRODUCTION.md).
 
 **Version 0.9.6:** improve immersive translation around code, formulas, captions, editors and dynamic paragraphs, with additional handling for clipped cards, pinned navigation, ruby annotations, visually hidden labels and mixed-language batches. Paper author lists retain their original rows and links, with one translation beneath the list and separate affiliation prose. Completed status shrinks to an expandable control. See the [release notes](docs/RELEASE_NOTES_0.9.6.md), [testing guide](docs/IMMERSIVE_WEB_TESTING.md), [initial verification](docs/VERIFICATION_0.9.6.md), [expanded checks](docs/VERIFICATION_0.9.6_EXPANDED.md), [author layout checks](docs/VERIFICATION_0.9.6_AUTHORS.md) and [publication status](docs/STORE_SUBMISSION_0.9.6.md).
 
@@ -40,9 +40,9 @@ Optional ChatGPT plan sign-in appears only when selected in Settings. A working 
 
 [![Webpage reading, selection translation, documents, paper research, default translation and optional ChatGPT preview](branding/store-0.9.2/preview.jpg)](docs/STORE_PRESENTATION_0.9.2.md)
 
-The [current store introduction](docs/STORE_PRESENTATION_0.9.5.md) describes the research workflow in English and Chinese. The illustrated [0.9.2 presentation](docs/STORE_PRESENTATION_0.9.2.md) retains its versioned screenshots; generated fixtures, simulated API responses and capture versions are labelled. Provider quality and speed vary.
+The [current store introduction](docs/STORE_PRESENTATION_0.9.8.md) describes the research workflow in English and Chinese. The illustrated [0.9.2 presentation](docs/STORE_PRESENTATION_0.9.2.md) retains its versioned screenshots; generated fixtures, simulated API responses and capture versions are labelled. Provider quality and speed vary.
 
-GitHub and store submission states are recorded separately in the [0.9.7 publication record](docs/STORE_SUBMISSION_0.9.7.md). Store submission does not establish approval.
+GitHub and store submission states are recorded separately in the [0.9.8 publication record](docs/STORE_SUBMISSION_0.9.8.md). Store submission does not establish approval.
 
 ## Translation providers
 
@@ -81,11 +81,13 @@ Search returned IDs, filter reported text/image capabilities, inspect metadata, 
 3. Open the extension options. Default machine translation needs no API key. If you use another provider, choose it in **API 方案与模型**, enter its required settings, and save.
 4. Allow access to the provider API domain when prompted and use **测试连接** in the same section.
 5. Open a normal webpage and choose **沉浸式翻译当前网页** (immersive translation).
-6. For the nearby selection button, enable **在此网站启用划词翻译按钮** in the popup and approve access to that site. Select text, then click **翻译**. Press Esc to close. This opt-in persists for that site; selecting alone never sends text.
+6. Approve **一次授权所有网站** once to reuse access across websites. For the nearby selection button, enable **在此网站启用划词翻译按钮** in the popup. Select text, then click **翻译**. Press Esc to close. This opt-in persists for that site; selecting alone never sends text.
 
-Under **网站与 API 访问权限**, **一次授权所有网站** explicitly requests persistent HTTP/HTTPS access for pages, original images and APIs. This allows the extension to read those sites and reduces later permission dialogs; it does not enable selection buttons on every site. **恢复按站点授权** clears optional website grants, including existing individual/API grants, so they can be requested again when needed.
+The popup and Settings → **网站与 API 访问权限** use the same **一次授权所有网站** request for persistent HTTP/HTTPS access to pages, original images, document URLs and APIs. Browser confirmation is required once, then shared across websites. **撤销网站授权** clears optional website grants, including existing individual/API grants. Selection buttons remain a separate site preference.
 
-Browser-internal pages and restricted store pages cannot host the webpage translation interface. When you first open the popup on an ungranted website, it shows a current-site authorization reminder. Clicking **授权当前网站** requests that HTTP(S) host on all ports inside the browser confirmation gesture; opening the popup itself does not request permission. The compact card folds its detailed explanation; denial/cancellation leaves a retry, consent hides it immediately, and reopening a granted site leaves no placeholder. The check uses actual browser grants, so revocation makes the reminder appear again. Protected browser/store pages omit this card. Authorization does not start translation or enable selection buttons. File-URL access is a separate browser extension-detail setting. For a PDF open in Edge, use **PDF / 文档左右对照** in the popup to open the separate document reader. Page-panel extraction is limited to 12,000 characters per action; immersive translation has no fixed paragraph or body-character cap.
+Without the all-websites grant, the popup shows a compact authorization prompt even on an individually granted site. Opening the popup alone requests nothing; clicking authorization or translation invokes the browser confirmation. Denial, cancellation and failed checks leave a retry. Consent hides the prompt across websites; revocation restores it. Browser commands/context menus with missing host access open the grant UI. Authorization alone sends no text and enables no selection buttons. Browser-internal/store restrictions and the separate file-URL setting still apply. For a PDF open in Edge, use **PDF / 文档左右对照**. Page-panel extraction is limited to 12,000 characters per action; immersive translation has no fixed paragraph or body-character cap.
+
+After a webpage translation error, click **继续翻译** or invoke the same translation action again. Completed paragraphs and successful long-paragraph chunks are reused; unfinished streams are retried. Fixing credentials or changing the model can retain progress. Changing source/target language, restoring originals or changing the paper starts a fresh translation; changed immersive paragraphs alone are replaced. Progress stays in the current webpage's memory and is lost on reload/close. Retries are explicit.
 
 ## Reading preferences (0.8.7)
 
@@ -159,7 +161,7 @@ Webpage paper workspaces automatically save edited material, drafts, 20 conversa
 
 ## Privacy
 
-Translation starts after a user action. Requests go directly to the configured endpoint. Settings and API keys use browser-local extension storage. The extension contains no advertising, analytics, telemetry, or remote executable code. Optional host access is requested separately for your API domain and each site where you enable the selection button. The per-site setting registers bundled UI code for later visits, without automatically translating or sending text. Site matching covers the selected HTTP(S) scheme and host on all ports. Turning the switch off disables the UI and unregisters future loading; revoke retained site access separately through Edge if desired.
+Translation starts after a user action. Requests go directly to the configured endpoint. Settings and API keys use browser-local extension storage. The extension contains no advertising, analytics, telemetry, or remote executable code. Optional HTTP/HTTPS access is requested once across websites, APIs and original images. The selection-button preference registers bundled UI code for that site's later visits, without automatically translating or sending text. Turning that switch off disables the UI and unregisters future loading; website access can be revoked separately.
 
 The service worker holds recent source text and results only in memory (at most 128 entries / 250,000 characters, five-minute reuse window), never in persistent translation history. See the policy for details.
 
@@ -173,7 +175,7 @@ Requires Node.js and PowerShell. Runtime libraries are checked into `vendor/`; n
 .\package.ps1 -OutputDirectory .\dist
 ```
 
-The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.7.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
+The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.8.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
 
 ## Verification
 

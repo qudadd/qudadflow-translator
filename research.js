@@ -1,3 +1,4 @@
+import './src/website-access.js';
 import {FigureWorkflow} from './src/figure-workflow.mjs';
 import {researchMessage} from './src/research-ui.mjs';
 import {renderResearch} from './src/research-render.mjs';
@@ -121,7 +122,7 @@ async function load(){
     let added=0,failed=0;
     try{
       // Requested before the first await so the user's click grants the origins.
-      const permission=chrome.permissions.request({origins:[...new Set(todo.map(item=>item.origin))]});
+      const permission=QFWebsiteAccess.request();
       if(!await permission)throw new Error('未获得原图来源权限，可再次点击载入重试。');
       if(!current())return;
       for(const [position,item] of todo.entries()){

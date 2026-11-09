@@ -30,6 +30,10 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
     const immersiveFitted = new Map();
     let immersiveRecords = [];
     let immersiveSession;
+    let immersiveCheckpoint;
+    let pageCheckpoint;
+    let languageRevision = 0;
+    let panelResume;
     let immersiveRunId = 0;
     let panelRunId = 0;
     let requestSequence = 0;
@@ -112,6 +116,13 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       return ++panelRunId;
     }
 
+    function removePanel() {
+      host?.remove();
+      host = undefined;
+      shadow = undefined;
+      panelResume = undefined;
+    }
+
     function ensurePanel() {
       if (host && shadow) return shadow;
       host = document.createElement("div");
@@ -137,6 +148,9 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
           .restore { display:none; }
           .minimize { display:none; }
           .status { margin:0 0 12px; color:#66748b; }
+          .recovery { display:flex; justify-content:flex-end; margin-top:10px; }
+          .recovery[hidden] { display:none; }
+          button:focus-visible { outline:2px solid #315bc7; outline-offset:2px; }
           .error { color:#b42318; background:#fff3f1; border-color:#ffd8d3; }
           .panel.compact { top:auto; bottom:16px; right:16px; width:min(340px, calc(100vw - 32px)); max-height:35vh; border-radius:12px; }
           .compact .head { padding:9px 12px; }
@@ -151,24 +165,26 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         </style>
         <section class="panel" role="dialog" aria-label="QudadFlow Translator">
           <header class="head"><strong class="title">QudadFlow Translator</strong><button class="minimize" title="收起翻译状态" aria-label="收起翻译状态" aria-expanded="true">−</button><button class="restore" title="恢复网页原文">恢复原文</button><button class="copy" title="复制译文">复制</button><button class="close" title="关闭">×</button></header>
-          <div class="body"><p class="status"></p><p class="label">原文</p><div class="box source"></div><p class="label">译文</p><div class="box translation"></div><div class="actions"><button class="primary copy-bottom">复制译文</button></div></div>
+          <div class="body"><p class="status" role="status"></p><p class="label">原文</p><div class="box source"></div><p class="label">译文</p><div class="box translation"></div><div class="actions"><button class="primary copy-bottom">复制译文</button></div><div class="recovery" hidden><button class="primary resume" type="button">继续翻译</button></div></div>
         </section>`;
       const close = () => {
         beginPanelRun();
-        host.remove();
-        host = undefined;
-        shadow = undefined;
+        removePanel();
       };
       shadow.querySelector(".close").addEventListener("click", close);
+      shadow.querySelector('.resume').addEventListener('click', () => {
+        const resume = panelResume;
+        if (!resume) return;
+        panelResume = undefined;
+        shadow.querySelector('.recovery').hidden = true;
+        void resume().catch(error => setStatus(`翻译失败：${error.message}`, true));
+      });
       shadow.querySelector(".minimize").addEventListener("click", () => {
         const minimized = shadow.querySelector(".panel").classList.toggle("minimized");
         immersivePanelExpanded = !minimized;
         updatePanelMinimizeButton();
       });
-      shadow.querySelector(".restore").addEventListener("click", () => {
-        const count = restoreImmersive();
-        showPanel({ title: "沉浸式翻译", status: count ? `已恢复 ${count} 个网页段落。` : "当前页面没有沉浸式译文。" });
-      });
+      shadow.querySelector(".restore").addEventListener("click", restoreImmersive);
       const copy = async () => {
         const root = shadow;
         const value = root.querySelector(".translation").textContent;
@@ -196,7 +212,7 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       button.setAttribute("aria-expanded", String(!minimized));
     }
 
-    function showPanel({ title, source = "", translation = "", status = "", showRestore = false, compact = false, settled = false }) {
+    function showPanel({ title, source = "", translation = "", status = "", showRestore = false, compact = false, settled = false, resume }) {
       const root = ensurePanel();
       root.querySelector(".panel").classList.toggle("compact", compact);
       if (!compact || status.startsWith("翻译失败")) root.querySelector(".panel").classList.remove("minimized");
@@ -208,6 +224,8 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       root.querySelector(".status").textContent = status;
       root.querySelector(".restore").style.display = showRestore ? "inline-block" : "none";
       root.querySelector(".translation").classList.toggle("error", !translation && status.startsWith("翻译失败"));
+      panelResume = resume;
+      root.querySelector('.recovery').hidden = !resume;
     }
 
     function setStatus(status, reveal = false) {
@@ -776,6 +794,13 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       cancelRequests();
       immersiveRunId += 1;
       panelRunId += 1;
+      immersiveCheckpoint = undefined;
+      const count = clearImmersiveTranslations();
+      removePanel();
+      return count;
+    }
+
+    function clearImmersiveTranslations() {
       const nodes = immersiveRecords.map((record) => record.translationElement).filter((node) => node?.isConnected);
       const count = nodes.length;
       nodes.forEach((node) => node.remove());
@@ -1159,9 +1184,9 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       } catch (error) {
         if (session.runId === immersiveRunId && error.code !== "CANCELLED") {
           cancelRequests();
-          showPanel({ title: "沉浸式翻译", source: `已显示 ${session.translatedCount} 个译文段落。`, status: `翻译失败：${error.message}`, showRestore: true, compact: true });
+          showPanel({ title: "沉浸式翻译已暂停", source: `已保留 ${session.translatedCount} 个完整译文段落。`, status: `翻译失败：${error.message} 点击“继续翻译”补译未完成内容。`, showRestore: true, compact: true, resume: () => translateImmersive(session.languageRevision === languageRevision ? session.targetLanguage : undefined) });
         }
-        return { ok: false, code: error.code || "TRANSLATION_FAILED", error: error.message };
+        return { ok: false, code: error.code || "TRANSLATION_FAILED", error: error.message, canResume: error.code !== 'CANCELLED', translatedCount: session.translatedCount };
       } finally {
         session.busy = false;
         if (isCurrent()) {
@@ -1260,7 +1285,8 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
     }
 
     async function translateImmersive(targetLanguage) {
-      restoreImmersive();
+      hideSelectionBubble(true);
+      cancelRequests();
       immersivePanelExpanded = false;
       const runId = ++immersiveRunId;
       panelRunId += 1;
@@ -1270,7 +1296,19 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
       targetLanguage ||= preferences.targetLanguage || "zh-CN";
       if (colorRevision === immersiveColorRevision) setImmersiveColor(preferences.immersiveTranslationColor);
       if (runId !== immersiveRunId) return { ok: false, code: "CANCELLED", error: "翻译已取消。" };
-      const session = { runId, targetLanguage, url: location.href.split("#")[0], roots: new Set([document]), observers: new Map(), views: new Set(), seen: new WeakMap(), languages: new Map(), pending:new Set(), waiters:new Set(), inFlight:0, recordSequence:0, dispatchSequence:0, languageChars: 0, translatedCount: 0, skippedCount: 0, fallbackBlocks: 0 };
+      const url = location.href.split('#')[0];
+      if (!immersiveCheckpoint || immersiveCheckpoint.url !== url || immersiveCheckpoint.targetLanguage !== targetLanguage || immersiveCheckpoint.languageRevision !== languageRevision) clearImmersiveTranslations();
+      immersiveCheckpoint = {url, targetLanguage, languageRevision};
+      const session = { runId, targetLanguage, languageRevision, url, roots: new Set([document]), observers: new Map(), views: new Set(), seen: new WeakMap(), languages: new Map(), pending:new Set(), waiters:new Set(), inFlight:0, recordSequence:0, dispatchSequence:0, languageChars: 0, translatedCount: 0, skippedCount: 0, fallbackBlocks: 0 };
+      // Rebuild the queue from retained records, including batches removed from
+      // pending when dispatched. Only completed chunks are eligible for reuse.
+      for (const record of immersiveRecords) {
+        session.recordSequence = Math.max(session.recordSequence, record.order + 1);
+        record.nodes.forEach((node, index) => session.seen.set(node, {original: record.originals[index], record}));
+        if (record.completed) session.translatedCount += 1;
+        else if (record.skipped) session.skippedCount += 1;
+        else session.pending.add(record);
+      }
       session.isCurrent = () => runId === immersiveRunId && immersiveSession === session;
       session.onScroll = () => scheduleImmersiveScan(session);
       session.onLoad = (event) => { if (event.target?.tagName === "IFRAME") scheduleImmersiveScan(session); };
@@ -1303,6 +1341,9 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
 
     async function translatePage(targetLanguage) {
       const runId = beginPanelRun();
+      const preferences = await chrome.storage.local.get({targetLanguage: 'zh-CN'});
+      targetLanguage ||= preferences.targetLanguage || 'zh-CN';
+      if (runId !== panelRunId) return {ok:false, code:'CANCELLED', error:'翻译已取消。'};
       const collected = collectVisibleText(document.body || document.documentElement);
       const notice = collected.length > MAX_PAGE_CHARS ? `本次仅翻译前 ${MAX_PAGE_CHARS} 个字符。` : "";
       const source = collected.slice(0, MAX_PAGE_CHARS);
@@ -1310,27 +1351,32 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
         showPanel({ title: "翻译当前网页", status: "当前页面没有可翻译的文本。" });
         return { ok: false, error: "当前页面没有可翻译的文本。" };
       }
-      const chunks = splitText(source, CHUNK_CHARS);
-      showPanel({ title: "翻译当前网页", source, status: `${notice}正在翻译第 1/${chunks.length} 段…` });
-      const translated = [];
+      const url = location.href.split('#')[0];
+      if (!pageCheckpoint || pageCheckpoint.url !== url || pageCheckpoint.source !== source || pageCheckpoint.targetLanguage !== targetLanguage || pageCheckpoint.languageRevision !== languageRevision) {
+        pageCheckpoint = {url, source, targetLanguage, languageRevision, chunks:splitText(source, CHUNK_CHARS), translated:[], completed:new Set()};
+      }
+      const checkpoint = pageCheckpoint, {chunks, translated, completed} = checkpoint;
+      const partials = [];
       const isCurrent = () => runId === panelRunId;
-      let completed = 0;
-      startProgress(`${notice}正在翻译，已完成 0/${chunks.length} 段…`);
-      const render = () => { if (isCurrent() && shadow) shadow.querySelector(".translation").textContent = translated.filter(Boolean).join("\n\n"); };
+      const output = () => chunks.map((_, index) => completed.has(index) ? translated[index] : partials[index]).filter(Boolean).join('\n\n');
+      showPanel({ title: "翻译当前网页", source, translation:output(), status: `${notice}正在翻译，已完成 ${completed.size}/${chunks.length} 段…` });
+      startProgress(`${notice}正在翻译，已完成 ${completed.size}/${chunks.length} 段…`);
+      const render = () => { if (isCurrent() && shadow) shadow.querySelector(".translation").textContent = output(); };
       try {
-        await mapConcurrent(chunks, async (chunk, index) => {
+        const remaining = chunks.map((chunk, index) => ({chunk, index})).filter(({index}) => !completed.has(index));
+        await mapConcurrent(remaining, async ({chunk, index}) => {
           const translation = await requestTranslation(chunk, targetLanguage, "web page", (partial) => {
-            if (isCurrent()) { translated[index] = partial; render(); }
+            if (isCurrent()) { partials[index] = partial; render(); }
           });
           if (!isCurrent()) return;
           translated[index] = translation;
-          completed += 1;
+          completed.add(index);
           render();
-          setStatus(`${notice}正在翻译，已完成 ${completed}/${chunks.length} 段…`);
+          setStatus(`${notice}正在翻译，已完成 ${completed.size}/${chunks.length} 段…`);
         }, isCurrent);
       } catch (error) {
-        if (isCurrent()) showPanel({ title: "翻译当前网页", source, translation: translated.filter(Boolean).join("\n\n"), status: `翻译失败：${error.message}` });
-        return { ok: false, code: error.code, error: error.message };
+        if (isCurrent()) showPanel({ title: "网页翻译已暂停", source, translation: output(), status: `翻译失败：${error.message} 已完成 ${completed.size}/${chunks.length} 段，点击“继续翻译”接着翻译。`, resume: () => translatePage(checkpoint.languageRevision === languageRevision ? targetLanguage : undefined) });
+        return { ok: false, code: error.code, error: error.message, canResume:error.code !== 'CANCELLED', translatedCount:completed.size };
       } finally {
         if (isCurrent()) stopProgress();
       }
@@ -1341,13 +1387,14 @@ if (!globalThis.__edgeWebTranslatorLoaded) {
     chrome.storage?.onChanged?.addListener((changes,area)=>{
       if(area!=='local')return;
       if('immersiveTranslationColor' in changes){immersiveColorRevision+=1;setImmersiveColor(changes.immersiveTranslationColor.newValue);}
+      if (['sourceLanguage','targetLanguage'].some(key => key in changes)) languageRevision += 1;
       const fields=['apiStyle','chatgptAccount','endpoint','apiKey','mymemoryEmail','model','providerRegion','sourceLanguage','targetLanguage','temperature','streamOpenAi','customHeaders','requestTemplate','responsePath'];
       if(!fields.some(key=>key in changes))return;
       const running=pendingRequests.size>0||Boolean(immersiveSession);
       if(!running)return;
       if(selectionBusy)hideSelectionBubble(true);
       cancelRequests();immersiveRunId+=1;panelRunId+=1;
-      if(running&&shadow)setStatus('翻译配置已更改，当前任务已停止。已完成的译文保留；可重新发起翻译。', true);
+      if(running&&shadow)setStatus('翻译配置已更改，当前任务已停止。已完成译文保留；再次点击翻译可继续，更换语言时重新翻译。', true);
     });
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

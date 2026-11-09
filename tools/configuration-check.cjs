@@ -20,7 +20,9 @@ const server=http.createServer(async(req,res)=>{
   try{
     const extension=path.join(scratch,'extension');fs.mkdirSync(extension);
     for(const file of ['manifest.json','offscreen-translation.html','research.html','research.css','research.js','popup.html','popup.css','popup.js','options.html','options.css','options.js','privacy.html','src','assets','_locales'])fs.cpSync(path.join(root,file),path.join(extension,file),{recursive:true});
-    const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json'),'utf8'));manifest.host_permissions=['http://127.0.0.1/*','https://api.mymemory.translated.net/*'];fs.writeFileSync(path.join(extension,'manifest.json'),JSON.stringify(manifest));
+    // Test-only web grant avoids a native permission dialog in headless save tests.
+    // Denial, scope and revocation are independently driven by the UI harness below.
+    const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json'),'utf8'));manifest.host_permissions=['http://*/*','https://*/*'];fs.writeFileSync(path.join(extension,'manifest.json'),JSON.stringify(manifest));
     context=await chromium.launchPersistentContext(path.join(scratch,'profile'),{channel:process.env.QF_BROWSER_CHANNEL||'msedge',headless:true,viewport:{width:1180,height:1200},args:['--disable-extensions-except='+extension,'--load-extension='+extension]});browserVersion=context.browser().version();
     const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'),id=new URL(worker.url()).host,base='chrome-extension://'+id+'/';
     const initial={apiStyle:'openai-compatible',apiKey:'SYNTHETIC-ORIGINAL-KEY',endpoint:origin+'/v1',model:'original-model',targetLanguage:'zh-CN'};
@@ -88,6 +90,7 @@ const server=http.createServer(async(req,res)=>{
         p.getAll=async()=>({origins:h.granted?['https://*/*','http://*/*','https://papers.example/*']:[]});
         p.remove=async args=>{h.removals.push(args);h.granted=false;return true;};
       });
+      await page.evaluate(()=>refreshWebsitePermission());
       try{
         assert.equal(await page.locator('#grantAllWebsites').isVisible(),true);
         await page.locator('#grantAllWebsites').click();await page.waitForFunction(()=>document.querySelector('#websitePermissionStatus').textContent.includes('未授予'));
@@ -95,19 +98,19 @@ const server=http.createServer(async(req,res)=>{
         await page.evaluate(()=>window.permissionHarness.allow=true);await page.locator('#grantAllWebsites').click();await page.waitForFunction(()=>document.querySelector('#websitePermissionStatus').textContent.includes('已持久授权'));
         assert.equal(await page.locator('#grantAllWebsites').isVisible(),false);assert.equal(await page.locator('#revokeAllWebsites').isVisible(),true);
         const granted=await page.evaluate(()=>window.permissionHarness.requests);assert.equal(granted.length,2);assert.ok(granted.every(r=>r.active));assert.deepEqual(granted[1].origins,['https://*/*','http://*/*']);assert.deepEqual(await get(),saved);
-        await page.locator('#revokeAllWebsites').click();await page.waitForFunction(()=>document.querySelector('#websitePermissionStatus').textContent.includes('当前按站点'));
+        await page.locator('#revokeAllWebsites').click();await page.waitForFunction(()=>document.querySelector('#websitePermissionStatus').textContent.includes('尚未授权所有网站'));
         assert.equal(await page.locator('#grantAllWebsites').isVisible(),true);const removed=await page.evaluate(()=>window.permissionHarness.removals);assert.equal(removed.length,1);assert.ok(removed[0].origins.includes('https://papers.example/*'));assert.deepEqual(await get(),saved);
       }finally{await page.evaluate(()=>{for(const [name,fn]of Object.entries(window.permissionHarness.originals))chrome.permissions[name]=fn;});await page.reload();await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.locator('#expandSettings').click();}
     });
-    await check('Compact site prompt: denied retry, immediate grant hiding, persisted suppression, revoked-site reminder and protected-page suppression',async()=>{
+    await check('All-websites prompt: denied retry, immediate grant hiding, persisted suppression, revoked-site reminder and protected-page suppression',async()=>{
       const saved=await get(),before=calls.length,site=await context.newPage(),popup=await context.newPage();
       await site.goto(origin+'/first-use?private=SYNTHETIC');
       const tab=await worker.evaluate(async url=>(await chrome.tabs.query({})).find(t=>t.url===url),site.url());
       await popup.addInitScript(tab=>{
         const query=chrome.tabs.query.bind(chrome.tabs),getTab=chrome.tabs.get.bind(chrome.tabs);
         chrome.tabs.query=args=>args.active?Promise.resolve([tab]):query(args);
-        const h=window.sitePermissionHarness={granted:sessionStorage.getItem('qf-test-site-granted')==='true',allow:false,requests:[],added:[],removed:[]};
-        chrome.permissions.contains=async()=>h.holdPermissionCheck?new Promise(resolve=>{h.releasePermissionCheck=resolve;}):h.granted;
+        const h=window.sitePermissionHarness={granted:sessionStorage.getItem('qf-test-site-granted')==='true',siteOnly:true,allow:false,requests:[],added:[],removed:[]};
+        chrome.permissions.contains=async args=>h.holdPermissionCheck?new Promise(resolve=>{h.releasePermissionCheck=resolve;}):h.granted||h.siteOnly&&args.origins.every(origin=>!['https://*/*','http://*/*'].includes(origin));
         chrome.permissions.request=async args=>{
           h.requests.push({...args,active:navigator.userActivation.isActive});
           if(h.holdRequest)await new Promise(resolve=>{h.releaseRequest=resolve;});
@@ -119,7 +122,8 @@ const server=http.createServer(async(req,res)=>{
       },tab);
       try{
         await popup.goto(base+'popup.html');await popup.locator('#authorizeCurrentSite:not([disabled])').waitFor();
-        assert.equal(await popup.locator('#siteAuthorization').isVisible(),true);assert.match(await popup.locator('#siteAuthorizationHint').textContent(),/127\.0\.0\.1/);
+        assert.equal(await popup.locator('#siteAuthorization').isVisible(),true);assert.match(await popup.locator('#siteAuthorizationHint').textContent(),/无需逐站/);
+        assert.equal(await popup.evaluate(()=>chrome.permissions.contains({origins:['http://127.0.0.1/*']})),true,'individual grant should not hide the all-sites prompt');
         assert.doesNotMatch(await popup.locator('#siteAuthorization').textContent(),/private=|SYNTHETIC|ORIGINAL-KEY/);
         assert.equal(await popup.evaluate(()=>window.sitePermissionHarness.requests.length),0);
         assert.equal(await popup.locator('#siteAuthorizationDetails').evaluate(e=>e.open),false);
@@ -141,7 +145,7 @@ const server=http.createServer(async(req,res)=>{
         assert.equal(await popup.locator('#siteAuthorization').isHidden(),true);
         await popup.evaluate(()=>{const h=window.sitePermissionHarness;h.holdTab=false;h.releaseTab();});
         await popup.waitForFunction(()=>!authorizingSite);
-        const requests=await popup.evaluate(()=>window.sitePermissionHarness.requests);assert.equal(requests.length,2);assert.ok(requests.every(r=>r.active));assert.deepEqual(requests[1].origins,['http://127.0.0.1/*']);
+        const requests=await popup.evaluate(()=>window.sitePermissionHarness.requests);assert.equal(requests.length,2);assert.ok(requests.every(r=>r.active));assert.deepEqual(requests[1].origins,['https://*/*','http://*/*']);
         assert.equal(await popup.locator('#selectionEnabled').isChecked(),false);assert.deepEqual(await get(),saved);assert.equal(calls.length,before);
         await popup.reload();await popup.waitForFunction(()=>siteAuthorizationTarget&&!document.querySelector('#selectionEnabled').disabled);
         assert.equal(await popup.evaluate(()=>window.sitePermissionHarness.granted),true);
@@ -149,6 +153,9 @@ const server=http.createServer(async(req,res)=>{
         assert.equal(await popup.locator('#siteAuthorization').evaluate(e=>e.getBoundingClientRect().height),0);
         assert.equal(await popup.evaluate(()=>window.sitePermissionHarness.requests.length),0);
         await popup.locator('.popup').screenshot({path:path.join(path.dirname(reportPath),'qudadflow-site-authorized-v'+manifest.version+'.png')});
+        await popup.evaluate(async()=>{activeTab={id:1,url:'https://different-paper.example/article'};await updateSiteAuthorization();});
+        assert.equal(await popup.locator('#siteAuthorization').isHidden(),true,'another website must reuse the same all-sites grant');
+        assert.equal(await popup.evaluate(()=>window.sitePermissionHarness.requests.length),0);
         await popup.evaluate(async()=>{const h=window.sitePermissionHarness;h.granted=false;sessionStorage.setItem('qf-test-site-granted','false');await Promise.all(h.removed.map(listener=>listener({origins:['http://127.0.0.1/*']})));});
         assert.equal(await popup.locator('#siteAuthorization').isVisible(),true);
         assert.equal(await popup.locator('#authorizeCurrentSite').isEnabled(),true);

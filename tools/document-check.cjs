@@ -81,6 +81,13 @@ const server=http.createServer(async(req,res)=>{
     const manifest=JSON.parse(fs.readFileSync(path.join(extension,'manifest.json'),'utf8'));version=manifest.version;manifest.host_permissions=['http://127.0.0.1/*'];fs.writeFileSync(path.join(extension,'manifest.json'),JSON.stringify(manifest));
     context=await chromium.launchPersistentContext(path.join(scratch,'test-profile'),{channel:'msedge',headless:true,acceptDownloads:true,viewport:{width:1440,height:1000},args:['--disable-extensions-except='+extension,'--load-extension='+extension]});
     const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'),id=new URL(worker.url()).host,base='chrome-extension://'+id+'/';
+    // Simulate the native all-websites confirmation in this headless URL suite.
+    // Actual denial remains covered below; popup scope/revocation use their own suite.
+    await context.addInitScript(()=>{
+      if(location.protocol!=='chrome-extension:'||!chrome.permissions)return;
+      const request=chrome.permissions.request.bind(chrome.permissions);
+      chrome.permissions.request=args=>args.origins?.includes('https://*/*')&&args.origins?.includes('http://*/*')?Promise.resolve(true):request(args);
+    });
     const page=await context.newPage();page.setDefaultTimeout(8000);page.on('pageerror',e=>browserErrors.push(e.message));
     context.on('request',request=>{if(/^https?:/.test(request.url())&&!request.url().startsWith(origin))unexpectedUrls.push(request.url().split('?')[0]);});
     async function configure(extra={}){mode='normal';await worker.evaluate(settings=>chrome.storage.local.set(settings),{apiStyle:'openai-compatible',endpoint:origin+'/v1/chat/completions',apiKey:'SYNTHETIC-DOCUMENT-TEST-KEY',model:'document-'+(++scenario),targetLanguage:'zh-CN',sourceLanguage:'auto',streamOpenAi:true,requestTimeoutSeconds:45,...extra});await delay(40);}

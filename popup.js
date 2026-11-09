@@ -54,13 +54,15 @@ async function updateSiteAuthorization() {
     return;
   }
   try {
-    const allowed = await chrome.permissions.contains({origins:[target.pattern]});
+    const allowed = await QFWebsiteAccess.contains();
     if (siteAuthorizationTarget !== target) return;
     card.hidden = allowed; button.disabled = allowed || authorizingSite;
-    $('siteAuthorizationHint').textContent = target.host;
+    $('siteAuthorizationHint').textContent = '浏览器确认一次，之后无需逐站授权。';
     if (allowed) $('siteAuthorizationDetails').open = false;
   } catch {
-    if (siteAuthorizationTarget === target) siteAuthorizationTarget = null;
+    if (siteAuthorizationTarget !== target) return;
+    card.hidden = false; button.disabled = authorizingSite;
+    $('siteAuthorizationHint').textContent = '无法读取权限，请点击授权重试。';
   }
 }
 
@@ -70,22 +72,22 @@ async function authorizeCurrentSite() {
   authorizingSite = true; $('authorizeCurrentSite').disabled = true;
   try {
     // Keep the permission request inside the click's user activation.
-    const allowed = await chrome.permissions.request({origins:[target.pattern]});
+    const allowed = await QFWebsiteAccess.request();
     if (!allowed) {
-      $('siteAuthorizationHint').textContent = `${target.host} · 未授权，可重试`;
-      setStatus('未授予本站权限。可以稍后重试，或在设置中管理网站授权。', true);
+      $('siteAuthorizationHint').textContent = '未授权，可重试';
+      setStatus('未授予所有网站访问权限。点击“一次授权所有网站”重试。', true);
       return;
     }
     // Hide immediately on consent, even if page setup or an older permission check is pending.
     siteAuthorizationTarget = null;
     $('siteAuthorization').hidden = true;
     $('siteAuthorizationDetails').open = false;
-    setStatus(`已授权 ${target.host}。可以开始沉浸式翻译，或自行开启下方划词按钮。`);
+    setStatus('已授权所有 HTTP/HTTPS 网站，后续无需逐站确认。');
     const tab = await chrome.tabs.get(target.tabId).catch(() => null);
     if (tab) activeTab = tab;
     if (tab && siteAuthorizationFor(tab)?.pattern === target.pattern) {
       try { await ensureContentScript(tab.id); await loadSelectionSite(); }
-      catch { setStatus(`已授权 ${target.host}。当前页面不支持网页注入；PDF 请使用文档阅读器。`); }
+      catch { setStatus('所有网站已授权。当前页面不支持网页注入；PDF 请使用文档阅读器。'); }
     }
     await updateSiteAuthorization();
   } catch (error) {
@@ -140,8 +142,8 @@ async function setSelectionSite() {
   let createdScript = false;
   try {
     if (enabled) {
-      const allowed = await chrome.permissions.request({ origins: [selectionSitePattern] });
-      if (!allowed) throw new Error("未授予本站访问权限，划词按钮尚未开启。");
+      const allowed = await QFWebsiteAccess.request();
+      if (!allowed) { await updateSiteAuthorization(); throw new Error('未授予所有网站访问权限，划词按钮尚未开启。'); }
       const scripts = await chrome.scripting.getRegisteredContentScripts({ ids: [selectionSiteId] });
       if (!scripts.length) {
         await chrome.scripting.registerContentScripts([{
@@ -172,6 +174,13 @@ async function run(type) {
   const buttons = ["translateSelection", "translatePage", "translateImmersive"].map($);
   buttons.forEach((button) => { button.disabled = true; });
   try {
+    // Request all web origins while the initiating click is still active.
+    if (siteAuthorizationFor(activeTab) && !await QFWebsiteAccess.request()) {
+      await updateSiteAuthorization();
+      setStatus('未授予所有网站访问权限。点击“一次授权所有网站”后继续。', true);
+      return;
+    }
+    await updateSiteAuthorization();
     if (!activeTab?.id) await loadSelection();
     if (!activeTab?.id) return;
     await ensureContentScript(activeTab.id);
@@ -179,7 +188,7 @@ async function run(type) {
     const response = await sendTabMessage(activeTab.id, { type, targetLanguage: $("targetLanguage").value });
     if (!response?.ok) {
       const suffix = response?.code === "PERMISSION_REQUIRED" ? "请打开设置并允许访问 API 域名。" : "";
-      setStatus(`${response?.error || "翻译失败。"} ${suffix}`.trim(), true);
+      setStatus(`${response?.error || "翻译失败。"} ${suffix}${response?.canResume ? '已完成译文保留，点击网页中的“继续翻译”或再次点击翻译按钮即可接着翻译。' : ''}`.trim(), true);
       return;
     }
     setStatus(type === "TRANSLATE_IMMERSIVE"
@@ -232,7 +241,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   $('openResearch').addEventListener('click',async()=>{
     $('openResearch').disabled=true;setStatus('正在本地提取论文与图表…');
-    try{const tab=activeTab||(await chrome.tabs.query({active:true,currentWindow:true}))[0];const result=await chrome.runtime.sendMessage({type:'RESEARCH_CAPTURE',tabId:tab?.id});if(!result?.ok)throw new Error(result?.error||'提取失败');window.close();}catch(error){setStatus(error.message,true);}finally{$('openResearch').disabled=false;}
+    try{const permission=QFWebsiteAccess.request();if(!await permission){await updateSiteAuthorization();throw new Error('未授予所有网站访问权限，请点击“一次授权所有网站”后重试。');}const tab=activeTab||(await chrome.tabs.query({active:true,currentWindow:true}))[0];const result=await chrome.runtime.sendMessage({type:'RESEARCH_CAPTURE',tabId:tab?.id});if(!result?.ok)throw new Error(result?.error||'提取失败');window.close();}catch(error){setStatus(error.message,true);}finally{$('openResearch').disabled=false;}
   });
   await Promise.all([
     stored.then(value => { $("targetLanguage").value = value.targetLanguage || DEFAULT_TARGET; }),

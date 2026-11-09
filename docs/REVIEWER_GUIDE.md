@@ -1,8 +1,14 @@
-# QudadFlow Translator: certification review (0.9.7)
+# QudadFlow Translator: certification review (0.9.8)
 
 The extension has no QudadFlow service account. Its default machine translation needs no AI credentials. Optional Google Cloud Translation, DeepL, Microsoft Translator and OpenAI-compatible services use the reviewer's own endpoint and credentials. Optional ChatGPT plan sign-in uses each user's official OpenAI authorization and a separately installed Windows x64 native host. No shared production keys or account are supplied. The UI is Simplified Chinese; English/Chinese store metadata are included.
 
 For basic text testing, leave **自动机器翻译（默认免 Key）** selected in Settings. Approve site access when prompted, open a normal English HTTP(S) webpage and request immersive or selection translation. The extension first tries a ready browser-local Translator model. If the browser supports it, the user may click **下载并准备本地模型** in Settings to download a model for the chosen language pair. Without a ready model, requested text goes immediately to MyMemory over HTTPS. MyMemory's typical anonymous allowance is 5,000 characters/day, possibly shared by network, and its retention/usage terms apply. A personal contact email can be added for the provider's stated higher allowance; no independent per-person public quota is guaranteed. AI research and vision need a compatible API profile/model or an eligible ChatGPT plan account.
+
+## Website access and translation recovery in 0.9.8
+
+On an HTTP(S) website without a full grant, open the popup and click **一次授权所有网站**. Confirm both HTTP/HTTPS origins once in the browser. A previously individual host grant does not suppress this prompt. Switch websites: the grant is reused. Reject or revoke it and verify the reminder returns. API setup, remote document links and original-figure loading use this same scope. No new manifest permission is added; the existing website scopes remain optional. Granting alone sends no content or enables selection buttons everywhere. Missing host access from browser commands/context menus opens authorization. Settings can revoke website grants; local files and protected pages retain browser restrictions.
+
+Use a long webpage and a provider that succeeds on some batches before returning an error or dropping a stream. Finished paragraphs remain. **继续翻译** and the original translation action retry only missing paragraphs/chunks, including successful chunks inside an incomplete long paragraph. No automatic error retry runs. The separate webpage-text panel also resumes complete chunks in original order. Fixing provider configuration can retain progress; changing source/target language or restoring originals resets the relevant checkpoint. Changed immersive paragraphs are replaced. Refresh/close loses these webpage-memory checkpoints. This is independent of persistent paper workspaces. [Release notes](RELEASE_NOTES_0.9.8.md).
 
 ## Paper conversations and recovery in 0.9.7
 
@@ -45,7 +51,7 @@ On a paper or in the PDF/Word/TXT/Markdown reader, click **展开工作台**. Ch
 1. Expand Settings → **翻译偏好**. Recolor existing immersive translations without a new request. Type/save or record the webpage shortcut. Default: **Shift+A**. Esc, Tab, blur and Cancel cancel recording. Reset/disable are available. The shortcut excludes editors/inputs and runs only in granted HTTP/HTTPS page bodies. Alt+Shift+I remains a browser-command fallback.
 2. Translate a long normal webpage and scroll/expand content. The live viewport is prioritized, dynamic text supplemented and confidently detected target-language text skipped. Translation/AI have no extension-imposed deadline; Stop or actual HTTP/network/stream errors end calls. Downloads retain resource safeguards.
 3. For live review, supply valid provider credentials. Read upstream models and explicitly choose one after inspecting reported metadata. Missing metadata remains unknown; some providers lack a model list. Model loading sends no page text. Test the draft, then save. Up to 20 API connections can be saved/switched only in Settings. Reading views discover and select models on the active API, with plain model-ID lists and inline refresh/cancel. No page text goes with discovery. Optional host grants can persist independently of configuration drafts.
-4. Settings sections fold independently. Website/API permissions are optional and requested as needed. A separate explicit all-websites grant can reduce repeated prompts.
+4. Settings sections fold independently. Website/API access remains optional in the manifest; explicit actions request all HTTP/HTTPS origins once, shared across pages, original images, remote documents and APIs.
 
 ## Documents
 

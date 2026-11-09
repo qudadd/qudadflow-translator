@@ -321,11 +321,11 @@ function permissionContains(origins) {
   return new Promise((resolve) => chrome.permissions.contains({ origins }, resolve));
 }
 
-const ALL_WEBSITES=['https://*/*','http://*/*'];
+const ALL_WEBSITES=QFWebsiteAccess.origins;
 let websitePermissionBusy=false;
 async function refreshWebsitePermission(){
   const granted=await permissionContains(ALL_WEBSITES);
-  $('websitePermissionStatus').textContent=granted?'已持久授权所有 HTTP/HTTPS 网站，可减少重复确认。':'当前按站点授权，已授予的权限会由浏览器保留。';
+  $('websitePermissionStatus').textContent=granted?'已持久授权所有 HTTP/HTTPS 网站，无需逐站确认。':'尚未授权所有网站。点击“一次授权所有网站”后，无需逐站确认。';
   $('grantAllWebsites').hidden=granted;
   $('revokeAllWebsites').hidden=!granted;
 }
@@ -337,9 +337,9 @@ $('grantAllWebsites').onclick=async()=>{
     const pending=permissionRequest(ALL_WEBSITES);
     $('websitePermissionStatus').textContent='等待浏览器确认网站授权…';
     const granted=await pending;await refreshWebsitePermission();
-    if(!granted)$('websitePermissionStatus').textContent='未授予全部网站权限，继续使用按站点授权。';
+    if(!granted)$('websitePermissionStatus').textContent='未授予全部网站权限，可再次点击授权。';
     await askForEndpointPermission(false);
-  }catch{ $('websitePermissionStatus').textContent='网站授权未完成，可重试或继续按站点授权。'; }
+  }catch{ $('websitePermissionStatus').textContent='网站授权未完成，请再次点击授权。'; }
   finally{websitePermissionBusy=false;}
 };
 $('revokeAllWebsites').onclick=async()=>{
@@ -390,7 +390,7 @@ async function askForEndpointPermission(showMessage = true) {
   // Call request() directly from the click/submit event. Waiting for a
   // permissions.contains() result first can consume the browser's transient
   // user activation and make an otherwise valid request fail.
-  const granted = await permissionRequest([pattern]);
+  const granted = await permissionRequest(ALL_WEBSITES);
   $("permissionStatus").textContent = granted ? `已允许访问 ${pattern}` : `未允许访问 ${pattern}，翻译请求会被浏览器拦截。`;
   if (showMessage && !granted) setStatus("未获得 API 域名权限，设置仍会保存。", true);
   return granted;

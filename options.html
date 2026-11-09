@@ -119,11 +119,11 @@
         <section class="advanced trial-inline" id="trialSettings"><h3>MyMemory 快速试用</h3><p>默认 English → 简体中文。匿名额度通常为 5000 字符/天，适合非私密短文；其他源语言需手动选择。</p><button type="button" class="secondary" id="useTrial">启用 MyMemory 基础试用</button><p class="hint">文字通过 HTTPS 查询发送给 MyMemory，服务商可能长期保留。<a href="https://mymemory.translated.net/terms-and-conditions" target="_blank" rel="noreferrer">服务与隐私条款</a> · <a href="https://mymemory.translated.net/doc/usagelimits.php" target="_blank" rel="noreferrer">额度说明</a></p></section>
         <section class="advanced permission-inline" id="permissionSettings">
           <h3>网站与 API 访问权限</h3>
-          <p id="permissionStatus">保存时会请求访问你填写的 API 域名。扩展只会向该域名发送翻译请求。</p>
-          <button type="button" class="secondary" id="requestPermission">请求/检查 API 域名权限</button>
-          <p class="hint">默认按需授权，浏览器会记住已授权的站点。也可一次允许所有 HTTP/HTTPS 网站，减少切换论文、载入原图和 API 时的确认。此权限允许扩展读取这些网站；只有你操作翻译或分析时才发送相应内容，不会自动启用全站划词。</p>
+          <p id="permissionStatus">保存时会一次请求所有 HTTP/HTTPS 网站权限。翻译请求仍只发送至所选 API。</p>
+          <button type="button" class="secondary" id="requestPermission">授权网站与 API 访问</button>
+          <p class="hint">一次允许所有 HTTP/HTTPS 网站，切换论文、载入原图和 API 时无需逐站确认。浏览器会记住授权。只有你操作翻译或分析时才发送相应内容，不会自动启用全站划词；本地文件权限在浏览器扩展详情中管理。</p>
           <p id="websitePermissionStatus" role="status">正在检查网站权限…</p>
-          <div class="permission-actions"><button type="button" class="secondary" id="grantAllWebsites">一次授权所有网站</button><button type="button" class="secondary" id="revokeAllWebsites" hidden>恢复按站点授权</button></div>
+          <div class="permission-actions"><button type="button" class="secondary" id="grantAllWebsites">一次授权所有网站</button><button type="button" class="secondary" id="revokeAllWebsites" hidden>撤销网站授权</button></div>
           <p class="hint">恢复按站点授权会清除可选网站授权，使用时可重新授予。浏览器内置页面与商店页面仍受浏览器限制；本地文件访问需在扩展详情单独开启。</p>
         </section>
         <div class="connection-actions"><div class="save-info"><span id="saveState">正在读取本地配置…</span><span id="status" role="status"></span></div><div class="save-buttons"><button type="button" class="secondary" id="testApi">测试连接</button><button type="button" class="secondary" id="cancelTestApi" hidden>停止测试</button><button type="submit" class="primary">保存设置</button></div></div>
@@ -171,6 +171,7 @@
   </main>
   </div>
   <script src="src/immersive-shortcut.js"></script>
+  <script src="src/website-access.js"></script>
   <script src="options.js"></script>
   <script src="src/connector-setup.js"></script>
   <script src="src/chatgpt-options.js"></script>

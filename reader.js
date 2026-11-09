@@ -1,4 +1,5 @@
 import {MAX_FILE_BYTES, MAX_PAGES, textPages, decodeText, parseDocxXml, pdfBlocks, translationBatches, markedTranslations} from './src/document-format.mjs';
+import './src/website-access.js';
 import {PdfLayoutView,fitText,blockDetail} from './src/layout-view.mjs';
 import {renderWord,WordLayoutView} from './src/word-layout.mjs';
 import {FigureWorkflow,imageData} from './src/figure-workflow.mjs';
@@ -396,7 +397,7 @@ async function openUrl(event) {
     url=new URL($('documentUrl').value.trim());
     if(!['https:','http:'].includes(url.protocol)||url.username||url.password)throw new Error('请输入 HTTP(S) 文档链接。本地文件、blob 链接或登录后下载的文档可用“打开文件”。');
     // Request permission directly in the submit gesture before any unrelated await.
-    permission=chrome.permissions.request({origins:[`${url.protocol}//${url.hostname}/*`]});
+    permission=QFWebsiteAccess.request();
   } catch(error){status(error.message,true);return;}
   try {if(!await permission){status('未获得文档站点权限。也可以下载文件后使用“打开文件”。',true);return;}}
   catch {status('无法授予文档站点权限，请下载文件后使用“打开文件”。',true);return;}

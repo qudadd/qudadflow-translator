@@ -324,6 +324,16 @@ function background(settings = {}, {permission = true, timeout = 800} = {}) {
       assert.doesNotMatch(JSON.stringify(metadata.manifest),/__MSG_/);
     });
     const extensionOrigin=`chrome-extension://${worker.url().split('/')[2]}`;
+    // Native all-web consent cannot be clicked in headless mode. Simulate only
+    // that confirmation here; configuration-check verifies its scope/denial UI.
+    await browser.addInitScript(()=>{
+      if(location.protocol!=='chrome-extension:'||!chrome.permissions)return;
+      const request=chrome.permissions.request.bind(chrome.permissions);
+      chrome.permissions.request=(args,callback)=>{
+        if(args.origins?.includes('https://*/*')&&args.origins?.includes('http://*/*')){callback?.(true);return Promise.resolve(true);}
+        return request(args,callback);
+      };
+    });
     const options=await browser.newPage();
     await options.goto(extensionOrigin+'/options.html');
     await options.waitForFunction(()=>document.querySelector('#endpoint').value);await options.locator('#expandSettings').click();

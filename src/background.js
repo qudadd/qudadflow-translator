@@ -595,8 +595,28 @@ async function forwardToActiveTab(message) {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   const tab = tabs[0];
   if (!tab || typeof tab.id !== "number") throw new Error("找不到当前标签页。");
+  if (!await ensureWebsiteAccess(tab)) return {ok:false, code:'PERMISSION_REQUIRED', error:'请在弹窗中一次授权所有网站。'};
   await ensureContentScript(tab.id);
   return tabsSendMessage(tab.id, message);
+}
+
+async function ensureWebsiteAccess(tab) {
+  let pattern;
+  try { pattern = selectionPattern(tab.url); } catch { return true; }
+  if (await permissionsContains([pattern])) return true;
+  // Browser commands/context menus may reach a page before an optional grant.
+  // Show the extension's grant UI rather than leaving an invisible console error.
+  await showWebsiteAuthorization();
+  return false;
+}
+
+let websiteAuthorizationOpening;
+function showWebsiteAuthorization() {
+  if (!websiteAuthorizationOpening) websiteAuthorizationOpening = (async () => {
+    try { await chrome.action.openPopup(); }
+    catch { await chrome.tabs.create({url:chrome.runtime.getURL('options.html#permissionSettings')}); }
+  })().finally(() => { websiteAuthorizationOpening = undefined; });
+  return websiteAuthorizationOpening;
 }
 
 function createContextMenu() {
@@ -679,6 +699,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       await chrome.tabs.create({ url: chrome.runtime.getURL(`reader.html#${fragment}`) });
       return;
     }
+    if (!await ensureWebsiteAccess(tab)) return;
     await ensureContentScript(tab.id);
     if (info.menuItemId === "translate-selection") {
       await tabsSendMessage(tab.id, { type: "TRANSLATE_SELECTION", selectionText: info.selectionText || "" });
@@ -856,7 +877,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   };
   translateText(request, controller, progress, metadata)
     .then((translation) => sendResponse({ ok: true, translation, cached: Boolean(metadata.cached), elapsedMs: Date.now() - started }))
-    .catch((error) => sendResponse({ ok: false, code: error.code || "TRANSLATION_FAILED", error: error.message, elapsedMs: Date.now() - started, ...upstreamDiagnostic(error) }))
+    .catch((error) => {
+      if (error.code === 'PERMISSION_REQUIRED' && sender.tab?.id && message.type === 'TRANSLATE_TEXT') void showWebsiteAuthorization().catch(() => {});
+      sendResponse({ ok: false, code: error.code || "TRANSLATION_FAILED", error: error.message, elapsedMs: Date.now() - started, ...upstreamDiagnostic(error) });
+    })
     .finally(() => { if (activeRequests.get(requestKey) === controller) activeRequests.delete(requestKey); });
   return true;
 });

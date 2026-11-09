@@ -12,8 +12,8 @@
   <main class="popup">
     <div class="brand"><img src="assets/icon32.png" alt=""><div><h1>QudadFlow Translator</h1><p>默认机器翻译，也可选择自己的 API</p></div></div>
     <section id="siteAuthorization" class="site-authorization" aria-labelledby="siteAuthorizationTitle" hidden>
-      <div class="site-authorization-row"><div><h2 id="siteAuthorizationTitle">当前网站未授权</h2><p id="siteAuthorizationHint"></p></div><button id="authorizeCurrentSite" class="primary" type="button" disabled>授权当前网站</button></div>
-      <details id="siteAuthorizationDetails"><summary>授权说明</summary><p>允许读取本站页面，用于沉浸式翻译、划词和快捷键。点击后由浏览器确认，范围为该协议和主机的所有端口；不会发起翻译或自动开启划词，可在扩展设置中撤销。</p></details>
+      <div class="site-authorization-row"><div><h2 id="siteAuthorizationTitle">开启所有网站访问</h2><p id="siteAuthorizationHint" role="status"></p></div><button id="authorizeCurrentSite" class="primary" type="button" disabled>一次授权所有网站</button></div>
+      <details id="siteAuthorizationDetails"><summary>授权说明</summary><p>一次允许所有 HTTP/HTTPS 网站，用于网页翻译、论文、原图和 API 访问，后续无需逐站确认。浏览器会记住授权；可在设置中撤销。授权本身不发送内容或开启划词。本地文件与浏览器保护页面仍遵循浏览器限制。</p></details>
     </section>
     <label for="activeModel">翻译模型</label><select id="activeModel" disabled></select><p class="hint">自动读取当前 API 的上游模型。新增或切换 API 请打开设置。</p>
     <label for="targetLanguage">目标语言</label>
@@ -41,6 +41,7 @@
     <div class="footer"><button id="openOptions">API 与翻译设置</button><a href="privacy.html" target="_blank">隐私说明</a></div>
     <a class="community" href="options.html#communitySupport" target="_blank" rel="noopener">QQ 交流群 <strong>1048123205</strong><span aria-hidden="true">↗</span></a>
   </main>
+  <script src="src/website-access.js"></script>
   <script src="popup.js"></script>
   <script src="src/version.js"></script>
 </body>
