@@ -1,6 +1,6 @@
 # QudadFlow Translator 0.9.8
 
-Release prepared 2026-11-10. GitHub publication and Chrome/Edge review outcomes are recorded separately in the [three-platform submission record](STORE_SUBMISSION_0.9.8.md).
+Released on GitHub, 2026-11-10. Chrome and Edge received the same 0.9.8 runtime package and are awaiting review; both stores still show 0.9.7 as live. See the [three-platform submission record](STORE_SUBMISSION_0.9.8.md) for verified files and status.
 
 ## One website authorization
 
