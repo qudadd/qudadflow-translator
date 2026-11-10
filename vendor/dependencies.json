@@ -13,6 +13,16 @@
       "wasm",
       "LICENSE",
       "README.md"
+    ],
+    "patches": [
+      {
+        "id": "core-js-explicit-javascript-protocol",
+        "files": [
+          "legacy/build/pdf.mjs",
+          "legacy/build/pdf.worker.mjs"
+        ],
+        "description": "Use an explicit javascript: literal and descriptive variable in the bundled core-js legacy iframe fallback; runtime behavior is unchanged."
+      }
     ]
   },
   {

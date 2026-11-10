@@ -68,6 +68,19 @@ try{
   await check('Syntax errors in first-party runtime code fail the build checks',()=>changed('popup.js',fs.readFileSync(path.join(snapshot,'popup.js'),'utf8')+'\nconst = ;\n',()=>assert.match(validate(false),/popup.js.*语法检查失败/)));
   await check('Remote module imports fail validation without executing or fetching them',()=>changed('src/build-fixture.mjs',"import 'https://example.invalid/never-loaded.mjs';\n",()=>assert.match(validate(false),/non-local resource/)));
   await check('Missing bundled PDF codec is detected before an installable package is produced',()=>changed('vendor/pdfjs/wasm/openjpeg.wasm',null,()=>assert.match(validate(false),/openjpeg.wasm/)));
+  await check('Restoring the upstream assembled protocol in either PDF.js module blocks validation and packaging',()=>{
+    const before=digest(fs.readFileSync(path.join(first,runtimeName)));
+    for(const name of ['vendor/pdfjs/legacy/build/pdf.mjs','vendor/pdfjs/legacy/build/pdf.worker.mjs']){
+      const upstream=fs.readFileSync(path.join(snapshot,name),'utf8')
+        .replace("  var javascriptProtocol = 'javascript:';", "  var JS = 'java' + SCRIPT + ':';")
+        .replace('  iframe.src = javascriptProtocol;', '  iframe.src = String(JS);');
+      changed(name,upstream,()=>{
+        assert.match(validate(false),/PDF.js readability patch/);
+        assert.match(build(first,false),/PDF.js readability patch/);
+      });
+    }
+    assert.equal(digest(fs.readFileSync(path.join(first,runtimeName))),before);
+  });
   await check('Private-file rejection preserves existing output packages and leaves no staging directory',()=>{
     const before=digest(fs.readFileSync(path.join(first,runtimeName)));
     changed('src/.env.fixture','SYNTHETIC_BUILD_DATA=1\n',()=>assert.match(build(first,false),/Unexpected package path/));

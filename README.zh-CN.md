@@ -1,6 +1,6 @@
 # QudadFlow Translator（Edge / Chrome 扩展）
 
-版本 **0.9.8** 一次申请所有 HTTP/HTTPS 网站权限，网页、原图、文档链接与 API 共用授权；缺失权限时显示授权入口。网页翻译出错或断流后，点击 **继续翻译** 仅重试未完成内容，保留完整译文和长段落已完成分块。**恢复原文** 直接关闭翻译面板。见[更新说明](docs/RELEASE_NOTES_0.9.8.md)和[三平台发布状态](docs/STORE_SUBMISSION_0.9.8.md)。
+版本 **0.9.9** 修复 PDF.js 主模块与 worker 中旧兼容分支的协议拼接写法，回应 Chrome **Red Titanium** 代码可读性问题。依赖更新时自动应用有记录的补丁，打包前检查防止回退。论文处理与网页续译功能沿用 0.9.8。见[更新说明](docs/RELEASE_NOTES_0.9.9.md)、[可读性修复](docs/CHROME_READABILITY_0.9.9.md)和[三平台发布状态](docs/STORE_SUBMISSION_0.9.9.md)。
 
 **面向论文深度阅读与图表学习的研究工作台。**
 
@@ -38,9 +38,9 @@
 
 [![网页沉浸阅读、划词翻译、文档、论文分析、默认翻译及可选 ChatGPT 登录预览](branding/store-0.9.2/preview.jpg)](docs/STORE_PRESENTATION_0.9.2.md)
 
-[当前商店简介](docs/STORE_PRESENTATION_0.9.8.md)按论文研究流程提供中英文介绍；[0.9.2 展示资料](docs/STORE_PRESENTATION_0.9.2.md)保留七张带版本标注的截图，标明生成样例与模拟接口。真实服务效果取决于服务商与模型。
+[当前商店简介](docs/STORE_PRESENTATION_0.9.9.md)按论文研究流程提供中英文介绍；[0.9.2 展示资料](docs/STORE_PRESENTATION_0.9.2.md)保留七张带版本标注的截图，标明生成样例与模拟接口。真实服务效果取决于服务商与模型。
 
-GitHub、Edge 与 Chrome 的实际更新状态见[0.9.8 发布记录](docs/STORE_SUBMISSION_0.9.8.md)，商店提交与审核通过分别记录。
+GitHub、Edge 与 Chrome 的实际更新状态见[0.9.9 发布记录](docs/STORE_SUBMISSION_0.9.9.md)，商店提交与审核通过分别记录。
 
 ## 本次图表改进
 
@@ -224,7 +224,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 .\package.ps1
 ```
 
-打包脚本用同一文件清单执行复制、依赖检查及 ZIP 审计：检查 Manifest、图标、自有脚本语法和本地依赖，再验证暂存运行目录，逐个比对压缩包文件与源文件字节。通过后生成 `outputs/qudadflow-translator-v0.9.8.zip`、独立源码包、审计 JSON 和 `SHA256SUMS-v0.9.8.txt`；源文件校验失败时保留已有安装包。固定 ZIP 时间戳和路径顺序，使相同源码在同一 Node/PowerShell/.NET 环境中构建结果一致。运行包不含开发测试、截图与文档；打包不会自动发布。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
+打包脚本用同一文件清单执行复制、依赖检查及 ZIP 审计：检查 Manifest、图标、自有脚本语法和本地依赖，再验证暂存运行目录，逐个比对压缩包文件与源文件字节。通过后生成 `outputs/qudadflow-translator-v0.9.9.zip`、独立源码包、审计 JSON 和 `SHA256SUMS-v0.9.9.txt`；源文件校验失败时保留已有安装包。固定 ZIP 时间戳和路径顺序，使相同源码在同一 Node/PowerShell/.NET 环境中构建结果一致。运行包不含开发测试、截图与文档；打包不会自动发布。可以用 `-OutputDirectory` 指定输出目录。文档库已放入 `vendor/`，不需额外安装依赖；`tools/vendor-document-libs.mjs` 可按固定版本与 SHA512 校验重新下载这些依赖。
 
 ## 项目与上架信息
 
@@ -238,7 +238,7 @@ DeepSeek、Moonshot、智谱、通义、硅基流动等服务通常可以填写�
 - 按目标 API 服务商的条款确认用户文本和 Key 的处理方式。
 - 使用真实 API 在干净的 Edge 配置中完成侧载验收，再提交商店审核。
 
-三个平台实际进度见[0.9.8 发布记录](docs/STORE_SUBMISSION_0.9.8.md)；中英文商店简介见[当前介绍](docs/STORE_PRESENTATION_0.9.8.md)，历史截图见[展示资料](docs/STORE_PRESENTATION_0.9.2.md)。
+三个平台实际进度见[0.9.9 发布记录](docs/STORE_SUBMISSION_0.9.9.md)；中英文商店简介见[当前介绍](docs/STORE_PRESENTATION_0.9.9.md)，历史截图见[展示资料](docs/STORE_PRESENTATION_0.9.2.md)。
 
 ## 自动功能验证
 

@@ -1,0 +1,9 @@
+QudadFlow Translator 0.9.9 is a code readability maintenance update. Both stores and GitHub receive the identical runtime ZIP.
+
+Chrome review reference Red Titanium identified a protocol assembled from string fragments in pdfjs-dist 6.4.299's bundled core-js legacy Object.create fallback. Both vendor/pdfjs/legacy/build/pdf.mjs and vendor/pdfjs/legacy/build/pdf.worker.mjs now use var javascriptProtocol = 'javascript:'; and iframe.src = javascriptProtocol;. The value and fallback behavior are unchanged. Local modifications are marked in both modules and documented in THIRD_PARTY_NOTICES.md and vendor/dependencies.json; original licenses are retained.
+
+The integrity-checked vendoring script applies tools/pdfjs-readability.mjs after extraction and stops on unexpected upstream changes. Package validation rejects regression in either file, with negative build tests. PDF.js version, permissions, CSP and reader behavior are retained. The reader does not run PDF JavaScript, and keeps isEvalSupported: false and enableXfa: false.
+
+No QudadFlow account or shared production credential is needed. Open a local PDF in the document reader to test rendering, text extraction, navigation and ordinary figure/table extraction without a key. Optional translation, paper Q&A, vision and Python/R draft generation use the reviewer's compatible service/model. The separate optional Windows ChatGPT companion stays at 0.9.2.
+
+Existing website authorization, continuation after webpage translation errors and silent Restore originals are retained. Product descriptions are unchanged. Review details: https://github.com/qudadd/qudadflow-translator/blob/main/docs/CHROME_READABILITY_0.9.9.md . Test scope/results: docs/VERIFICATION_0.9.9.md.

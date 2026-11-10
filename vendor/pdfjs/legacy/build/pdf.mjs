@@ -2590,12 +2590,14 @@ var NullProtoObjectViaActiveX = function (activeXDocument) {
 var NullProtoObjectViaIFrame = function () {
   // Thrash, waste and sodomy: IE GC bug
   var iframe = documentCreateElement('iframe');
-  var JS = 'java' + SCRIPT + ':';
+  // QudadFlow local modification: spell out the protocol in this core-js
+  // legacy IE fallback. See THIRD_PARTY_NOTICES.md for patch provenance.
+  var javascriptProtocol = 'javascript:';
   var iframeDocument;
   iframe.style.display = 'none';
   html.appendChild(iframe);
   // https://github.com/zloirock/core-js/issues/475
-  iframe.src = String(JS);
+  iframe.src = javascriptProtocol;
   iframeDocument = iframe.contentWindow.document;
   iframeDocument.open();
   iframeDocument.write(scriptTag('document.F=Object'));

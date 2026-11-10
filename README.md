@@ -1,6 +1,6 @@
 # QudadFlow Translator
 
-Version **0.9.8** requests all HTTP/HTTPS website access once for pages, original images, document URLs and APIs. Missing access shows a grant action. After a webpage translation error or interrupted stream, **继续翻译** resumes unfinished paragraphs/chunks while retaining complete translations. **恢复原文** closes the translation panel directly. See [release notes](docs/RELEASE_NOTES_0.9.8.md) and [three-platform publication status](docs/STORE_SUBMISSION_0.9.8.md).
+Version **0.9.9** makes the bundled PDF.js legacy fallback explicit and readable in both the main module and worker, addressing Chrome review reference **Red Titanium**. The dependency workflow reapplies the documented patch, and packaging rejects regressions. Paper workflows and resumable webpage translation continue from 0.9.8. See [release notes](docs/RELEASE_NOTES_0.9.9.md), [readability correction](docs/CHROME_READABILITY_0.9.9.md) and [three-platform publication status](docs/STORE_SUBMISSION_0.9.9.md).
 
 **A research workspace for reading papers in depth and learning from their figures, for Edge and Chrome.**
 
@@ -40,9 +40,9 @@ Optional ChatGPT plan sign-in appears only when selected in Settings. A working 
 
 [![Webpage reading, selection translation, documents, paper research, default translation and optional ChatGPT preview](branding/store-0.9.2/preview.jpg)](docs/STORE_PRESENTATION_0.9.2.md)
 
-The [current store introduction](docs/STORE_PRESENTATION_0.9.8.md) describes the research workflow in English and Chinese. The illustrated [0.9.2 presentation](docs/STORE_PRESENTATION_0.9.2.md) retains its versioned screenshots; generated fixtures, simulated API responses and capture versions are labelled. Provider quality and speed vary.
+The [current store introduction](docs/STORE_PRESENTATION_0.9.9.md) describes the research workflow in English and Chinese. The illustrated [0.9.2 presentation](docs/STORE_PRESENTATION_0.9.2.md) retains its versioned screenshots; generated fixtures, simulated API responses and capture versions are labelled. Provider quality and speed vary.
 
-GitHub and store submission states are recorded separately in the [0.9.8 publication record](docs/STORE_SUBMISSION_0.9.8.md). Store submission does not establish approval.
+GitHub and store submission states are recorded separately in the [0.9.9 publication record](docs/STORE_SUBMISSION_0.9.9.md). Store submission does not establish approval.
 
 ## Translation providers
 
@@ -175,7 +175,7 @@ Requires Node.js and PowerShell. Runtime libraries are checked into `vendor/`; n
 .\package.ps1 -OutputDirectory .\dist
 ```
 
-The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.8.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
+The script uses one file inventory for staging, dependency checks and archive auditing. It checks the manifest, icons, all first-party script syntax and literal local dependencies, validates the staged runtime, then compares every ZIP entry and its bytes with the source. It emits the runtime ZIP, source ZIP, an audit JSON and `SHA256SUMS-v0.9.9.txt` only after verification succeeds. Invalid source files leave previous output packages intact. Sorted paths and fixed ZIP timestamps make unchanged inputs reproducible on the same Node/PowerShell/.NET environment. The runtime ZIP is the store-upload package; packaging does not publish it. Development tools, screenshots and documents stay in the source ZIP. Never include your API keys in a package or commit.
 
 ## Verification
 

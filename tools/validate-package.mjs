@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {spawnSync} from 'node:child_process';
 import {runtimeFiles,checkLocalReferences} from './package-files.mjs';
+import {assertVendoredPdfjsReadability} from './pdfjs-readability.mjs';
 
 const root = process.argv[2]?path.resolve(process.argv[2]):path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
@@ -78,6 +79,7 @@ for(const file of ['research.html','research.js','research.css','src/research-st
 assert(JSON.stringify(manifest.host_permissions||[])===JSON.stringify(['https://api.mymemory.translated.net/*']), '生产包只能预先请求 MyMemory 免费翻译域名，不得请求全部网站权限');
 let scripts=0,files=[];
 try {
+  assertVendoredPdfjsReadability(root);
   files=runtimeFiles(root);
   checkLocalReferences(files,name=>fs.readFileSync(path.join(root,name),'utf8'));
   for(const name of files.filter(name=>!name.startsWith('vendor/')&&/\.(?:js|mjs)$/.test(name))){
